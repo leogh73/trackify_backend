@@ -1,0 +1,196 @@
+import puppeteer from 'puppeteer';
+import { load } from 'cheerio';
+
+async function checkStart(code) {
+	try {
+		return await startCheck(code, null);
+	} catch (error) {
+		return {
+			error: 'Ha ocurrido un error. Reintente más tarde',
+		};
+	}
+}
+
+async function checkUpdate(code, lastEvent) {
+	try {
+		return await startCheck(code, lastEvent);
+	} catch (error) {
+		return {
+			error: 'Ha ocurrido un error. Reintente más tarde',
+		};
+	}
+}
+
+async function startCheck(code, lastEvent) {
+	const browser = await puppeteer.launch();
+	const page = await browser.newPage();
+
+	await page.goto(`${process.env.CLICOH_API_URL1}`);
+	await page.waitForSelector("input[name='codigo']");
+	await page.type("input[name='codigo']", `${code}`);
+	let data = await (
+		await Promise.all([
+			page.waitForResponse(
+				(response) =>
+					response.url() === `${process.env.CLICOH_API_URL2}` &&
+					response.request().method() === 'POST',
+			),
+			page.click('.fa.fa-search'),
+		])
+	)[0].json();
+	await browser.close();
+
+	let events = data.packagestatehistory_set.map((e) => {
+		return {
+			date: convertDate(e.since.split('T')[0]),
+			time: e.since.split('T')[1].split('.')[0].split('-')[0],
+			description: e.state.description,
+		};
+	});
+	events.reverse();
+
+	let response;
+	if (!lastEvent) {
+		response = startResponse(events, data);
+	} else {
+		response = updateResponse(events, lastEvent);
+	}
+
+	return response;
+}
+
+function startResponse(events, data) {
+	let origin = (() => {
+		const { address, locality, country, street_number, administrative_area_level_1, postal_code } =
+			data.origin;
+		return {
+			address,
+			locality,
+			country,
+			street_number,
+			administrative_area_level_1,
+			postal_code,
+		};
+	})();
+
+	let destiny = (() => {
+		const { address, locality, country, street_number, administrative_area_level_1, postal_code } =
+			data.to;
+		return {
+			address,
+			locality,
+			country,
+			street_number,
+			administrative_area_level_1,
+			postal_code,
+		};
+	})();
+
+	const { dni, first_name, last_name, email, phone, address } = data.receiver;
+	let receiver = {
+		dni,
+		first_name,
+		last_name,
+		email: verifyData(email),
+		phone: verifyData(phone),
+		address: verifyData(address),
+	};
+
+	let otherData = {
+		pickupPoint: verifyData(data.pickup_point),
+		clientName: data.cliente,
+		serviceType: data.package_sub_service_combination.name,
+		secretCodeConfirmed: verifyData(data.secret_code_confirmed),
+	};
+
+	let response = {
+		events,
+		origin,
+		destiny,
+		receiver,
+		otherData,
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
+	};
+
+	return response;
+}
+
+function updateResponse(events, lastEvent) {
+	let eventsText = events.map((e) => `${e.date} - ${e.time} - ${e.description}`);
+	let eventIndex = eventsText.indexOf(lastEvent);
+
+	let eventsResponse = [];
+	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
+
+	let response = { events: eventsResponse };
+	if (eventsResponse.length) {
+		response.lastEvent = `${eventsResponse[0].date} - ${eventsResponse[0].time} - ${eventsResponse[0].description}`;
+	}
+
+	return response;
+}
+
+function convertDate(date) {
+	let dateToday = new Date(date);
+	let newDate =
+		dateToday.getDate() + '/' + (dateToday.getMonth() + 1) + '/' + dateToday.getFullYear();
+	return newDate;
+}
+
+function verifyData(data) {
+	let newData;
+	if (data == null) {
+		newData = 'Sin datos';
+	} else if (data == false) {
+		newData = 'No';
+	} else if (data == true) {
+		newData = 'Si';
+	} else {
+		return data;
+	}
+	return newData;
+}
+
+function convertFromDrive(driveData) {
+	const { events, otherData } = driveData;
+	return {
+		events,
+		origin: {
+			address: otherData[0][0],
+			locality: otherData[0][1],
+			country: otherData[0][2],
+			street_number: otherData[0][3],
+			administrative_area_level_1: otherData[0][4],
+			postal_code: otherData[0][5],
+		},
+		destiny: {
+			address: otherData[1][0],
+			locality: otherData[1][1],
+			country: otherData[1][2],
+			street_number: otherData[1][3],
+			administrative_area_level_1: otherData[1][4],
+			postal_code: otherData[1][5],
+		},
+		receiver: {
+			dni: otherData[2][0],
+			first_name: otherData[2][1],
+			last_name: otherData[2][2],
+			email: otherData[2][3],
+			phone: otherData[2][4],
+			address: otherData[2][5],
+		},
+		otherData: {
+			pickupPoint: otherData[3][0],
+			clientName: otherData[3][1],
+			serviceType: otherData[3][2],
+			secretCodeConfirmed: otherData[3][3],
+		},
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
+	};
+}
+
+export default {
+	checkStart,
+	checkUpdate,
+	convertFromDrive,
+};
