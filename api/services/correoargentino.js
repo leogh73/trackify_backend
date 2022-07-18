@@ -88,7 +88,7 @@ function convertFromDrive(driveData) {
 	const { events } = driveData;
 	return {
 		events,
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].condition} - ${events[0].motive} - ${events[0].location}`,
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].location} - ${events[0].description} - ${events[0].condition}`,
 	};
 }
 
