@@ -1,5 +1,6 @@
 import express from 'express';
 export const router = express.Router();
+import puppeteer from 'puppeteer';
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
