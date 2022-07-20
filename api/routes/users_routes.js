@@ -1,5 +1,6 @@
 import express from 'express';
 export const router = express.Router();
+import puppeteer from 'puppeteer';
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
@@ -10,9 +11,26 @@ router.post('/request', user.serviceRequest);
 
 router.get('/test', async (req, res) => {
 	try {
+		const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+		const page = await browser.newPage();
+
+		await page.goto(`${process.env.CLICOH_API_URL1}`);
+		await page.waitForSelector("input[name='codigo']");
+		await page.type("input[name='codigo']", 'HWUIN94250');
+		let data = await (
+			await Promise.all([
+				page.waitForResponse(
+					(response) =>
+						response.url() === `${process.env.CLICOH_API_URL2}` &&
+						response.request().method() === 'POST',
+				),
+				page.click('.fa.fa-search'),
+			])
+		)[0].json();
+		await browser.close();
 		res.json({
 			status: 200,
-			message: 'Get data has successfully',
+			message: data,
 		});
 	} catch (error) {
 		console.error(error);
