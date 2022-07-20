@@ -13,10 +13,6 @@ router.get('/test', async (req, res) => {
 	try {
 		const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
 		const page = await browser.newPage();
-		res.json({
-			status: 200,
-			message: 'Opened',
-		});
 
 		await page.goto(`${process.env.CLICOH_API_URL1}`);
 		await page.waitForSelector("input[name='codigo']");
