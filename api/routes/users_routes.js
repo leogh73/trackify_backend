@@ -1,6 +1,5 @@
 import express from 'express';
 export const router = express.Router();
-import puppeteer from 'puppeteer';
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
@@ -37,3 +36,15 @@ router.get('/test', async (req, res) => {
 		return res.status(500).send('Server error');
 	}
 });
+
+// router.get('/test', async (req, res) => {
+// 	try {
+// 		res.json({
+// 			status: 200,
+// 			message: 'Get data has successfully',
+// 		});
+// 	} catch (error) {
+// 		console.error(error);
+// 		return res.status(500).send('Server error');
+// 	}
+// });
