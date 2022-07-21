@@ -45,6 +45,10 @@ router.get('/test', async (req, res) => {
 			waitUntil: 'load',
 		});
 
+		// let timeout = false;
+		// setTimeout(() => {
+		// 	timeout = true;
+		// }, 15000);
 		const checkData = async () => {
 			await page.type('#tramite', '682257040');
 			let data = await (
