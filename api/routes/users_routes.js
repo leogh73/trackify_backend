@@ -15,8 +15,9 @@ router.get('/test', async (req, res) => {
 	try {
 		// const browser = await playwright.chromium.launch({});
 		const browser = await playwright.chromium.launch({
-			args: [...chromium.args, '--font-render-hinting=none'],
+			args: chromium.args,
 			executablePath: await chromium.executablePath,
+			headless: chromium.headless,
 		});
 		const context = await browser.newContext();
 		const page = await context.newPage();
