@@ -47,6 +47,7 @@ async function startCheck(code, lastEvent) {
 		} else return data;
 	};
 	let data = await checkData();
+	await browser.close();
 
 	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
 		const { evento, estado, fecha, planta } = e;
