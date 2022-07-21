@@ -21,9 +21,6 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	// const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-	// const page = await browser.newPage();
-
 	const browser = await playwright.launchChromium({ headless: true });
 	const context = await browser.newContext();
 	const page = await context.newPage();
@@ -31,7 +28,6 @@ async function startCheck(code, lastEvent) {
 	await page.goto(`${process.env.CLICOH_API_URL1}`, {
 		waitUntil: 'load',
 	});
-	// await page.waitForSelector("input[name='codigo']");
 	await page.type("input[name='codigo']", `${code}`);
 	let data = await (
 		await Promise.all([

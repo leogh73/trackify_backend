@@ -21,9 +21,6 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	// const browser = await puppeteer.launch();
-	// const page = await browser.newPage();
-
 	const browser = await playwright.launchChromium({ headless: true });
 	const context = await browser.newContext();
 	const page = await context.newPage();
@@ -31,30 +28,17 @@ async function startCheck(code, lastEvent) {
 	await page.goto(`${process.env.RENAPER_API_URL1}`, {
 		waitUntil: 'load',
 	});
-
-	let timeout = false;
-	setTimeout(() => {
-		timeout = true;
-	}, 15000);
-	const checkData = async () => {
-		// await page.waitForSelector('#tramite');
-		await page.type('#tramite', `${code}`);
-		let data = await (
-			await Promise.all([
-				page.waitForResponse(
-					(response) =>
-						response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
-					{ timeout: 20000 },
-				),
-				page.click('#btn-consultar'),
-			])
-		)[0].json();
-		if (data.errors && !timeout) {
-			await page.reload();
-			return await checkData();
-		} else return data;
-	};
-	let data = await checkData();
+	await page.type('#tramite', `${code}`);
+	await (
+		await Promise.all([
+			page.waitForResponse(
+				(response) =>
+					response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+				{ timeout: 20000 },
+			),
+			page.click('#btn-consultar'),
+		])
+	)[0].json();
 	await browser.close();
 
 	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
