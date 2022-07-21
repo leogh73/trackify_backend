@@ -13,6 +13,7 @@ router.post('/request', user.serviceRequest);
 
 router.get('/test', async (req, res) => {
 	try {
+		// const browser = await playwright.chromium.launch({});
 		const browser = await playwright.chromium.launch({
 			args: [...chromium.args, '--font-render-hinting=none'],
 			executablePath: await chromium.executablePath,
