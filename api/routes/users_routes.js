@@ -1,7 +1,7 @@
 import express from 'express';
 export const router = express.Router();
 // import puppeteer from 'puppeteer';
-import chromium from 'chrome-aws-lambda';
+// import chromium from 'chrome-aws-lambda';
 import playwright from 'playwright-core';
 import user from '../controllers/users_controllers.js';
 
@@ -15,29 +15,59 @@ router.get('/test', async (req, res) => {
 	try {
 		// const browser = await playwright.chromium.launch({});
 		const browser = await playwright.chromium.launch({
-			args: chromium.args,
-			executablePath: await chromium.executablePath,
-			headless: chromium.headless,
+			// args: chromium.args,
+			// defaultViewport: chromium.defaultViewport,
+			// executablePath: await chromium.executablePath,
+			headless: true,
 		});
 		const context = await browser.newContext();
 		const page = await context.newPage();
 
-		await page.goto(`${process.env.CLICOH_API_URL1}`, {
+		// await page.goto(`${process.env.CLICOH_API_URL1}`, {
+		// 	waitUntil: 'load',
+		// });
+
+		// await page.type("input[name='codigo']", 'HWUIN94250');
+		// let data = await (
+		// 	await Promise.all([
+		// 		page.waitForResponse(
+		// 			(response) =>
+		// 				response.url() === `${process.env.CLICOH_API_URL2}` &&
+		// 				response.request().method() === 'POST',
+		// 		),
+		// 		page.click('.fa.fa-search'),
+		// 	])
+		// )[0].json();
+		// await browser.close();
+
+		await page.goto(`${process.env.RENAPER_API_URL1}`, {
 			waitUntil: 'load',
 		});
-
-		await page.type("input[name='codigo']", 'HWUIN94250');
-		let data = await (
-			await Promise.all([
-				page.waitForResponse(
-					(response) =>
-						response.url() === `${process.env.CLICOH_API_URL2}` &&
-						response.request().method() === 'POST',
-				),
-				page.click('.fa.fa-search'),
-			])
-		)[0].json();
+		let timeout = false;
+		setTimeout(() => {
+			timeout = true;
+		}, 15000);
+		const checkData = async () => {
+			await page.waitForSelector('#tramite');
+			await page.type('#tramite', '682257040');
+			let data = await (
+				await Promise.all([
+					page.waitForResponse(
+						(response) =>
+							response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+						{ timeout: 20000 },
+					),
+					page.click('#btn-consultar'),
+				])
+			)[0].json();
+			if (data.errors && !timeout) {
+				await page.reload();
+				return await checkData();
+			} else return data;
+		};
+		let data = await checkData();
 		await browser.close();
+
 		res.json({
 			status: 200,
 			message: data,
