@@ -29,10 +29,6 @@ async function startCheck(code, lastEvent) {
 		waitUntil: 'load',
 	});
 
-	let timeout = false;
-	setTimeout(() => {
-		timeout = true;
-	}, 15000);
 	const checkData = async () => {
 		await page.type('#tramite', `${code}`);
 		let data = await (
@@ -45,7 +41,7 @@ async function startCheck(code, lastEvent) {
 				page.click('#btn-consultar'),
 			])
 		)[0].json();
-		if (data.errors && !timeout) {
+		if (data.errors) {
 			await page.reload();
 			return await checkData();
 		} else return data;

@@ -45,10 +45,6 @@ router.get('/test', async (req, res) => {
 			waitUntil: 'load',
 		});
 
-		let timeout = false;
-		setTimeout(() => {
-			timeout = true;
-		}, 15000);
 		const checkData = async () => {
 			await page.type('#tramite', '682257040');
 			let data = await (
@@ -61,7 +57,7 @@ router.get('/test', async (req, res) => {
 					page.click('#btn-consultar'),
 				])
 			)[0].json();
-			if (data.errors && !timeout) {
+			if (data.errors) {
 				await page.reload();
 				return await checkData();
 			} else return data;
