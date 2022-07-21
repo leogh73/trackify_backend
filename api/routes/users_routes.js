@@ -2,7 +2,8 @@ import express from 'express';
 export const router = express.Router();
 // import puppeteer from 'puppeteer';
 // import chromium from 'chrome-aws-lambda';
-import playwright from 'playwright-core';
+import playwright from 'playwright-aws-lambda';
+
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
@@ -13,13 +14,13 @@ router.post('/request', user.serviceRequest);
 
 router.get('/test', async (req, res) => {
 	try {
-		// const browser = await playwright.chromium.launch({});
-		const browser = await playwright.chromium.launch({
-			// args: chromium.args,
-			// defaultViewport: chromium.defaultViewport,
-			// executablePath: await chromium.executablePath,
-			headless: true,
-		});
+		const browser = await playwright.launchChromium({ headless: true });
+		// const browser = await playwright.chromium.launch({
+		// args: chromium.args,
+		// defaultViewport: chromium.defaultViewport,
+		// executablePath: await chromium.executablePath,
+		// headless: true,
+		// });
 		const context = await browser.newContext();
 		const page = await context.newPage();
 
