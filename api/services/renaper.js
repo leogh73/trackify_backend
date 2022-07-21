@@ -29,7 +29,7 @@ async function startCheck(code, lastEvent) {
 		waitUntil: 'load',
 	});
 	await page.type('#tramite', `${code}`);
-	await (
+	let data = await (
 		await Promise.all([
 			page.waitForResponse(
 				(response) =>
