@@ -49,35 +49,36 @@ router.get('/test', async (req, res) => {
 		setTimeout(() => {
 			timeout = true;
 		}, 15000);
-		await page.type('#tramite', '682257040');
-		// const checkData = async () => {
-		// 	// await page.waitForSelector('#tramite');
-		// 	let data = await (
-		// 		await Promise.all([
-		// 			page.waitForResponse(
-		// 				(response) =>
-		// 					response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
-		// 				{ timeout: 20000 },
-		// 			),
-		// 			page.click('#btn-consultar'),
-		// 		])
-		// 	)[0].json();
-		// 	if (data.errors && !timeout) {
-		// 		await page.reload();
-		// 		return await checkData();
-		// 	} else return data;
-		// };
-		// let data = await checkData();
-		let data = await (
-			await Promise.all([
-				page.waitForResponse(
-					(response) =>
-						response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
-					{ timeout: 20000 },
-				),
-				page.click('#btn-consultar'),
-			])
-		)[0].json();
+		const checkData = async () => {
+			await page.type('#tramite', '682257040');
+			let data = await (
+				await Promise.all([
+					page.waitForResponse(
+						(response) =>
+							response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+						{ timeout: 20000 },
+					),
+					page.click('#btn-consultar'),
+				])
+			)[0].json();
+			if (data.errors && !timeout) {
+				await page.reload();
+				return await checkData();
+			} else return data;
+		};
+		let data = await checkData();
+
+		// let data = await (
+		// 	await Promise.all([
+		// 		page.waitForResponse(
+		// 			(response) =>
+		// 				response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+		// 			{ timeout: 20000 },
+		// 		),
+		// 		page.click('#btn-consultar'),
+		// 	])
+		// )[0].json();
+
 		await browser.close();
 
 		res.json({
