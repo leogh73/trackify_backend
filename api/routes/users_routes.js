@@ -15,14 +15,14 @@ router.post('/request', user.serviceRequest);
 router.get('/test', async (req, res) => {
 	try {
 		const browser = await playwright.launchChromium({ headless: true });
+		const context = await browser.newContext();
+		const page = await context.newPage();
 		// const browser = await playwright.chromium.launch({
 		// args: chromium.args,
 		// defaultViewport: chromium.defaultViewport,
 		// executablePath: await chromium.executablePath,
 		// headless: true,
 		// });
-		const context = await browser.newContext();
-		const page = await context.newPage();
 
 		// await page.goto(`${process.env.CLICOH_API_URL1}`, {
 		// 	waitUntil: 'load',
@@ -49,7 +49,7 @@ router.get('/test', async (req, res) => {
 			timeout = true;
 		}, 15000);
 		const checkData = async () => {
-			await page.waitForSelector('#tramite');
+			// await page.waitForSelector('#tramite');
 			await page.type('#tramite', '682257040');
 			let data = await (
 				await Promise.all([
