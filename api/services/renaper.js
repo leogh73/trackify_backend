@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {
@@ -21,16 +21,23 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await puppeteer.launch();
-	const page = await browser.newPage();
+	// const browser = await puppeteer.launch();
+	// const page = await browser.newPage();
 
-	await page.goto(`${process.env.RENAPER_API_URL1}`);
+	const browser = await playwright.launchChromium({ headless: true });
+	const context = await browser.newContext();
+	const page = await context.newPage();
+
+	await page.goto(`${process.env.RENAPER_API_URL1}`, {
+		waitUntil: 'load',
+	});
+
 	let timeout = false;
 	setTimeout(() => {
 		timeout = true;
 	}, 15000);
 	const checkData = async () => {
-		await page.waitForSelector('#tramite');
+		// await page.waitForSelector('#tramite');
 		await page.type('#tramite', `${code}`);
 		let data = await (
 			await Promise.all([
