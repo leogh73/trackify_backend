@@ -53,6 +53,7 @@ const trackingAction = async (req, res) => {
 const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn } = req.body;
 	try {
+		// let response = {};
 		let response = {};
 		let user = await update(userId, token);
 		if (user.error) {
