@@ -63,6 +63,7 @@ const sincronize = async (req, res) => {
 			let driveStatus = 'Not logged in';
 			if (driveLoggedIn == 'true') {
 				const { user, driveAuth, drive } = await google.userDriveInstance(userId);
+				// await Promise.all(driveAuth.backupIds.map((id) => drive.files.delete({ fileId: id })));
 				driveStatus = 'Backup not found';
 				if (user.googleDrive.backupId) {
 					driveStatus = await google.backupDriveStatus(user, driveAuth, drive, currentDate);

@@ -203,7 +203,6 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 		data.mercadoLibre = user.mercadoLibre;
 		userData = data;
 	}
-
 	let result;
 	if (backupFiles[0]?.currentDevice) {
 		result = await drive.files.update({
@@ -221,7 +220,7 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 			},
 			media: {
 				mimeType: 'application/json',
-				body: JSON.stringify(userData),
+				body: userData,
 			},
 			uploadType: 'media',
 		});
