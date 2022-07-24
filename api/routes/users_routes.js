@@ -1,10 +1,6 @@
 import express from 'express';
 export const router = express.Router();
-// import puppeteer from 'puppeteer';
-// import chromium from 'chrome-aws-lambda';
 import playwright from 'playwright-aws-lambda';
-import trackings_controllers from '../controllers/trackings_controllers.js';
-
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
@@ -13,7 +9,6 @@ router.post('/sincronize', user.sincronize);
 router.post('/check', user.check);
 router.post('/request', user.serviceRequest);
 
-router.get('/cycle', trackings_controllers.checkCycle);
 router.get('/test', async (req, res) => {
 	try {
 		const browser = await playwright.launchChromium({ headless: true });
