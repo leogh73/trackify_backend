@@ -181,14 +181,12 @@ const findBackups = async (user, driveAuth, drive) => {
 };
 
 const readBackup = async (drive, backupId) => {
-	const { date, time, activeTrackings, archivedTrackings } = JSON.parse(
-		(
-			await drive.files.get({
-				fileId: backupId,
-				alt: 'media',
-			})
-		).data,
-	);
+	const { date, time, activeTrackings, archivedTrackings } = (
+		await drive.files.get({
+			fileId: backupId,
+			alt: 'media',
+		})
+	).data;
 	return {
 		id: backupId,
 		date: `${date} - ${time}`,
