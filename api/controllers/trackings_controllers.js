@@ -64,10 +64,10 @@ async function findUpdatedTrackings(tracking, lastEventsUser) {
 	let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
 	if (trackingIndex == -1) {
 		await remove(user.id, [tracking.id]);
-		return null;
 	} else if (lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent) {
 		return tracking;
 	}
+	return null;
 }
 
 async function check(trackingId) {
