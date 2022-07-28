@@ -25,7 +25,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await playwright.launchChromium();
+	const browser = await playwright.launchChromium({ headless: false });
 	const context = await browser.newContext();
 	const page = await context.newPage();
 

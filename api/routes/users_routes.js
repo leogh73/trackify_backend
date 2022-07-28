@@ -17,7 +17,7 @@ router.get('/cycle', async (req, res) => {
 
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium();
+		const browser = await playwright.launchChromium({ headless: false });
 		const context = await browser.newContext();
 		const page = await context.newPage();
 		// const browser = await playwright.chromium.launch({
