@@ -254,6 +254,14 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 	return result;
 };
 
+const sincronizeDrive = async (userId, currentDate) => {
+	const { user, driveAuth, drive } = await userDriveInstance(userId);
+	let driveStatus = 'Backup not found';
+	if (user.googleDrive.backupId)
+		driveStatus = await backupDriveStatus(user, driveAuth, drive, currentDate);
+	return driveStatus;
+};
+
 const backupDriveStatus = async (user, driveAuth, drive, currentDate) => {
 	let response = 'Not present';
 	let backupFile = await findBackups(user, driveAuth, drive);
@@ -283,6 +291,7 @@ export default {
 	createUpdate,
 	restore,
 	remove,
+	sincronizeDrive,
 	userDriveInstance,
 	backupDriveStatus,
 };

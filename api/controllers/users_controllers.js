@@ -77,21 +77,13 @@ const sincronize = async (req, res) => {
 		if (user.error) {
 			response.error = user.error;
 		} else {
-			let dataStatus = [];
-			if (lastEvents != '[]') dataStatus = await tracking.sincronize(user, JSON.parse(lastEvents));
-			let driveStatus = 'Not logged in';
-			if (driveLoggedIn == 'true') {
-				const { user, driveAuth, drive } = await google.userDriveInstance(userId);
-				// await Promise.all(driveAuth.backupIds.map((id) => drive.files.delete({ fileId: id })));
-				driveStatus = 'Backup not found';
-				if (user.googleDrive.backupId) {
-					driveStatus = await google.backupDriveStatus(user, driveAuth, drive, currentDate);
-				}
-			}
-			response.data = dataStatus;
-			response.driveStatus = driveStatus;
+			response.data =
+				lastEvents != '[]' ? await tracking.sincronize(user, JSON.parse(lastEvents)) : [];
+			response.driveStatus =
+				driveLoggedIn == 'true'
+					? await google.sincronizeDrive(userId, currentDate)
+					: 'Not logged in';
 		}
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();

@@ -52,12 +52,22 @@ async function remove(userId, trackingIds) {
 
 async function sincronize(user, lastEventsUser) {
 	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings } });
-	let responseTrackings = trackingsDB.filter((tracking) => {
-		let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
-		if (lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent)
-			return tracking;
-	});
+	let responseTrackings = (
+		await Promise.all(
+			trackingsDB.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser)),
+		)
+	).filter((result) => !!result);
 	return responseTrackings;
+}
+
+async function findUpdatedTrackings(tracking, lastEventsUser) {
+	let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
+	if (trackingIndex == -1) {
+		await remove(user.id, [tracking.id]);
+		return null;
+	} else if (lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent) {
+		return tracking;
+	}
 }
 
 async function check(trackingId) {
