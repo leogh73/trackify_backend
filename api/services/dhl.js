@@ -6,6 +6,7 @@ async function checkStart(code) {
 	} catch (error) {
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
+			lastEvent: error.response.statusCode === 404 ? 'No hay datos' : null,
 		};
 	}
 }
@@ -15,6 +16,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'DHL',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -130,7 +135,7 @@ function updateResponse(data, eventsList, lastEvent) {
 	let response = { events: eventsListFinal };
 	if (eventsListFinal.length) {
 		response.status = status;
-		response.lastEvent = `${eventsListFinal[0].date} - ${eventsListFinal[0].time} - ${eventsListFinal[0].location} - ${eventsListFinal[0].description}`;
+		response.lastEvent = eventsText[0];
 	}
 
 	return response;

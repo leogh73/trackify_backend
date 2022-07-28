@@ -1,5 +1,6 @@
 import got from 'got';
 import Models from '../modules/mongodb.js';
+import luxon from '../modules/luxon.js';
 
 const initialize = async (req, res) => {
 	const { userId, code } = req.body;
@@ -31,11 +32,16 @@ const initialize = async (req, res) => {
 		await user.save();
 		res.status(200).json(meLiResponse);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Revise el código o reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'MercadoLibre initialize',
+			{ userId, code },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -55,11 +61,16 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Revise el código o reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'MercadoLibre consult',
+			{ userId, consultType },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -70,11 +81,16 @@ const loadMore = async (req, res) => {
 		let results = await checkShippings(JSON.parse(shippingIds), JSON.parse(httpHeaders));
 		res.status(200).json(results);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Revise el código o reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'MercadoLibre load more',
+			{ shippingIds, httpHeaders },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -105,6 +121,16 @@ async function checkShippingOrders(userId, consultType) {
 		if (error.response.statusCode === 401) {
 			await renewTokenML(userData.model);
 			return await checkShippingOrders(userId, consultType);
+		} else {
+			let message = luxon.errorMessage();
+			console.log(error);
+			return await Models.storeLog(
+				'MercadoLibre check shipping orders',
+				{ userId, consultType },
+				error,
+				message.date,
+				message.time,
+			);
 		}
 	}
 

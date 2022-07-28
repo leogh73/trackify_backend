@@ -1,5 +1,7 @@
 import { google } from 'googleapis';
 import Models from '../modules/mongodb.js';
+import luxon from '../modules/luxon.js';
+
 import trackings from './trackings_controllers.js';
 
 const oauth2Client = new google.auth.OAuth2(
@@ -32,11 +34,16 @@ const initialize = async (req, res) => {
 		await user.save();
 		res.status(200).json(userAuth);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Google initialize',
+			{ userId, authCode, email },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 //
@@ -50,11 +57,10 @@ const consult = async (req, res) => {
 			backupFiles.unshift({ date: null, currentDevice: true });
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -79,11 +85,16 @@ const createUpdate = async (req, res) => {
 		}
 		res.status(200).json(response);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Google create/update',
+			{ userId, userData },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -109,11 +120,16 @@ const restore = async (req, res) => {
 		}
 		res.status(200).json(userData);
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Google restore',
+			{ userId, backupId },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -130,11 +146,16 @@ const remove = async (req, res) => {
 		await drive.files.delete({ fileId: backupId });
 		res.status(200).json({ message: 'OK' });
 	} catch (error) {
-		let errorMessage = {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-		res.status(404).json(errorMessage);
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Google remove',
+			{ userId, backupId },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -187,6 +208,7 @@ const readBackup = async (drive, backupId) => {
 			alt: 'media',
 		})
 	).data;
+
 	return {
 		id: backupId,
 		date: `${date} - ${time}`,

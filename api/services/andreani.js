@@ -6,6 +6,7 @@ async function checkStart(code) {
 	} catch (error) {
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
+			lastEvent: error.response.statusCode === 404 ? 'No hay datos' : null,
 		};
 	}
 }
@@ -15,6 +16,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'Andreani',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -22,10 +27,10 @@ async function checkUpdate(code, lastEvent) {
 
 async function startCheck(code, lastEvent) {
 	const events = await got(`${process.env.ANDREANI_API_URL1.replace('code', code)}`, {
-		timeout: { response: 15000 },
+		timeout: { response: 10000 },
 	});
 	const visits = await got(`${process.env.ANDREANI_API_URL2.replace('code', code)}`, {
-		timeout: { response: 15000 },
+		timeout: { response: 10000 },
 	});
 
 	const resultEvents = JSON.parse(events.body);
@@ -90,7 +95,7 @@ function updateResponse(eventsList, newVisitList, lastEvent) {
 	let response = { events: eventsResponse };
 	if (eventsResponse.length) {
 		response.visits = newVisitList;
-		response.lastEvent = `${eventsResponse[0].date} - ${eventsResponse[0].time} - ${eventsResponse[0].condition} - ${eventsResponse[0].motive} - ${eventsResponse[0].location}`;
+		response.lastEvent = eventsText[0];
 	}
 
 	return response;

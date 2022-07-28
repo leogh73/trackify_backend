@@ -14,4 +14,12 @@ const getTime = () => {
 		.padStart(2, 0)}`;
 };
 
-export default { getDate, getTime };
+const errorMessage = () => {
+	return {
+		error: 'Ha ocurrido un error. Reintente más tarde',
+		date: getDate(),
+		time: getTime(),
+	};
+};
+
+export default { getDate, getTime, errorMessage };

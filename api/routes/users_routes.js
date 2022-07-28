@@ -1,6 +1,7 @@
 import express from 'express';
 export const router = express.Router();
 import playwright from 'playwright-aws-lambda';
+import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
 
 router.post('/initialize', user.initialize);
@@ -9,9 +10,17 @@ router.post('/sincronize', user.sincronize);
 router.post('/check', user.check);
 router.post('/request', user.serviceRequest);
 
+router.get('/cycle', async (req, res) => {
+	await trackings.checkCycle();
+	res.status(200).json({ message: 'CHECK COMPLETE' });
+});
+
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium({ headless: true });
+		const browser = await playwright.launchChromium({
+			headless: false,
+			args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+		});
 		const context = await browser.newContext();
 		const page = await context.newPage();
 		// const browser = await playwright.chromium.launch({
@@ -42,10 +51,11 @@ router.get('/test', async (req, res) => {
 			waitUntil: 'load',
 		});
 
-		// let timeout = false;
-		// setTimeout(() => {
-		// 	timeout = true;
-		// }, 15000);
+		let timeout = false;
+		setTimeout(() => {
+			timeout = true;
+		}, 15000);
+
 		const checkData = async () => {
 			await page.type('#tramite', '682257040');
 			let data = await (
@@ -58,12 +68,13 @@ router.get('/test', async (req, res) => {
 					page.click('#btn-consultar'),
 				])
 			)[0].json();
-			if (data.errors) {
+			if (data.errors && !timeout) {
 				await page.reload();
 				return await checkData();
 			} else return data;
 		};
 		let data = await checkData();
+		await browser.close();
 
 		// let data = await (
 		// 	await Promise.all([
@@ -75,8 +86,6 @@ router.get('/test', async (req, res) => {
 		// 		page.click('#btn-consultar'),
 		// 	])
 		// )[0].json();
-
-		await browser.close();
 
 		res.json({
 			status: 200,

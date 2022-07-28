@@ -1,5 +1,4 @@
 import Models from '../modules/mongodb.js';
-import sendNotification from '../modules/firebase_notification.js';
 import luxon from '../modules/luxon.js';
 
 import tracking from './trackings_controllers.js';
@@ -16,7 +15,16 @@ const initialize = async (req, res) => {
 		const result = await newUser.save();
 		res.status(200).json({ userId: result['id'] });
 	} catch (error) {
-		res.status(404).json(errorMessage());
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Initialize user',
+			{ lastActivity: newUser.lastActivity, tokenFB: newUser.tokenFB },
+			error,
+			message.date,
+			message.time,
+		);
+		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -43,10 +51,21 @@ const trackingAction = async (req, res) => {
 			await tracking.remove(userId, JSON.parse(trackingIds));
 			response = { 'Eliminación completada': trackingIds };
 		}
-		let statusCode = response.lastEvent == 'No hay datos' ? 204 : 200;
+		// console.log(response);
+		let statusCode = response.lastEvent == 'No hay datos' ? 404 : 200;
+		// console.log(statusCode);
 		res.status(statusCode).json(response);
 	} catch (error) {
-		res.status(404).json(errorMessage());
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Tracking action',
+			{ userId, action, body: req.body },
+			error,
+			message.date,
+			message.time,
+		);
+		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -72,10 +91,19 @@ const sincronize = async (req, res) => {
 			response.data = dataStatus;
 			response.driveStatus = driveStatus;
 		}
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Sincronize',
+			{ userId, token, lastEvents, currentDate, driveLoggedIn },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
-		res.status(404).json(errorMessage());
+		res.status(500).json(message);
 	}
 };
 
@@ -85,7 +113,10 @@ const check = async (req, res) => {
 		let response = await tracking.check(trackingId);
 		res.status(200).json(response);
 	} catch (error) {
-		res.status(404).json(errorMessage());
+		let message = luxon.errorMessage();
+		await Models.storeLog('Check', { trackingId }, error, message.date, message.time);
+		console.log(error);
+		res.status(500).json(message);
 	}
 };
 
@@ -128,19 +159,17 @@ const serviceRequest = async (req, res) => {
 		const { id } = await new Models.ServiceRequest({ userId, service, code, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {
-		res.status(404).json({
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		});
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Service request',
+			{ userId, service, code, email },
+			error,
+			message.date,
+			message.time,
+		);
 		console.log(error);
+		res.status(500).json(message);
 	}
-};
-
-const errorMessage = () => {
-	return {
-		error: 'Ha ocurrido un error. Reintente más tarde',
-		checkDate: luxon.getDate(),
-		checkTime: luxon.getTime(),
-	};
 };
 
 export default {

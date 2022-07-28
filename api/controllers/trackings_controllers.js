@@ -6,9 +6,9 @@ import user from './users_controllers.js';
 import selectService from '../services/_select.js';
 
 async function add(userId, title, service, code, checkDate, checkTime, fromDrive, driveData) {
-	let result;
-	if (fromDrive) result = selectService(service).convertFromDrive(driveData);
-	if (!fromDrive) result = await selectService(service).checkStart(code);
+	let result = fromDrive
+		? selectService(service).convertFromDrive(driveData)
+		: await selectService(service).checkStart(code);
 	let user = await Models.User.findById(userId);
 
 	let newTracking;
@@ -24,14 +24,12 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 		});
 	}
 
-	let trackingId;
 	if (result.lastEvent != 'No hay datos') {
-		trackingId = await saveNewTracking(newTracking, user);
+		result.trackingId = await saveNewTracking(newTracking, user);
 	}
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
-	result.trackingId = trackingId;
 
 	return result;
 }
@@ -57,7 +55,7 @@ async function sincronize(user, lastEventsUser) {
 	let responseTrackings = trackingsDB.filter((tracking) => {
 		let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
 		if (lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent)
-			return trackingsDB[trackingIndex];
+			return tracking;
 	});
 	return responseTrackings;
 }
@@ -120,24 +118,38 @@ async function updateDatabase(response, tracking) {
 async function checkCycle() {
 	let tokenCollection = await user.checkCycle();
 	if (!tokenCollection.length) return;
-	for (let token of tokenCollection) {
-		let userTrackings = await Models.Tracking.find({ token: token });
-		let userData = { token: token, results: [] };
-		let userResults = await Promise.allSettled(
-			userTrackings.map((tracking) => checkTracking(tracking)),
+	await Promise.all(tokenCollection.map((token) => userCheck(token)));
+}
+
+async function userCheck(token) {
+	let userTrackings = await Models.Tracking.find({ token: token });
+	let userData = { token: token, results: [] };
+	let userResults = await Promise.allSettled(
+		userTrackings.map((tracking) => checkTracking(tracking)),
+	);
+	userData.results = userResults
+		.filter((result) => result.status == 'fulfilled' && result.value.result.events?.length)
+		.map((result) => result.value);
+	if (userData.results.length) {
+		await Promise.allSettled(
+			userData.results.map((result) => {
+				let index = userTrackings.findIndex((tracking) => tracking.id === result.idMDB);
+				return updateDatabase(result, userTrackings[index]);
+			}),
 		);
-		userData.results = userResults
-			.filter((result) => result.status == 'fulfilled' && result.value.result.events?.length)
-			.map((result) => result.value);
-		if (userData.results.length) {
-			await Promise.allSettled(
-				userData.results.map((result) => {
-					let index = userTrackings.findIndex((tracking) => tracking.id === result.idMDB);
-					return updateDatabase(result, userTrackings[index]);
-				}),
-			);
-			sendNotification(userData);
-		}
+		sendNotification(userData);
+	}
+	let failedChecks = userResults
+		.filter((result) => result.status == 'rejected')
+		.map((result) => result.value);
+	if (failedChecks.length) {
+		await Models.storeLog({
+			actionName: 'check cycle',
+			actionDetail: failedChecks,
+			errorMessage: 'rejected promises',
+			date: luxon.getDate(),
+			time: luxon.getTime(),
+		});
 	}
 }
 

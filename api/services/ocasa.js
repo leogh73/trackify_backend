@@ -16,6 +16,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'OCASA',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -79,9 +83,7 @@ function updateResponse(eventsList, lastEvent) {
 	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
 
 	let response = { events: eventsResponse };
-	if (eventsResponse.length) {
-		response.lastEvent = `${eventsResponse[0].date} - ${eventsResponse[0].time} - ${eventsResponse[0].detail}`;
-	}
+	if (eventsResponse.length) response.lastEvent = eventsText[0];
 
 	return response;
 }

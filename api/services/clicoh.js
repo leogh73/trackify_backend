@@ -15,6 +15,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'ClicOh',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -124,9 +128,7 @@ function updateResponse(events, lastEvent) {
 	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
 
 	let response = { events: eventsResponse };
-	if (eventsResponse.length) {
-		response.lastEvent = `${eventsResponse[0].date} - ${eventsResponse[0].time} - ${eventsResponse[0].description}`;
-	}
+	if (eventsResponse.length) response.lastEvent = eventsText[0];
 
 	return response;
 }

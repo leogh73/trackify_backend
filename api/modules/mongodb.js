@@ -52,9 +52,21 @@ const serviceRequestSchema = new Schema({
 	email: { type: String, required: true },
 });
 
+const logSchema = new Schema({
+	actionName: { type: String, required: true },
+	actionDetail: { type: Object, required: true },
+	errorMessage: { type: String, required: true },
+	date: { type: String, required: true },
+	time: { type: String, required: true },
+});
+
 const User = mongoose.model('User', userSchema);
 const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const ServiceRequest = mongoose.model('Service request', serviceRequestSchema);
+const Log = mongoose.model('Log', logSchema);
 
-export default { User, Tracking, GoogleDrive, ServiceRequest };
+const storeLog = async (actionName, actionDetail, errorMessage, date, time) =>
+	await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
+
+export default { User, Tracking, GoogleDrive, ServiceRequest, storeLog };

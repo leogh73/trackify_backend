@@ -15,6 +15,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'ViaCargo',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -102,8 +106,6 @@ function updateResponse(eventsList, destiny, lastEvent) {
 	let eventsResponse = [];
 	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
 
-	console.log(eventsResponse);
-
 	let response = {
 		events: eventsResponse,
 	};
@@ -113,7 +115,7 @@ function updateResponse(eventsList, destiny, lastEvent) {
 			dateDelivered: destiny.dateDelivered,
 			timeDelivered: destiny.timeDelivered,
 		};
-		response.lastEvent = `${eventsResponse[0].date} - ${eventsResponse[0].time} - ${eventsResponse[0].location} - ${eventsResponse[0].status}`;
+		response.lastEvent = eventsText[0];
 	}
 
 	return response;

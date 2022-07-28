@@ -16,6 +16,10 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
+			service: 'EcaPack',
+			code,
+			lastEvent,
+			detail: error,
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
 	}
@@ -81,9 +85,7 @@ function updateResponse(eventsList, lastEvent) {
 	if (eventIndex) eventsListFinal = eventsList.slice(0, eventIndex);
 
 	let response = { events: eventsListFinal };
-	if (eventsListFinal.length) {
-		response.lastEvent = `${eventsListFinal[0].date} - ${eventsListFinal[0].time} - ${eventsListFinal[0].location} - ${eventsListFinal[0].sign}`;
-	}
+	if (eventsListFinal.length) response.lastEvent = eventsText[0];
 
 	return response;
 }
