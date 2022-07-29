@@ -33,6 +33,11 @@ async function startCheck(code, lastEvent) {
 		waitUntil: 'load',
 	});
 
+	let timeout = false;
+	setTimeout(() => {
+		timeout = true;
+	}, 15000);
+
 	const checkData = async () => {
 		await page.type('#tramite', `${code}`);
 		let data = await (
@@ -40,12 +45,11 @@ async function startCheck(code, lastEvent) {
 				page.waitForResponse(
 					(response) =>
 						response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
-					{ timeout: 20000 },
 				),
 				page.click('#btn-consultar'),
 			])
 		)[0].json();
-		if (data.errors) {
+		if (data.errors && !timeout) {
 			await page.reload();
 			return await checkData();
 		} else return data;

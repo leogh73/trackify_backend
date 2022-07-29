@@ -128,7 +128,18 @@ async function updateDatabase(response, tracking) {
 async function checkCycle() {
 	let tokenCollection = await user.checkCycle();
 	if (!tokenCollection.length) return;
-	await Promise.all(tokenCollection.map((token) => userCheck(token)));
+	let rejectedChecks = (await Promise.all(tokenCollection.map((token) => userCheck(token))))
+		.map((result) => (result.rejected.length ? result.rejected : null))
+		.filter((value) => !!value);
+	// if (rejectedChecks.length) {
+	await Models.storeLog(
+		'check cycle',
+		rejectedChecks,
+		'rejected promises',
+		luxon.getDate(),
+		luxon.getTime(),
+	);
+	// }
 }
 
 async function userCheck(token) {
@@ -152,15 +163,7 @@ async function userCheck(token) {
 	let failedChecks = userResults
 		.filter((result) => result.status == 'rejected')
 		.map((result) => result.value);
-	if (failedChecks.length) {
-		await Models.storeLog({
-			actionName: 'check cycle',
-			actionDetail: failedChecks,
-			errorMessage: 'rejected promises',
-			date: luxon.getDate(),
-			time: luxon.getTime(),
-		});
-	}
+	return { fulfilled: userData.results, rejected: failedChecks };
 }
 
 async function checkTracking(tracking) {
