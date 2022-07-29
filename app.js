@@ -7,7 +7,7 @@ import { router as mercadoLibre } from './api/routes/mercadolibre_routes.js';
 import { router as google } from './api/routes/google_routes.js';
 import cors from 'cors';
 import helmet from 'helmet';
-import job from './api/modules/cron.js';
+import slater from './api/modules/slater.js';
 
 // const compression = require('compression');
 app.setMaxListeners(20);
