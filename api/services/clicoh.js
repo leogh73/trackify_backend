@@ -121,14 +121,15 @@ function startResponse(events, data) {
 }
 
 function updateResponse(events, lastEvent) {
-	let eventsText = events.map((e) => `${e.date} - ${e.time} - ${e.description}`);
-	let eventIndex = eventsText.indexOf(lastEvent);
+	let eventsText = events.map((e) => `${e.description}`);
+	let eventIndex = eventsText.indexOf(lastEvent.split(' - ')[2]);
 
 	let eventsResponse = [];
 	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
 
 	let response = { events: eventsResponse };
-	if (eventsResponse.length) response.lastEvent = eventsText[0];
+	if (eventsResponse.length)
+		response.lastEvent = `${events[0].date} - ${events[0].time} - ${events[0].description}`;
 
 	return response;
 }
