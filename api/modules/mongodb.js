@@ -45,10 +45,9 @@ const googleDriveSchema = new Schema({
 	backupIds: [{ type: String, required: true }],
 });
 
-const serviceRequestSchema = new Schema({
+const contactSchema = new Schema({
 	userId: { type: String, required: true },
-	service: { type: String, required: true },
-	code: { type: String, required: true },
+	message: { type: String, required: true },
 	email: { type: String, required: true },
 });
 
@@ -63,10 +62,10 @@ const logSchema = new Schema({
 const User = mongoose.model('User', userSchema);
 const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
-const ServiceRequest = mongoose.model('Service request', serviceRequestSchema);
+const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
 
 const storeLog = async (actionName, actionDetail, errorMessage, date, time) =>
 	await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
 
-export default { User, Tracking, GoogleDrive, ServiceRequest, storeLog };
+export default { User, Tracking, GoogleDrive, Contact, storeLog };

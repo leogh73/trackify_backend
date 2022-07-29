@@ -145,10 +145,10 @@ const checkCycle = async () => {
 	return activeTokens;
 };
 
-const serviceRequest = async (req, res) => {
-	const { userId, service, code, email } = req.body;
+const contactForm = async (req, res) => {
+	const { userId, message, email } = req.body;
 	try {
-		const { id } = await new Models.ServiceRequest({ userId, service, code, email }).save();
+		const { id } = await new Models.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {
 		let message = luxon.errorMessage();
@@ -171,5 +171,5 @@ export default {
 	check,
 	remove,
 	checkCycle,
-	serviceRequest,
+	contactForm,
 };

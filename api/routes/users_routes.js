@@ -8,7 +8,7 @@ router.post('/initialize', user.initialize);
 router.post('/:userId/:action', user.trackingAction);
 router.post('/sincronize', user.sincronize);
 router.post('/check', user.check);
-router.post('/request', user.serviceRequest);
+router.post('/contact', user.contactForm);
 
 router.get('/cycle', async (req, res) => {
 	await trackings.checkCycle();
