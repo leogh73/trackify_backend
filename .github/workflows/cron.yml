@@ -3,10 +3,10 @@ on:
   schedule:
     - cron: '0 */2 * * *'
 jobs:
-  cron:
+  build:
+    name: Call our API route
     runs-on: ubuntu-latest
     steps:
-      - name: Call our API route
-        run: |
-          curl --request GET \
-          --url 'https://trackify-backend-nu.vercel.app/api/user/cycle' \
+        - run: |
+              curl --request GET \
+              --url 'https://trackify-backend-nu.vercel.app/api/user/cycle' \
