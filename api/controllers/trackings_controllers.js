@@ -131,15 +131,15 @@ async function checkCycle() {
 	let rejectedChecks = (await Promise.all(tokenCollection.map((token) => userCheck(token))))
 		.map((result) => (result.rejected.length ? result.rejected : null))
 		.filter((value) => !!value);
-	// if (rejectedChecks.length) {
-	await Models.storeLog(
-		'check cycle',
-		rejectedChecks,
-		'rejected promises',
-		luxon.getDate(),
-		luxon.getTime(),
-	);
-	// }
+	if (rejectedChecks.length) {
+		await Models.storeLog(
+			'check cycle',
+			rejectedChecks,
+			'rejected promises',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+	}
 }
 
 async function userCheck(token) {

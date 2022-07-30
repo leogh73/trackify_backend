@@ -1,15 +1,15 @@
 import express from 'express';
 const app = express();
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv/config';
 
 import { router as user } from './api/routes/users_routes.js';
 import { router as mercadoLibre } from './api/routes/mercadolibre_routes.js';
 import { router as google } from './api/routes/google_routes.js';
-import cors from 'cors';
-import helmet from 'helmet';
-import slater from './api/modules/slater.js';
 
-// const compression = require('compression');
+app.use(compression());
 app.setMaxListeners(20);
 app.use(express.json());
 app.use(cors({ origin: true }));

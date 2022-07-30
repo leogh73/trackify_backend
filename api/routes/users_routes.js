@@ -11,8 +11,12 @@ router.post('/check', user.check);
 router.post('/contact', user.contactForm);
 
 router.get('/cycle', async (req, res) => {
-	await trackings.checkCycle();
-	res.status(200).json({ message: 'CHECK COMPLETE' });
+	try {
+		await trackings.checkCycle();
+		res.status(200).json({ message: 'CHECK COMPLETE' });
+	} catch (error) {
+		res.status(500).json({ error: 'CHECK CYCLE FAILED' });
+	}
 });
 
 router.get('/test', async (req, res) => {
