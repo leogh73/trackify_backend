@@ -1,0 +1,12 @@
+name: 2-hours-cron
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call our API route
+        run: |
+          curl --request GET \
+          --url 'https://trackify-backend-nu.vercel.app/api/user/cycle'
