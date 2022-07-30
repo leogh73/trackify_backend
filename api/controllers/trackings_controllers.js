@@ -128,7 +128,7 @@ async function updateDatabase(response, tracking) {
 async function checkCycle() {
 	let tokenCollection = await user.checkCycle();
 	if (!tokenCollection.length) return;
-	let rejectedChecks = (await Promise.all(tokenCollection.map((token) => userCheck(token))))
+	let rejectedChecks = (await Promise.allSettled(tokenCollection.map((token) => userCheck(token))))
 		.map((result) => (result.rejected.length ? result.rejected : null))
 		.filter((value) => !!value);
 	if (rejectedChecks.length) {
