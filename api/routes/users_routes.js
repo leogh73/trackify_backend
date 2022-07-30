@@ -31,23 +31,6 @@ router.get('/test', async (req, res) => {
 		// headless: true,
 		// });
 
-		// await page.goto(`${process.env.CLICOH_API_URL1}`, {
-		// 	waitUntil: 'load',
-		// });
-
-		// await page.type("input[name='codigo']", 'HWUIN94250');
-		// let data = await (
-		// 	await Promise.all([
-		// 		page.waitForResponse(
-		// 			(response) =>
-		// 				response.url() === `${process.env.CLICOH_API_URL2}` &&
-		// 				response.request().method() === 'POST',
-		// 		),
-		// 		page.click('.fa.fa-search'),
-		// 	])
-		// )[0].json();
-		// await browser.close();
-
 		await page.goto(`${process.env.RENAPER_API_URL1}`, {
 			waitUntil: 'load',
 		});
