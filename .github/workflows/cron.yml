@@ -9,4 +9,4 @@ jobs:
       - name: Call our API route
         run: |
           curl --request GET \
-          --url 'https://trackify-backend-nu.vercel.app/api/user/cycle'
+          --url 'https://trackify-backend-nu.vercel.app/api/user/cycle' \
