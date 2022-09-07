@@ -24,9 +24,9 @@
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "node server.js",
-		"start-server": "node server.js",
-		"start:dev": "node server.js"
+		"start": "node app.js",
+		"start-server": "node app.js",
+		"start:dev": "node app.js"
 	},
 	"author": "LEO",
 	"license": "ISC"
