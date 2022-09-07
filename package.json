@@ -19,14 +19,13 @@
 		"helmet": "^4.4.1",
 		"luxon": "^2.4.0",
 		"mongoose": "^6.2.10",
-		"nodemon": "^2.0.15",
 		"playwright-chromium": "1.24.2"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"start": "node app.js",
-		"start-server": "nodemon app.js",
-		"start:dev": "nodemon app.js"
+		"start-server": "node app.js",
+		"start:dev": "node app.js"
 	},
 	"author": "LEO",
 	"license": "ISC"
