@@ -1,6 +1,7 @@
 import express from 'express';
 export const router = express.Router();
 import playwright from 'playwright-aws-lambda';
+console.log(playwright);
 // import { chromium } from 'playwright-chromium';
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
@@ -18,10 +19,6 @@ router.get('/cycle', async (req, res) => {
 	} catch (error) {
 		res.status(500).json({ error: 'CHECK CYCLE FAILED' });
 	}
-});
-
-router.get('/keepawake', (req, res) => {
-	res.status(200).json({ message: 'REQUEST COMPLETED' });
 });
 
 router.get('/test', async (req, res) => {
