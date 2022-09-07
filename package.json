@@ -4,7 +4,7 @@
 	"description": "",
 	"type": "module",
 	"exports": "./index.js",
-	"main": "./index.js",
+	"main": "dist/index",
 	"typings": "dist/index",
 	"dependencies": {
 		"cheerio": "^1.0.0-rc.10",
@@ -14,6 +14,7 @@
 		"dotenv": "^16.0.0",
 		"express": "^4.17.3",
 		"firebase-admin": "^10.2.0",
+		"g": "^2.0.1",
 		"googleapis": "^100.0.0",
 		"got": "^12.0.3",
 		"helmet": "^4.4.1",
@@ -24,9 +25,9 @@
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "node app.js",
-		"start-server": "node app.js",
-		"start:dev": "node app.js"
+		"start": "node server.js",
+		"start-server": "node server.js",
+		"start:dev": "node server.js"
 	},
 	"author": "LEO",
 	"license": "ISC"
