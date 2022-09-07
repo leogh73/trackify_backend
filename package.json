@@ -21,7 +21,6 @@
 		"helmet": "^4.4.1",
 		"luxon": "^2.4.0",
 		"mongoose": "^6.2.10",
-		"playwright-chromium": "1.24.2",
 		"playwright-core": "^1.25.2"
 	},
 	"scripts": {
