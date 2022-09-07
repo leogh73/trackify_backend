@@ -1,5 +1,6 @@
 import vars from '../modules/crypto-js.js';
-import playwright from 'playwright-aws-lambda';
+import chromium from 'chrome-aws-lambda';
+// import playwright from 'playwright-aws-lambda';
 // import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
@@ -27,9 +28,10 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await playwright.launchChromium();
+	// const browser = await playwright.launchChromium();
 	// const browser = await chromium.launch({ args: ['--no-sandbox'] });
-	const context = await browser.newContext();
+	const browser = await chromium.puppeteer.launch();
+	// const context = await browser.newContext();
 	const page = await context.newPage();
 
 	await page.goto(`${vars.CLICOH_API_URL1}`, {
