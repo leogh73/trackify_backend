@@ -4,7 +4,7 @@
 	"description": "",
 	"type": "module",
 	"exports": "./index.js",
-	"main": "app.js",
+	"main": "./app.js",
 	"typings": "dist/index",
 	"dependencies": {
 		"cheerio": "^1.0.0-rc.10",
