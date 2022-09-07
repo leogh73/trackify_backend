@@ -20,13 +20,13 @@
 		"helmet": "^4.4.1",
 		"luxon": "^2.4.0",
 		"mongoose": "^6.2.10",
-		"playwright-aws-lambda": "^0.9.0"
+		"playwright-chromium": "1.24.2"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"start": "node app.js",
 		"start-server": "node app.js",
-		"start:dev": "node app.js"
+		"start:dev": "nod app.js"
 	},
 	"author": "LEO",
 	"license": "ISC"
