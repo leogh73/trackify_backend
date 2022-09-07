@@ -1,7 +1,7 @@
 import express from 'express';
 export const router = express.Router();
-// import playwright from 'playwright-aws-lambda';
-import { chromium } from 'playwright-chromium';
+import playwright from 'playwright-aws-lambda';
+// import { chromium } from 'playwright-chromium';
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
 
@@ -22,9 +22,9 @@ router.get('/cycle', async (req, res) => {
 
 router.get('/test', async (req, res) => {
 	try {
-		// const browser = await playwright.launchChromium();
+		const browser = await playwright.launchChromium();
 		// const browser = await chromium.puppeteer.launch();
-		const browser = await chromium.launch({ args: ['--no-sandbox'] });
+		// const browser = await chromium.launch({ args: ['--no-sandbox'] });
 		const context = await browser.newContext();
 		const page = await context.newPage();
 		// const browser = await playwright.chromium.launch({
