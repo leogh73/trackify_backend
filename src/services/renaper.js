@@ -1,4 +1,4 @@
-// import playwright from 'playwright-aws-lambda';
+import vars from '../modules/crypto-js.js';
 import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
@@ -31,7 +31,7 @@ async function startCheck(code, lastEvent) {
 	const context = await browser.newContext();
 	const page = await context.newPage();
 
-	await page.goto(`${process.env.RENAPER_API_URL1}`, {
+	await page.goto(`${vars.RENAPER_API_URL1}`, {
 		waitUntil: 'load',
 	});
 
@@ -45,8 +45,7 @@ async function startCheck(code, lastEvent) {
 		let data = await (
 			await Promise.all([
 				page.waitForResponse(
-					(response) =>
-						response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+					(response) => response.url() === `${vars.RENAPER_API_URL2}` && response.status() === 200,
 				),
 				page.click('#btn-consultar'),
 			])

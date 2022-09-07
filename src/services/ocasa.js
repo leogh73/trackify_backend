@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
 
@@ -26,7 +27,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let consult = await got(`${process.env.OCASA_API_URL.replace('code', code)}`, {
+	let consult = await got(`${vars.OCASA_API_URL.replace('code', code)}`, {
 		https: {
 			rejectUnauthorized: false,
 		},

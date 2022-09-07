@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
-import user from '../controllers/users_controllers.js';
-const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+import vars from './crypto-js.js';
+const serviceAccount = vars.GOOGLE_SERVICE_ACCOUNT;
 
 admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
@@ -26,17 +26,17 @@ function sendNotification(data) {
 		},
 	};
 
-	admin
-		.messaging()
-		.send(notification)
-		.then((response) => {
-			console.log({ 'Notification sended': response });
-		})
-		.catch(async (error) => {
-			if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
-				return await user.remove(data.token);
-			}
-		});
+	// admin
+	// 	.messaging()
+	// 	.send(notification)
+	// 	.then((response) => {
+	// 		console.log({ 'Notification sended': response });
+	// 	})
+	// 	.catch(async (error) => {
+	// 		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
+	// 			return await user.remove(data.token);
+	// 		}
+	// 	});
 }
 
 export default sendNotification;

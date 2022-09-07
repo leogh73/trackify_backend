@@ -26,7 +26,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let consult = await got(`${process.env.CORREOARGENTINO_API_URL.replace('code', code)}`);
+	let consult = await got(`${vars.CORREOARGENTINO_API_URL.replace('code', code)}`);
 	const $ = load(consult.body);
 
 	let rowsList = [];

@@ -1,4 +1,4 @@
-// import playwright from 'playwright-aws-lambda';
+import vars from '../modules/crypto-js.js';
 import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
@@ -31,7 +31,7 @@ async function startCheck(code, lastEvent) {
 	const context = await browser.newContext();
 	const page = await context.newPage();
 
-	await page.goto(`${process.env.CLICOH_API_URL1}`, {
+	await page.goto(`${vars.CLICOH_API_URL1}`, {
 		waitUntil: 'load',
 	});
 	await page.type("input[name='codigo']", `${code}`);
@@ -39,8 +39,7 @@ async function startCheck(code, lastEvent) {
 		await Promise.all([
 			page.waitForResponse(
 				(response) =>
-					response.url() === `${process.env.CLICOH_API_URL2}` &&
-					response.request().method() === 'POST',
+					response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST',
 			),
 			page.click('.fa.fa-search'),
 		])

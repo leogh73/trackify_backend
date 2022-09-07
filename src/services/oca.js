@@ -25,7 +25,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let consultEvents = await got.post(`${process.env.OCA_API_URL}`, {
+	let consultEvents = await got.post(`${vars.OCA_API_URL}`, {
 		json: { numberOfSend: code },
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;

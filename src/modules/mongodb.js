@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
+import vars from './crypto-js.js';
 const Schema = mongoose.Schema;
 
 mongoose
 	.connect(
-		`mongodb+srv://${process.env.MDB_USER}:${process.env.MDB_PASSWORD}@cluster0.rkwyv.mongodb.net/Trackify?retryWrites=true&w=majority`,
+		`mongodb+srv://${vars.MDB_USER}:${vars.MDB_PASSWORD}@cluster0.rkwyv.mongodb.net/Trackify?retryWrites=true&w=majority`,
 		{
 			useNewUrlParser: true,
 			useUnifiedTopology: true,

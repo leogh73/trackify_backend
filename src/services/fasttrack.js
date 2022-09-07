@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
 
@@ -26,11 +27,11 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let response1 = await got(`${process.env.FASTTRACK_API_URL1}`);
+	let response1 = await got(`${vars.FASTTRACK_API_URL1}`);
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
 	let response2 = await got(
-		`${process.env.FASTTRACK_API_URL2.replace('code', code).replace('TOKEN', token)}`,
+		`${vars.FASTTRACK_API_URL2.replace('code', code).replace('TOKEN', token)}`,
 	);
 	let result = JSON.parse(response2.body);
 

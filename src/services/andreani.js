@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 
 async function checkStart(code) {
@@ -26,10 +27,10 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const events = await got(`${process.env.ANDREANI_API_URL1.replace('code', code)}`, {
+	const events = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`, {
 		timeout: { response: 10000 },
 	});
-	const visits = await got(`${process.env.ANDREANI_API_URL2.replace('code', code)}`, {
+	const visits = await got(`${vars.ANDREANI_API_URL2.replace('code', code)}`, {
 		timeout: { response: 10000 },
 	});
 

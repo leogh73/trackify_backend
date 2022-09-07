@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 
 async function checkStart(code) {
@@ -26,10 +27,10 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const consult = await got(`${process.env.DHL_API_URL.replace('code', code)}`, {
+	const consult = await got(`${vars.DHL_API_URL.replace('code', code)}`, {
 		headers: {
 			Accept: 'application/json',
-			'DHL-API-Key': `${process.env.DHL_API_KEY}`,
+			'DHL-API-Key': `${vars.DHL_API_KEY}`,
 		},
 	});
 	console.log(consult);

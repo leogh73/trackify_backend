@@ -11,8 +11,8 @@ const initialize = async (req, res) => {
 			{
 				form: {
 					grant_type: 'authorization_code',
-					client_id: `${process.env.ML_CLIENT_ID}`,
-					client_secret: `${process.env.ML_CLIENT_SECRET}`,
+					client_id: `${vars.ML_CLIENT_ID}`,
+					client_secret: `${vars.ML_CLIENT_SECRET}`,
 					redirect_uri: 'https://mercadolibre.com.ar',
 					code: code,
 				},
@@ -200,8 +200,8 @@ async function renewTokenML(user) {
 		{
 			form: {
 				grant_type: 'refresh_token',
-				client_id: `${process.env.ML_CLIENT_ID}`,
-				client_secret: `${process.env.ML_CLIENT_SECRET}`,
+				client_id: `${vars.ML_CLIENT_ID}`,
+				client_secret: `${vars.ML_CLIENT_SECRET}`,
 				refresh_token: user.mercadoLibre.refresh_token,
 			},
 		},

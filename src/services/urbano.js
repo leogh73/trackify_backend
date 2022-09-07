@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
 
@@ -27,7 +28,7 @@ async function checkUpdate(code, lastEvent) {
 
 async function startCheck(code, lastEvent) {
 	let response1 = await got(
-		`${process.env.URBANO_API_URL1.replace('shicode', code.substring(0, 4).padStart(5, 0)).replace(
+		`${vars.URBANO_API_URL1.replace('shicode', code.substring(0, 4).padStart(5, 0)).replace(
 			'clicode',
 			code.substring(4),
 		)}`,
@@ -63,7 +64,7 @@ async function startCheck(code, lastEvent) {
 		service: $1('body > div > div:nth-child(4) > table > tbody > tr > td:nth-child(4)').text(),
 	};
 
-	let response2 = await got.post(`${process.env.URBANO_API_URL2}`, {
+	let response2 = await got.post(`${vars.URBANO_API_URL2}`, {
 		form: { accion: 'getDetalle', param1: param1 },
 	});
 	const $2 = load(response2.body);

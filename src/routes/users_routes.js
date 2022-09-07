@@ -37,7 +37,7 @@ router.get('/test', async (req, res) => {
 		// headless: true,
 		// });
 
-		await page.goto(`${process.env.RENAPER_API_URL1}`, {
+		await page.goto(`${vars.RENAPER_API_URL1}`, {
 			waitUntil: 'load',
 		});
 
@@ -52,7 +52,7 @@ router.get('/test', async (req, res) => {
 				await Promise.all([
 					page.waitForResponse(
 						(response) =>
-							response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+							response.url() === `${vars.RENAPER_API_URL2}` && response.status() === 200,
 						{ timeout: 20000 },
 					),
 					page.click('#btn-consultar'),
@@ -70,7 +70,7 @@ router.get('/test', async (req, res) => {
 		// 	await Promise.all([
 		// 		page.waitForResponse(
 		// 			(response) =>
-		// 				response.url() === `${process.env.RENAPER_API_URL2}` && response.status() === 200,
+		// 				response.url() === `${vars.RENAPER_API_URL2}` && response.status() === 200,
 		// 			{ timeout: 20000 },
 		// 		),
 		// 		page.click('#btn-consultar'),
@@ -92,14 +92,14 @@ router.get('/test', async (req, res) => {
 // const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
 // 		const page = await browser.newPage();
 
-// 		await page.goto(`${process.env.CLICOH_API_URL1}`);
+// 		await page.goto(`${vars.CLICOH_API_URL1}`);
 // 		await page.waitForSelector("input[name='codigo']");
 // 		await page.type("input[name='codigo']", 'HWUIN94250');
 // 		let data = await (
 // 			await Promise.all([
 // 				page.waitForResponse(
 // 					(response) =>
-// 						response.url() === `${process.env.CLICOH_API_URL2}` &&
+// 						response.url() === `${vars.CLICOH_API_URL2}` &&
 // 						response.request().method() === 'POST',
 // 				),
 // 				page.click('.fa.fa-search'),

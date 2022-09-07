@@ -1,12 +1,13 @@
 import { google } from 'googleapis';
+import vars from '../modules/crypto-js.js';
 import Models from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 
 import trackings from './trackings_controllers.js';
 
 const oauth2Client = new google.auth.OAuth2(
-	process.env.GOOGLE_CLIENT_ID,
-	process.env.GOOGLE_CLIENT_SECRET,
+	vars.GOOGLE_CLIENT_ID,
+	vars.GOOGLE_CLIENT_SECRET,
 	'https://trackify-6120f.firebaseapp.com/__/auth/handler',
 );
 

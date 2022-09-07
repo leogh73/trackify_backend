@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 
 async function checkStart(code) {
@@ -25,7 +26,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let response = await got.post(`${process.env.VIACARGO_API_URL.replace('code', code)}`);
+	let response = await got.post(`${vars.VIACARGO_API_URL.replace('code', code)}`);
 	let data = JSON.parse(response.body).ok[0].objeto;
 
 	let eventsList = data.listaEventos.map((e) => {

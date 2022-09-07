@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
 
@@ -28,7 +29,7 @@ async function checkUpdate(code, lastEvent) {
 async function startCheck(code, lastEvent) {
 	let dividedCode = code.split('-');
 	let consult = await got(
-		`${process.env.ECAPACK_API_URL.replace('dividedCode0', dividedCode[0])
+		`${vars.ECAPACK_API_URL.replace('dividedCode0', dividedCode[0])
 			.replace('dividedCode1', dividedCode[1])
 			.replace('dividedCode2', dividedCode[2])}`,
 	);
