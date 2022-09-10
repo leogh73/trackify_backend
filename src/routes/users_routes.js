@@ -1,7 +1,8 @@
 import express from 'express';
 export const router = express.Router();
 import playwright from 'playwright-aws-lambda';
-// import { chromium } from 'playwright-chromium';
+import vars from '../modules/crypto-js.js';
+
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
 
@@ -22,26 +23,18 @@ router.get('/cycle', async (req, res) => {
 
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium();
-		// const browser = await chromium.puppeteer.launch();
-		// const browser = await chromium.launch({ args: ['--no-sandbox'] });
+		const browser = await playwright.launchChromium({ headless: false });
 		const context = await browser.newContext();
 		const page = await context.newPage();
-		// const browser = await playwright.chromium.launch({
-		// args: chromium.args,
-		// defaultViewport: chromium.defaultViewport,
-		// executablePath: await chromium.executablePath,
-		// headless: true,
-		// });
 
 		await page.goto(`${vars.RENAPER_API_URL1}`, {
 			waitUntil: 'load',
 		});
 
-		// let timeout = false;
-		// setTimeout(() => {
-		// 	timeout = true;
-		// }, 15000);
+		let timeout = false;
+		setTimeout(() => {
+			timeout = true;
+		}, 15000);
 
 		const checkData = async () => {
 			await page.type('#tramite', '682257040');
@@ -55,24 +48,13 @@ router.get('/test', async (req, res) => {
 					page.click('#btn-consultar'),
 				])
 			)[0].json();
-			if (data.errors) {
+			if (data.errors && !timeout) {
 				await page.reload();
 				return await checkData();
 			} else return data;
 		};
 		let data = await checkData();
 		await browser.close();
-
-		// let data = await (
-		// 	await Promise.all([
-		// 		page.waitForResponse(
-		// 			(response) =>
-		// 				response.url() === `${vars.RENAPER_API_URL2}` && response.status() === 200,
-		// 			{ timeout: 20000 },
-		// 		),
-		// 		page.click('#btn-consultar'),
-		// 	])
-		// )[0].json();
 
 		res.json({
 			status: 200,

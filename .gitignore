@@ -68,3 +68,4 @@ node_modules/
 # test codes
 codigos.txt
 git rm --cached codigos.txt
+.vercel

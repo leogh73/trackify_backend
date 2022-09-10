@@ -33,7 +33,6 @@ async function startCheck(code, lastEvent) {
 			'DHL-API-Key': `${vars.DHL_API_KEY}`,
 		},
 	});
-	console.log(consult);
 	const data = JSON.parse(consult.body).shipments[0];
 
 	let eventsList = data.events.map((e) => {

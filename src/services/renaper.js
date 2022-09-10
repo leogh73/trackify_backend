@@ -1,7 +1,5 @@
 import vars from '../modules/crypto-js.js';
-// import chromium from 'chrome-aws-lambda';
 import playwright from 'playwright-aws-lambda';
-// import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
 	try {
@@ -28,9 +26,7 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await playwright.launchChromium();
-	// const browser = await chromium.launch({ args: ['--no-sandbox'] });
-	// const browser = await chromium.puppeteer.launch();
+	const browser = await playwright.launchChromium({ headless: false });
 	const context = await browser.newContext();
 	const page = await context.newPage();
 

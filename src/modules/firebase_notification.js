@@ -26,17 +26,17 @@ function sendNotification(data) {
 		},
 	};
 
-	// admin
-	// 	.messaging()
-	// 	.send(notification)
-	// 	.then((response) => {
-	// 		console.log({ 'Notification sended': response });
-	// 	})
-	// 	.catch(async (error) => {
-	// 		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
-	// 			return await user.remove(data.token);
-	// 		}
-	// 	});
+	admin
+		.messaging()
+		.send(notification)
+		.then((response) => {
+			console.log({ 'Notification sended': response });
+		})
+		.catch(async (error) => {
+			if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
+				return await user.remove(data.token);
+			}
+		});
 }
 
 export default sendNotification;
