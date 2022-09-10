@@ -1,6 +1,7 @@
 import got from 'got';
 import Models from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
+import vars from '../modules/crypto-js.js';
 
 const initialize = async (req, res) => {
 	const { userId, code } = req.body;

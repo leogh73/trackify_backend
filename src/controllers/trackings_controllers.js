@@ -31,6 +31,8 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
 
+	console.log(result);
+
 	return result;
 }
 
