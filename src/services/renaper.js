@@ -35,7 +35,7 @@ async function startCheck(code, lastEvent) {
 	});
 
 	let timeout = false;
-	setTimeout(() => {
+	let fetchDataTimeout = setTimeout(() => {
 		timeout = true;
 	}, 15000);
 
@@ -52,7 +52,10 @@ async function startCheck(code, lastEvent) {
 		if (data.errors && !timeout) {
 			await page.reload();
 			return await checkData();
-		} else return data;
+		} else {
+			clearTimeout(fetchDataTimeout);
+			return data;
+		}
 	};
 	let data = await checkData();
 	await browser.close();
