@@ -35,25 +35,23 @@ router.get('/test', async (req, res) => {
 			new Promise((resolve, reject) => {
 				setTimeout(() => {
 					reject('FUNCTION TIMEOUT');
-				}, 1000);
+				}, 12000);
 			});
 
 		const fetchData = async () => {
 			await page.type('#tramite', '682257040');
-			let data = await (
+			let response = await (
 				await Promise.all([
 					page.waitForResponse(
-						(response) =>
-							response.url() === `${vars.RENAPER_API_URL2}` && response.status() === 200,
-						{ timeout: 10000 },
+						(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
 					),
 					page.click('#btn-consultar'),
 				])
 			)[0].json();
-			if (data.errors) {
+			if (response.errors) {
 				await page.reload();
 				return await fetchData();
-			} else return data;
+			} else return response;
 		};
 		let data = await Promise.race([fetchData(), timeout()]);
 		await browser.close();
