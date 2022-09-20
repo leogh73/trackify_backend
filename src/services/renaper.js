@@ -38,7 +38,7 @@ async function startCheck(code, lastEvent) {
 		new Promise((resolve, reject) => {
 			setTimeout(() => {
 				reject('FUNCTION TIMEOUT');
-			}, 10000);
+			}, 12000);
 		});
 
 	const fetchData = async () => {

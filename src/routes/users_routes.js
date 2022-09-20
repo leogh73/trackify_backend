@@ -35,7 +35,7 @@ router.get('/test', async (req, res) => {
 			new Promise((resolve, reject) => {
 				setTimeout(() => {
 					reject('FUNCTION TIMEOUT');
-				}, 12000);
+				}, 1000);
 			});
 
 		const fetchData = async () => {
