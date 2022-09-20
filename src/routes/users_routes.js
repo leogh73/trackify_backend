@@ -31,10 +31,12 @@ router.get('/test', async (req, res) => {
 			waitUntil: 'load',
 		});
 
-		let timeout = false;
-		let fetchDataTimeout = setTimeout(() => {
-			timeout = true;
-		}, 15000);
+		const timeout = () =>
+			new Promise((resolve, reject) => {
+				setTimeout(() => {
+					reject('FUNCTION TIMEOUT');
+				}, 12000);
+			});
 
 		const fetchData = async () => {
 			await page.type('#tramite', '682257040');
@@ -48,15 +50,12 @@ router.get('/test', async (req, res) => {
 					page.click('#btn-consultar'),
 				])
 			)[0].json();
-			if (data.errors && !timeout) {
+			if (data.errors) {
 				await page.reload();
 				return await fetchData();
-			} else {
-				clearTimeout(fetchDataTimeout);
-				return data;
-			}
+			} else return data;
 		};
-		let data = await fetchData();
+		let data = await Promise.race([fetchData(), timeout()]);
 		await browser.close();
 
 		res.json({

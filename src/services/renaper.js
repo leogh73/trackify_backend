@@ -34,12 +34,14 @@ async function startCheck(code, lastEvent) {
 		waitUntil: 'load',
 	});
 
-	let timeout = false;
-	let fetchDataTimeout = setTimeout(() => {
-		timeout = true;
-	}, 15000);
+	const timeout = () =>
+		new Promise((resolve, reject) => {
+			setTimeout(() => {
+				reject('FUNCTION TIMEOUT');
+			}, 10000);
+		});
 
-	const checkData = async () => {
+	const fetchData = async () => {
 		await page.type('#tramite', `${code}`);
 		let data = await (
 			await Promise.all([
@@ -49,15 +51,12 @@ async function startCheck(code, lastEvent) {
 				page.click('#btn-consultar'),
 			])
 		)[0].json();
-		if (data.errors && !timeout) {
+		if (data.errors) {
 			await page.reload();
-			return await checkData();
-		} else {
-			clearTimeout(fetchDataTimeout);
-			return data;
-		}
+			return await fetchData();
+		} else return data;
 	};
-	let data = await checkData();
+	let data = await Promise.race([fetchData(), timeout()]);
 	await browser.close();
 
 	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
