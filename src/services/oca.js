@@ -1,3 +1,4 @@
+import vars from '../modules/crypto-js.js';
 import got from 'got';
 
 async function checkStart(code) {

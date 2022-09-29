@@ -166,6 +166,7 @@ async function checkShippingOrders(userId, consultType) {
 }
 
 async function checkShippings(shippingOrders, httpHeaders) {
+	console.log(shippingOrders);
 	let meLiResults = await Promise.allSettled(
 		shippingOrders.map((o) => checkShipping(o, httpHeaders)),
 	);
@@ -180,6 +181,7 @@ async function checkShipping(shippingOrder, httpHeaders) {
 		headers: httpHeaders,
 	});
 	let response = JSON.parse(consult.body);
+	if (shippingOrder.id == 41673694032) console.log(response);
 	let shipping = {
 		title: shippingOrder.items[0],
 		code: response.tracking_number,

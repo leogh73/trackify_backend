@@ -66,26 +66,19 @@ async function startCheck(code, lastEvent) {
 
 function startResponse(events, data) {
 	let origin = (() => {
-		const { address, locality, country, street_number, administrative_area_level_1, postal_code } =
-			data.origin;
+		const { address, country } = data.origin;
 		return {
 			address,
-			locality,
 			country,
-			street_number,
-			administrative_area_level_1,
-			postal_code,
 		};
 	})();
 
 	let destiny = (() => {
-		const { address, locality, country, street_number, administrative_area_level_1, postal_code } =
-			data.to;
+		const { address, locality, country, administrative_area_level_1, postal_code } = data.to;
 		return {
 			address,
 			locality,
 			country,
-			street_number,
 			administrative_area_level_1,
 			postal_code,
 		};
@@ -102,10 +95,7 @@ function startResponse(events, data) {
 	};
 
 	let otherData = {
-		pickupPoint: verifyData(data.pickup_point),
-		clientName: data.cliente,
-		serviceType: data.package_sub_service_combination.name,
-		secretCodeConfirmed: verifyData(data.secret_code_confirmed),
+		clientName: data.client,
 	};
 
 	let response = {
