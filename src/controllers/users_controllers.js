@@ -50,9 +50,7 @@ const trackingAction = async (req, res) => {
 			await tracking.remove(userId, JSON.parse(trackingIds));
 			response = { 'Eliminación completada': trackingIds };
 		}
-		// console.log(response);
 		let statusCode = response.lastEvent == 'No hay datos' ? 404 : 200;
-		// console.log(statusCode);
 		res.status(statusCode).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();

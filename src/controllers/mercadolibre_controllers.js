@@ -166,7 +166,6 @@ async function checkShippingOrders(userId, consultType) {
 }
 
 async function checkShippings(shippingOrders, httpHeaders) {
-	console.log(shippingOrders);
 	let meLiResults = await Promise.allSettled(
 		shippingOrders.map((o) => checkShipping(o, httpHeaders)),
 	);
