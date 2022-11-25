@@ -23,7 +23,10 @@ import vars from '../modules/crypto-js.js';
 
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium({ headless: false });
+		const browser = await playwright.launchChromium({
+			headless: false,
+			ignoreDefaultArgs: ['--disable-extensions'],
+		});
 		const context = await browser.newContext();
 		const page = await context.newPage();
 
