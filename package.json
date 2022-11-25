@@ -30,6 +30,9 @@
 		"start-server": "nodemon app.js",
 		"start:dev": "nodemon app.js"
 	},
+	"engines": {
+		"node": "^14"
+	},
 	"author": "LEO",
 	"license": "ISC"
 }
