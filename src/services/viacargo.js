@@ -63,8 +63,6 @@ async function startCheck(code, lastEvent) {
 		}`,
 	};
 
-	console.log(destiny);
-
 	let aditional = {
 		weightDeclared: `${data.kilos + ' kg.'}`,
 		numberOfPieces: data.numeroTotalPiezas,
