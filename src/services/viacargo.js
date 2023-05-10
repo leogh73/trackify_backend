@@ -56,12 +56,14 @@ async function startCheck(code, lastEvent) {
 		state: data.poblacionDestinatario,
 		phone: data.telefonoDestinatario,
 		dateDelivered: `${
-			data.fechaHoraEntrega.split(' ')[0] ? data.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
+			data.fechaHoraEntrega?.split(' ')[0] ? data.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
 		}`,
 		timeDelivered: `${
-			data.fechaHoraEntrega.split(' ')[1] ? data.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
+			data.fechaHoraEntrega?.split(' ')[1] ? data.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
 		}`,
 	};
+
+	console.log(destiny);
 
 	let aditional = {
 		weightDeclared: `${data.kilos + ' kg.'}`,
