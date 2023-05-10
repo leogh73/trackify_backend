@@ -14,7 +14,7 @@ const initialize = async (req, res) => {
 					grant_type: 'authorization_code',
 					client_id: `${vars.ML_CLIENT_ID}`,
 					client_secret: `${vars.ML_CLIENT_SECRET}`,
-					redirect_uri: 'https://mercadolibre.com.ar',
+					redirect_uri: 'https://trackear.vercel.app',
 					code: code,
 				},
 			},
