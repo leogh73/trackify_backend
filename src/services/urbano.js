@@ -27,17 +27,21 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let response1 = await got(
-		`${vars.URBANO_API_URL1.replace('shicode', code.substring(0, 4).padStart(5, 0)).replace(
+	let url;
+	if (code.toString().includes('00000000')) {
+		code = code.toString().split('00000000')[1];
+		url = vars.URBANO_API_URL1.replace('shicode', '002273').replace(
+			'clicode',
+			`${'00000000' + code}`,
+		);
+	} else {
+		url = vars.URBANO_API_URL1.replace('shicode', code.substring(0, 4).padStart(5, 0)).replace(
 			'clicode',
 			code.substring(4),
-		)}`,
-	);
-	// let response1 = await got(
-	// 	`https://apis.urbano.com.ar/cespecifica/?shi_codigo=${code
-	// 		.substring(0, 4)
-	// 		.padStart(5, 0)}&cli_codigo=${code.substring(4)}`,
-	// );
+		);
+	}
+	let response1 = await got(url);
+
 	const $1 = load(response1.body);
 	let data1 = $1('body > div > div:nth-child(4) > table > tbody').html();
 	let param1 =

@@ -11,7 +11,6 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 		: await selectService(service).checkStart(code);
 	let user = await Models.User.findById(userId);
 
-	console.log(result);
 	let newTracking;
 	if (!result.error) {
 		newTracking = new Models.Tracking({
