@@ -158,6 +158,7 @@ const checkCycle = async () => {
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
 	try {
+		if (message.includes('text ') || email.includes('text ')) return;
 		const { id } = await new Models.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {
