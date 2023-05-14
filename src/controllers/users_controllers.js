@@ -110,8 +110,10 @@ const check = async (req, res) => {
 };
 
 const remove = async (userId, token) => {
-	if (!!token) await Models.Tracking.deleteMany({ token: token });
-	return await Models.User.findOneAndDelete({ _id: userId });
+	let removeTasks = [];
+	removeTasks.push(Models.User.findOneAndDelete({ _id: userId }));
+	if (!!token) removeTasks.push(Models.Tracking.deleteMany({ token: token }));
+	await Promise.all(removeTasks);
 };
 
 const update = async (userId, token) => {
@@ -138,7 +140,7 @@ const checkCycle = async () => {
 	let removeUsers = [];
 	for (let userData of usersCollection) {
 		if (userData.token === 'BLACKLISTED') {
-			removeUsers.push(remove(userData.id));
+			removeUsers.push(remove(userData.id, null));
 		} else {
 			let dateToday = new Date(Date.now());
 			let difference = dateToday.getTime() - userData.lastActivity.getTime();
