@@ -1,5 +1,6 @@
 import express from 'express';
 export const router = express.Router();
+import Models from '../modules/mongodb.js';
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
 
@@ -14,6 +15,8 @@ router.get('/cycle', async (req, res) => {
 		await trackings.checkCycle();
 		res.status(200).json({ message: 'CHECK CYCLE COMPLETED' });
 	} catch (error) {
+		await Models.storeLog('Check cycle', null, error, message.date, message.time);
+		res.status(500).json(message);
 		res.status(500).json({ error: 'CHECK CYCLE FAILED' });
 	}
 });

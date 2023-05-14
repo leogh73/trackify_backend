@@ -109,9 +109,9 @@ const check = async (req, res) => {
 	}
 };
 
-const remove = async (token) => {
-	await Models.Tracking.deleteMany({ token: token });
-	return await Models.User.findOneAndDelete({ tokenFB: token });
+const remove = async (userId, token) => {
+	if (!!token) await Models.Tracking.deleteMany({ token: token });
+	return await Models.User.findOneAndDelete({ _id: userId });
 };
 
 const update = async (userId, token) => {
@@ -128,17 +128,28 @@ const update = async (userId, token) => {
 
 const checkCycle = async () => {
 	let usersCollection = (await Models.User.find({})).map((user) => {
-		return { token: user.tokenFB, lastActivity: user.lastActivity };
+		return {
+			id: user._id,
+			token: user.tokenFB,
+			lastActivity: user.lastActivity,
+			trackings: user.trackings,
+		};
 	});
+	let removeUsers = [];
 	for (let userData of usersCollection) {
-		let dateToday = new Date(Date.now());
-		let difference = dateToday.getTime() - userData.lastActivity.getTime();
-		let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-		if (totalDays > 31) await remove(userData.token);
+		if (userData.token === 'BLACKLISTED') {
+			removeUsers.push(remove(userData.id));
+		} else {
+			let dateToday = new Date(Date.now());
+			let difference = dateToday.getTime() - userData.lastActivity.getTime();
+			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
+			if (totalDays > 31) removeUsers.push(remove(userData.id, userData.token));
+		}
 	}
-	let activeTokens = (await Models.User.find({}))
+	await Promise.all(removeUsers);
+	let activeTokens = usersCollection
 		.filter((user) => user.trackings.length)
-		?.map((user) => user.tokenFB);
+		?.map((user) => user.token);
 	return activeTokens;
 };
 

@@ -1,11 +1,13 @@
 import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
+import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {
 		return await startCheck(code, null);
 	} catch (error) {
+		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
