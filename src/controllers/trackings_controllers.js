@@ -151,6 +151,7 @@ async function userCheck(token) {
 	userData.results = userResults
 		.filter((result) => result.status == 'fulfilled' && result.value.result.events?.length)
 		.map((result) => result.value);
+
 	if (userData.results.length) {
 		await Promise.allSettled(
 			userData.results.map((result) => {

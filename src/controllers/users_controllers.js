@@ -4,6 +4,7 @@ import tracking from './trackings_controllers.js';
 import google from './google_controllers.js';
 
 const initialize = async (req, res) => {
+	if (req.body.token === 'BLACKLISTED') return res.status(400).json({ error: 'token not valid' });
 	const newUser = new Models.User({
 		lastActivity: new Date(Date.now()),
 		tokenFB: req.body.token,
@@ -109,10 +110,11 @@ const check = async (req, res) => {
 	}
 };
 
-const remove = async (userId, token) => {
+const remove = async (userId, trackingsData) => {
 	let removeTasks = [];
 	removeTasks.push(Models.User.findOneAndDelete({ _id: userId }));
-	if (!!token) removeTasks.push(Models.Tracking.deleteMany({ token: token }));
+	if (trackingsData.trackings.length)
+		removeTasks.push(Models.Tracking.deleteMany({ token: trackingsData.token }));
 	await Promise.all(removeTasks);
 };
 
@@ -139,14 +141,13 @@ const checkCycle = async () => {
 	});
 	let removeUsers = [];
 	for (let userData of usersCollection) {
-		if (userData.token === 'BLACKLISTED') {
-			removeUsers.push(remove(userData.id, null));
-		} else {
-			let dateToday = new Date(Date.now());
-			let difference = dateToday.getTime() - userData.lastActivity.getTime();
-			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-			if (totalDays > 31) removeUsers.push(remove(userData.id, userData.token));
-		}
+		let dateToday = new Date(Date.now());
+		let difference = dateToday.getTime() - userData.lastActivity.getTime();
+		let totalDays = Math.floor(difference / (1000 * 3600 * 24));
+		if (totalDays > 31)
+			removeUsers.push(
+				remove(userData.id, { token: userData.token, trackings: userData.trackings }),
+			);
 	}
 	await Promise.all(removeUsers);
 	let activeTokens = usersCollection
@@ -158,7 +159,8 @@ const checkCycle = async () => {
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
 	try {
-		if (message.includes('text ') || email.includes('text ')) return;
+		if (message.includes('text ') || email.includes('text '))
+			return res.status(404).json({ error: 'content not valid' });
 		const { id } = await new Models.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {
