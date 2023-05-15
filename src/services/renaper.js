@@ -5,6 +5,7 @@ async function checkStart(code) {
 	try {
 		return await startCheck(code, null);
 	} catch (error) {
+		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
