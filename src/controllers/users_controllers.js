@@ -55,13 +55,14 @@ const trackingAction = async (req, res) => {
 		res.status(statusCode).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
-			'Tracking action',
-			{ userId, action, body: req.body },
-			error,
-			message.date,
-			message.time,
-		);
+		if (req.body.service !== 'Correo Argentino')
+			await Models.storeLog(
+				'Tracking action',
+				{ userId, action, body: req.body },
+				error,
+				message.date,
+				message.time,
+			);
 		console.log(error);
 		res.status(500).json(message);
 	}
