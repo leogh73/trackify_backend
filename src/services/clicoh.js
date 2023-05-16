@@ -25,9 +25,13 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let data = await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
-		json: { code },
-	});
+	let data = JSON.parse(
+		(
+			await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
+				json: { code },
+			})
+		).body,
+	);
 
 	let events = data.packagestatehistory_set.map((e) => {
 		return {

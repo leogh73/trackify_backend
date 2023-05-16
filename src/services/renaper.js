@@ -25,9 +25,13 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	let data = await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-		json: { code },
-	});
+	let data = JSON.parse(
+		(
+			await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
+				json: { code },
+			})
+		).body,
+	);
 
 	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
 		const { evento, estado, fecha, planta } = e;
