@@ -1,7 +1,6 @@
 import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
-import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {

@@ -21,47 +21,18 @@ router.get('/cycle', async (req, res) => {
 	}
 });
 
-import playwright from 'playwright-aws-lambda';
 import vars from '../modules/crypto-js.js';
+import got from 'got';
 
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium({ headless: false });
-		const context = await browser.newContext();
-		const page = await context.newPage();
-
-		await page.goto(`${vars.RENAPER_API_URL1}`, {
-			waitUntil: 'load',
+		let data = await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
+			json: { code: 'HWUIN94250' },
 		});
-
-		const timeout = () =>
-			new Promise((resolve, reject) => {
-				setTimeout(() => {
-					reject('FUNCTION TIMEOUT');
-				}, 12000);
-			});
-
-		const fetchData = async () => {
-			await page.type('#tramite', '682257040');
-			let response = await (
-				await Promise.all([
-					page.waitForResponse(
-						(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
-					),
-					page.click('#btn-consultar'),
-				])
-			)[0].json();
-			if (response.errors) {
-				await page.reload();
-				return await fetchData();
-			} else return response;
-		};
-		let data = await Promise.race([fetchData(), timeout()]);
-		await browser.close();
 
 		res.json({
 			status: 200,
-			message: data,
+			message: data.body,
 		});
 	} catch (error) {
 		console.error(error);

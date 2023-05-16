@@ -1,5 +1,4 @@
 import vars from '../modules/crypto-js.js';
-import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {
@@ -26,38 +25,9 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await playwright.launchChromium({ headless: false });
-	const context = await browser.newContext();
-	const page = await context.newPage();
-
-	await page.goto(`${vars.RENAPER_API_URL1}`, {
-		waitUntil: 'load',
+	let data = await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
+		json: { code },
 	});
-
-	const timeout = () =>
-		new Promise((resolve, reject) => {
-			setTimeout(() => {
-				reject('FUNCTION TIMEOUT');
-			}, 9500);
-		});
-
-	const fetchData = async () => {
-		await page.type('#tramite', `${code}`);
-		let response = await (
-			await Promise.all([
-				page.waitForResponse(
-					(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
-				),
-				page.click('#btn-consultar'),
-			])
-		)[0].json();
-		if (response.errors) {
-			await page.reload();
-			return await fetchData();
-		} else return response;
-	};
-	let data = await Promise.race([fetchData(), timeout()]);
-	await browser.close();
 
 	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
 		const { evento, estado, fecha, planta } = e;
