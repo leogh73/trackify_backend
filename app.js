@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv/config';
+import vars from './src/modules/crypto-js.js';
 
 import { router as user } from './src/routes/users_routes.js';
 import { router as mercadoLibre } from './src/routes/mercadolibre_routes.js';
@@ -18,7 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
 
 app.use(async (req, res, next) => {
-	await got(process.env.PLAYWRIGHT_API_URL);
+	await got(vars.PLAYWRIGHT_API_URL);
 	next();
 });
 

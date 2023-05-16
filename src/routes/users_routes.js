@@ -33,6 +33,7 @@ router.get('/test', async (req, res) => {
 				})
 			).body,
 		);
+		console.log(data);
 
 		res.json({
 			status: 200,
