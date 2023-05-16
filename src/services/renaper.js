@@ -1,5 +1,7 @@
 import vars from '../modules/crypto-js.js';
-import playwright from 'playwright-aws-lambda';
+import puppeteer from 'puppeteer';
+// import playwright from 'playwright-aws-lambda';
+// import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
 	try {
@@ -27,9 +29,18 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	const browser = await playwright.launchChromium({ headless: false });
-	const context = await browser.newContext();
-	const page = await context.newPage();
+	// const browser = await playwright.launchChromium({ headless: false });
+	// const browser = await chromium.launch({ args: ['--no-sandbox'] });
+	const browser = await puppeteer.launch({
+		args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
+		executablePath:
+			process.env.NODE_ENV === 'production'
+				? process.env.PUPPETEER_EXECUTABLE_PATH
+				: puppeteer.executablePath(),
+	});
+	// const context = await browser.newContext();
+	// const page = await context.newPage();
+	const page = await browser.newPage();
 
 	await page.goto(`${vars.RENAPER_API_URL1}`, {
 		waitUntil: 'load',
@@ -39,7 +50,7 @@ async function startCheck(code, lastEvent) {
 		new Promise((resolve, reject) => {
 			setTimeout(() => {
 				reject('FUNCTION TIMEOUT');
-			}, 9500);
+			}, 10000);
 		});
 
 	const fetchData = async () => {

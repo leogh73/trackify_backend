@@ -3,6 +3,7 @@ export const router = express.Router();
 import Models from '../modules/mongodb.js';
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
+import puppeteer from 'puppeteer';
 
 router.post('/initialize', user.initialize);
 router.post('/:userId/:action', user.trackingAction);
@@ -21,42 +22,31 @@ router.get('/cycle', async (req, res) => {
 	}
 });
 
-import playwright from 'playwright-aws-lambda';
+// import playwright from 'playwright-aws-lambda';
 import vars from '../modules/crypto-js.js';
 
 router.get('/test', async (req, res) => {
 	try {
-		const browser = await playwright.launchChromium({ headless: false });
-		const context = await browser.newContext();
-		const page = await context.newPage();
+		const browser = await puppeteer.launch({
+			args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
+		});
 
-		await page.goto(`${vars.RENAPER_API_URL1}`, {
+		const page = await browser.newPage();
+
+		await page.goto(`${vars.CLICOH_API_URL1}`, {
 			waitUntil: 'load',
 		});
 
-		const timeout = () =>
-			new Promise((resolve, reject) => {
-				setTimeout(() => {
-					reject('FUNCTION TIMEOUT');
-				}, 12000);
-			});
+		await page.type("input[name='codigo']", `${'HWUIN94250'}`);
 
-		const fetchData = async () => {
-			await page.type('#tramite', '682257040');
-			let response = await (
-				await Promise.all([
-					page.waitForResponse(
-						(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
-					),
-					page.click('#btn-consultar'),
-				])
-			)[0].json();
-			if (response.errors) {
-				await page.reload();
-				return await fetchData();
-			} else return response;
-		};
-		let data = await Promise.race([fetchData(), timeout()]);
+		let xhrCatcher = page.waitForResponse(
+			(response) =>
+				response.url().includes('check_package/') && response.request().method() != 'OPTIONS',
+		);
+
+		page.click('.fa.fa-search');
+		let data = await (await xhrCatcher).json();
+
 		await browser.close();
 
 		res.json({

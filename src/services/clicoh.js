@@ -1,6 +1,6 @@
 import vars from '../modules/crypto-js.js';
+import puppeteer from 'puppeteer';
 // import playwright from 'playwright-aws-lambda';
-import { chromium } from 'playwright-chromium';
 
 async function checkStart(code) {
 	try {
@@ -28,24 +28,53 @@ async function checkUpdate(code, lastEvent) {
 
 async function startCheck(code, lastEvent) {
 	// const browser = await playwright.launchChromium({ headless: false });
-	const browser = await chromium.launch({ args: ['--no-sandbox'] });
-	const context = await browser.newContext();
-	const page = await context.newPage();
+	const browser = await puppeteer.launch({
+		headless: false,
+		args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
+		executablePath: puppeteer.executablePath(),
+	});
+	// const context = await browser.newContext();
+	// const page = await context.newPage();
+	const page = await browser.newPage();
 
 	await page.goto(`${vars.CLICOH_API_URL1}`, {
 		waitUntil: 'load',
 	});
+
 	await page.type("input[name='codigo']", `${code}`);
-	let data = await (
-		await Promise.all([
-			page.waitForResponse(
-				(response) =>
-					response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST',
-			),
-			page.click('.fa.fa-search'),
-		])
-	)[0].json();
-	await browser.close();
+	// await page.setRequestInterception(true);
+	let data;
+	page.on('response', async (response) => {
+		if (response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST')
+			data = response.json();
+	});
+	await Promise.all([
+		page.waitForSelector('#seguirPaquete > div > div > div > div.active.shipmentDetailsCM'),
+		page.click('.fa.fa-search'),
+	]);
+
+	// page.on('response', async (response) => {
+	// 	console.log(response.url());
+	// 	if (response.url() === vars.CLICOH_API_URL2) {
+	// 		data = await response.json();
+	// 		await page.evaluate(() => window.stop());
+	// 	}
+	// });
+
+	// await browser.close();
+
+	// let data = await (
+	// 	await Promise.all([
+	// 		page.waitForResponse((response) => {
+	// 			console.log(response.url());
+	// 			response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST';
+	// 		}),
+	// 		page.click('.fa.fa-search'),
+	// 	])
+	// )[0].json();
+	// await browser.close();
+
+	console.log(data);
 
 	let events = data.packagestatehistory_set.map((e) => {
 		return {
