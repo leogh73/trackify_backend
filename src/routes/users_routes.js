@@ -27,8 +27,13 @@ import vars from '../modules/crypto-js.js';
 
 router.get('/test', async (req, res) => {
 	try {
+		// const browser = await playwright.launchChromium({ headless: false });
+		// const context = await browser.newContext();
+		// const page = await context.newPage();
+
 		const browser = await puppeteer.launch({
 			args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
+			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
 		});
 
 		const page = await browser.newPage();
