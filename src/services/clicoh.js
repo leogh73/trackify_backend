@@ -1,11 +1,11 @@
 import vars from '../modules/crypto-js.js';
-import puppeteer from 'puppeteer';
-// import playwright from 'playwright-aws-lambda';
+import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {
 		return await startCheck(code, null);
 	} catch (error) {
+		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
@@ -17,7 +17,7 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
-			service: 'ClicOh',
+			service: 'Renaper',
 			code,
 			lastEvent,
 			detail: error,
@@ -27,190 +27,122 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	// const browser = await playwright.launchChromium({ headless: false });
-	const browser = await puppeteer.launch({
-		headless: false,
-		args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
-		executablePath: puppeteer.executablePath(),
-	});
-	// const context = await browser.newContext();
-	// const page = await context.newPage();
-	const page = await browser.newPage();
+	const browser = await playwright.launchChromium({ headless: false });
+	const context = await browser.newContext();
+	const page = await context.newPage();
 
-	await page.goto(`${vars.CLICOH_API_URL1}`, {
+	await page.goto(`${vars.RENAPER_API_URL1}`, {
 		waitUntil: 'load',
 	});
 
-	await page.type("input[name='codigo']", `${code}`);
-	// await page.setRequestInterception(true);
-	let data;
-	page.on('response', async (response) => {
-		if (response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST')
-			data = response.json();
-	});
-	await Promise.all([
-		page.waitForSelector('#seguirPaquete > div > div > div > div.active.shipmentDetailsCM'),
-		page.click('.fa.fa-search'),
-	]);
+	const timeout = () =>
+		new Promise((resolve, reject) => {
+			setTimeout(() => {
+				reject('FUNCTION TIMEOUT');
+			}, 9500);
+		});
 
-	// page.on('response', async (response) => {
-	// 	console.log(response.url());
-	// 	if (response.url() === vars.CLICOH_API_URL2) {
-	// 		data = await response.json();
-	// 		await page.evaluate(() => window.stop());
-	// 	}
-	// });
+	const fetchData = async () => {
+		await page.type('#tramite', `${code}`);
+		let response = await (
+			await Promise.all([
+				page.waitForResponse(
+					(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
+				),
+				page.click('#btn-consultar'),
+			])
+		)[0].json();
+		if (response.errors) {
+			await page.reload();
+			return await fetchData();
+		} else return response;
+	};
+	let data = await Promise.race([fetchData(), timeout()]);
+	await browser.close();
 
-	// await browser.close();
-
-	// let data = await (
-	// 	await Promise.all([
-	// 		page.waitForResponse((response) => {
-	// 			console.log(response.url());
-	// 			response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST';
-	// 		}),
-	// 		page.click('.fa.fa-search'),
-	// 	])
-	// )[0].json();
-	// await browser.close();
-
-	console.log(data);
-
-	let events = data.packagestatehistory_set.map((e) => {
+	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
+		const { evento, estado, fecha, planta } = e;
+		let dateTime = fecha.split(' ');
+		let date = dateTime[0].split('-').join('/');
+		let time = dateTime[1];
 		return {
-			date: convertDate(e.since.split('T')[0]),
-			time: e.since.split('T')[1].split('.')[0].split('-')[0],
-			description: e.state.description,
+			date,
+			time,
+			plant: planta,
+			description: evento,
+			motive: estado == '' ? 'Sin datos' : estado,
 		};
 	});
-	events.reverse();
 
 	let response;
 	if (!lastEvent) {
-		response = startResponse(events, data);
+		response = startResponse(eventsList, data);
 	} else {
-		response = updateResponse(events, lastEvent);
+		response = updateResponse(eventsList, lastEvent);
 	}
 
 	return response;
 }
 
-function startResponse(events, data) {
-	let origin = (() => {
-		const { address, country } = data.origin;
-		return {
-			address,
-			country,
-		};
-	})();
-
-	let destiny = (() => {
-		const { address, locality, country, administrative_area_level_1, postal_code } = data.to;
-		return {
-			address,
-			locality,
-			country,
-			administrative_area_level_1,
-			postal_code,
-		};
-	})();
-
-	const { dni, first_name, last_name, email, phone, address } = data.receiver;
-	let receiver = {
-		dni,
-		first_name,
-		last_name,
-		email: verifyData(email),
-		phone: verifyData(phone),
-		address: verifyData(address),
+function startResponse(eventsList, data) {
+	const { clase_tramite, descripcion_tramite, tipo_retiro, tipo_tramite } = data.data;
+	let paperDetails = {
+		paperClass: clase_tramite,
+		paperKind: tipo_tramite,
+		description: descripcion_tramite,
+		pickUp: tipo_retiro,
 	};
 
-	let otherData = {
-		clientName: data.client,
+	const { descripcion, domicilio, codigo_postal, provincia } = data.data.oficina_remitente;
+	let originOffice = {
+		description: descripcion,
+		address: domicilio,
+		state: provincia,
+		zipCode: codigo_postal,
 	};
 
 	let response = {
-		events,
-		origin,
-		destiny,
-		receiver,
-		otherData,
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
+		events: eventsList,
+		details: paperDetails,
+		origin: originOffice,
+		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].plant} - ${eventsList[0].description} - ${eventsList[0].motive}`,
 	};
 
 	return response;
 }
 
-function updateResponse(events, lastEvent) {
-	let eventsText = events.map((e) => `${e.description}`);
-	let eventIndex = eventsText.indexOf(lastEvent.split(' - ')[2]);
+function updateResponse(eventsList, lastEvent) {
+	let eventsText = eventsList.map(
+		(e) => `${e.date} - ${e.time} - ${e.plant} - ${e.description} - ${e.motive}`,
+	);
+	let eventIndex = eventsText.indexOf(lastEvent);
 
 	let eventsResponse = [];
-	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
+	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
 
 	let response = { events: eventsResponse };
-	if (eventsResponse.length)
-		response.lastEvent = `${events[0].date} - ${events[0].time} - ${events[0].description}`;
+	if (eventsResponse.length) response.lastEvent = eventsText[0];
 
 	return response;
-}
-
-function convertDate(date) {
-	let dateToday = new Date(date);
-	let newDate =
-		dateToday.getDate() + '/' + (dateToday.getMonth() + 1) + '/' + dateToday.getFullYear();
-	return newDate;
-}
-
-function verifyData(data) {
-	let newData;
-	if (data == null) {
-		newData = 'Sin datos';
-	} else if (data == false) {
-		newData = 'No';
-	} else if (data == true) {
-		newData = 'Si';
-	} else {
-		return data;
-	}
-	return newData;
 }
 
 function convertFromDrive(driveData) {
 	const { events, otherData } = driveData;
 	return {
 		events,
+		details: {
+			paperClass: otherData[0][0],
+			paperKind: otherData[0][1],
+			description: otherData[0][2],
+			pickUp: otherData[0][3],
+		},
 		origin: {
-			address: otherData[0][0],
-			locality: otherData[0][1],
-			country: otherData[0][2],
-			street_number: otherData[0][3],
-			administrative_area_level_1: otherData[0][4],
-			postal_code: otherData[0][5],
+			description: otherData[1][0],
+			address: otherData[1][1],
+			state: otherData[1][2],
+			zipCode: otherData[1][3],
 		},
-		destiny: {
-			address: otherData[1][0],
-			locality: otherData[1][1],
-			country: otherData[1][2],
-			street_number: otherData[1][3],
-			administrative_area_level_1: otherData[1][4],
-			postal_code: otherData[1][5],
-		},
-		receiver: {
-			dni: otherData[2][0],
-			first_name: otherData[2][1],
-			last_name: otherData[2][2],
-			email: otherData[2][3],
-			phone: otherData[2][4],
-			address: otherData[2][5],
-		},
-		otherData: {
-			pickupPoint: otherData[3][0],
-			clientName: otherData[3][1],
-			serviceType: otherData[3][2],
-			secretCodeConfirmed: otherData[3][3],
-		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].plant} - ${events[0].description} - ${events[0].motive}`,
 	};
 }
 

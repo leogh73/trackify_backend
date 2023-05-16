@@ -1,13 +1,10 @@
 import vars from '../modules/crypto-js.js';
-import puppeteer from 'puppeteer';
-// import playwright from 'playwright-aws-lambda';
-// import { chromium } from 'playwright-chromium';
+import playwright from 'playwright-aws-lambda';
 
 async function checkStart(code) {
 	try {
 		return await startCheck(code, null);
 	} catch (error) {
-		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
@@ -19,7 +16,7 @@ async function checkUpdate(code, lastEvent) {
 		return await startCheck(code, lastEvent);
 	} catch (error) {
 		return {
-			service: 'Renaper',
+			service: 'ClicOh',
 			code,
 			lastEvent,
 			detail: error,
@@ -29,131 +26,160 @@ async function checkUpdate(code, lastEvent) {
 }
 
 async function startCheck(code, lastEvent) {
-	// const browser = await playwright.launchChromium({ headless: false });
-	// const browser = await chromium.launch({ args: ['--no-sandbox'] });
-	const browser = await puppeteer.launch({
-		args: ['--disable-setuid-sandbox', '--no-sandbox', '--single-process', '--no-zygote'],
-		executablePath:
-			process.env.NODE_ENV === 'production'
-				? process.env.PUPPETEER_EXECUTABLE_PATH
-				: puppeteer.executablePath(),
-	});
-	// const context = await browser.newContext();
-	// const page = await context.newPage();
-	const page = await browser.newPage();
+	const browser = await playwright.launchChromium({ headless: false });
+	const context = await browser.newContext();
+	const page = await context.newPage();
 
-	await page.goto(`${vars.RENAPER_API_URL1}`, {
+	await page.goto(`${vars.CLICOH_API_URL1}`, {
 		waitUntil: 'load',
 	});
-
-	const timeout = () =>
-		new Promise((resolve, reject) => {
-			setTimeout(() => {
-				reject('FUNCTION TIMEOUT');
-			}, 10000);
-		});
-
-	const fetchData = async () => {
-		await page.type('#tramite', `${code}`);
-		let response = await (
-			await Promise.all([
-				page.waitForResponse(
-					(res) => res.url() === `${vars.RENAPER_API_URL2}` && res.status() === 200,
-				),
-				page.click('#btn-consultar'),
-			])
-		)[0].json();
-		if (response.errors) {
-			await page.reload();
-			return await fetchData();
-		} else return response;
-	};
-	let data = await Promise.race([fetchData(), timeout()]);
+	await page.type("input[name='codigo']", `${code}`);
+	let data = await (
+		await Promise.all([
+			page.waitForResponse(
+				(response) =>
+					response.url() === `${vars.CLICOH_API_URL2}` && response.request().method() === 'POST',
+			),
+			page.click('.fa.fa-search'),
+		])
+	)[0].json();
 	await browser.close();
 
-	let eventsList = data.data.tramitesUI[0].historico.map((e) => {
-		const { evento, estado, fecha, planta } = e;
-		let dateTime = fecha.split(' ');
-		let date = dateTime[0].split('-').join('/');
-		let time = dateTime[1];
+	let events = data.packagestatehistory_set.map((e) => {
 		return {
-			date,
-			time,
-			plant: planta,
-			description: evento,
-			motive: estado == '' ? 'Sin datos' : estado,
+			date: convertDate(e.since.split('T')[0]),
+			time: e.since.split('T')[1].split('.')[0].split('-')[0],
+			description: e.state.description,
 		};
 	});
+	events.reverse();
 
 	let response;
 	if (!lastEvent) {
-		response = startResponse(eventsList, data);
+		response = startResponse(events, data);
 	} else {
-		response = updateResponse(eventsList, lastEvent);
+		response = updateResponse(events, lastEvent);
 	}
 
 	return response;
 }
 
-function startResponse(eventsList, data) {
-	const { clase_tramite, descripcion_tramite, tipo_retiro, tipo_tramite } = data.data;
-	let paperDetails = {
-		paperClass: clase_tramite,
-		paperKind: tipo_tramite,
-		description: descripcion_tramite,
-		pickUp: tipo_retiro,
+function startResponse(events, data) {
+	let origin = (() => {
+		const { address, country } = data.origin;
+		return {
+			address,
+			country,
+		};
+	})();
+
+	let destiny = (() => {
+		const { address, locality, country, administrative_area_level_1, postal_code } = data.to;
+		return {
+			address,
+			locality,
+			country,
+			administrative_area_level_1,
+			postal_code,
+		};
+	})();
+
+	const { dni, first_name, last_name, email, phone, address } = data.receiver;
+	let receiver = {
+		dni,
+		first_name,
+		last_name,
+		email: verifyData(email),
+		phone: verifyData(phone),
+		address: verifyData(address),
 	};
 
-	const { descripcion, domicilio, codigo_postal, provincia } = data.data.oficina_remitente;
-	let originOffice = {
-		description: descripcion,
-		address: domicilio,
-		state: provincia,
-		zipCode: codigo_postal,
+	let otherData = {
+		clientName: data.client,
 	};
 
 	let response = {
-		events: eventsList,
-		details: paperDetails,
-		origin: originOffice,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].plant} - ${eventsList[0].description} - ${eventsList[0].motive}`,
+		events,
+		origin,
+		destiny,
+		receiver,
+		otherData,
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
 	};
 
 	return response;
 }
 
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map(
-		(e) => `${e.date} - ${e.time} - ${e.plant} - ${e.description} - ${e.motive}`,
-	);
-	let eventIndex = eventsText.indexOf(lastEvent);
+function updateResponse(events, lastEvent) {
+	let eventsText = events.map((e) => `${e.description}`);
+	let eventIndex = eventsText.indexOf(lastEvent.split(' - ')[2]);
 
 	let eventsResponse = [];
-	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
+	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
 
 	let response = { events: eventsResponse };
-	if (eventsResponse.length) response.lastEvent = eventsText[0];
+	if (eventsResponse.length)
+		response.lastEvent = `${events[0].date} - ${events[0].time} - ${events[0].description}`;
 
 	return response;
+}
+
+function convertDate(date) {
+	let dateToday = new Date(date);
+	let newDate =
+		dateToday.getDate() + '/' + (dateToday.getMonth() + 1) + '/' + dateToday.getFullYear();
+	return newDate;
+}
+
+function verifyData(data) {
+	let newData;
+	if (data == null) {
+		newData = 'Sin datos';
+	} else if (data == false) {
+		newData = 'No';
+	} else if (data == true) {
+		newData = 'Si';
+	} else {
+		return data;
+	}
+	return newData;
 }
 
 function convertFromDrive(driveData) {
 	const { events, otherData } = driveData;
 	return {
 		events,
-		details: {
-			paperClass: otherData[0][0],
-			paperKind: otherData[0][1],
-			description: otherData[0][2],
-			pickUp: otherData[0][3],
-		},
 		origin: {
-			description: otherData[1][0],
-			address: otherData[1][1],
-			state: otherData[1][2],
-			zipCode: otherData[1][3],
+			address: otherData[0][0],
+			locality: otherData[0][1],
+			country: otherData[0][2],
+			street_number: otherData[0][3],
+			administrative_area_level_1: otherData[0][4],
+			postal_code: otherData[0][5],
 		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].plant} - ${events[0].description} - ${events[0].motive}`,
+		destiny: {
+			address: otherData[1][0],
+			locality: otherData[1][1],
+			country: otherData[1][2],
+			street_number: otherData[1][3],
+			administrative_area_level_1: otherData[1][4],
+			postal_code: otherData[1][5],
+		},
+		receiver: {
+			dni: otherData[2][0],
+			first_name: otherData[2][1],
+			last_name: otherData[2][2],
+			email: otherData[2][3],
+			phone: otherData[2][4],
+			address: otherData[2][5],
+		},
+		otherData: {
+			pickupPoint: otherData[3][0],
+			clientName: otherData[3][1],
+			serviceType: otherData[3][2],
+			secretCodeConfirmed: otherData[3][3],
+		},
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
 	};
 }
 
