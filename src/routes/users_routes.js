@@ -26,21 +26,21 @@ import got from 'got';
 
 router.get('/test', async (req, res) => {
 	try {
-		// let data = JSON.parse(
-		// 	(
-		// 		await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-		// 			json: { code: '682257040' },
-		// 		})
-		// 	).body,
-		// );
-
 		let data = JSON.parse(
 			(
-				await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
-					json: { code: 'HWUIN94250' },
+				await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
+					json: { code: '682257040' },
 				})
 			).body,
 		);
+
+		// let data = JSON.parse(
+		// 	(
+		// 		await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
+		// 			json: { code: 'HWUIN94250' },
+		// 		})
+		// 	).body,
+		// );
 
 		res.json({
 			status: 200,
