@@ -1,3 +1,4 @@
+import got from 'got';
 import vars from '../modules/crypto-js.js';
 
 async function checkStart(code) {
@@ -28,7 +29,7 @@ async function startCheck(code, lastEvent) {
 	let data = JSON.parse(
 		(
 			await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-				json: { code },
+				json: { code: code },
 			})
 		).body,
 	);

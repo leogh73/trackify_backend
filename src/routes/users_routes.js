@@ -26,6 +26,14 @@ import got from 'got';
 
 router.get('/test', async (req, res) => {
 	try {
+		// let data = JSON.parse(
+		// 	(
+		// 		await got.post(`http://localhost:5000/renaper`, {
+		// 			json: { code: '682257040' },
+		// 		})
+		// 	).body,
+		// );
+
 		let data = JSON.parse(
 			(
 				await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
@@ -47,7 +55,7 @@ router.get('/test', async (req, res) => {
 			message: data,
 		});
 	} catch (error) {
-		console.error(error);
+		// console.error(error);
 		return res.status(500).send({ 'Server Error': `${error}` });
 	}
 });

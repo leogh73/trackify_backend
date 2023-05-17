@@ -29,7 +29,7 @@
 		"start:dev": "nodemon app.js"
 	},
 	"engines": {
-		"node": "^14"
+		"node": "^18.16.2"
 	},
 	"author": "LEO",
 	"license": "ISC"
