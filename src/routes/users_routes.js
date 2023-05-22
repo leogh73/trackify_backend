@@ -35,13 +35,13 @@ router.get('/test', async (req, res) => {
 		// 	).body,
 		// );
 
-		let data = JSON.parse(
-			(
-				await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-					json: { code: '682257040' },
-				})
-			).body,
-		);
+		// let data = JSON.parse(
+		// 	(
+		// 		await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
+		// 			json: { code: '682257040' },
+		// 		})
+		// 	).body,
+		// );
 
 		// let data = JSON.parse(
 		// 	(
@@ -51,10 +51,10 @@ router.get('/test', async (req, res) => {
 		// 	).body,
 		// );
 
-		// sendNotification({
-		// 	token: '',
-		// 	results: [{ title: 'Prueba' }],
-		// });
+		sendNotification({
+			token: '',
+			results: [{ title: 'Prueba' }],
+		});
 
 		res.json({
 			status: 200,
