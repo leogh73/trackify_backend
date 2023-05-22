@@ -23,6 +23,7 @@ router.get('/cycle', async (req, res) => {
 
 import vars from '../modules/crypto-js.js';
 import got from 'got';
+import sendNotification from '../modules/firebase_notification.js';
 
 router.get('/test', async (req, res) => {
 	try {
@@ -49,6 +50,11 @@ router.get('/test', async (req, res) => {
 		// 		})
 		// 	).body,
 		// );
+
+		// sendNotification({
+		// 	token: '',
+		// 	results: [{ title: 'Prueba' }],
+		// });
 
 		res.json({
 			status: 200,
