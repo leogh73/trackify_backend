@@ -31,7 +31,6 @@ const initialize = async (req, res) => {
 const trackingAction = async (req, res) => {
 	const { userId, action } = req.params;
 	try {
-		return res.status(500).json({ message: luxon.errorMessage() });
 		let response;
 		if (action == 'add') {
 			const { title, service, code } = req.body;
