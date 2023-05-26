@@ -11,8 +11,6 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 		: await selectService(service).checkStart(code);
 	let user = await Models.User.findById(userId);
 
-	console.log(result);
-
 	let newTracking;
 	if (!result.error) {
 		newTracking = new Models.Tracking({
@@ -27,20 +25,16 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 	}
 
 	if (result.lastEvent != 'No hay datos') {
-		result.trackingId = await saveNewTracking(newTracking, user);
+		const addedTracking = await newTracking.save();
+		user.trackings.push(addedTracking.id);
+		await user.save();
+		result.trackingId = addedTracking.id;
 	}
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
 
 	return result;
-}
-
-async function saveNewTracking(newTracking, user) {
-	const addedTracking = await newTracking.save();
-	user.trackings.push(addedTracking.id);
-	await user.save();
-	return addedTracking.id;
 }
 
 async function remove(userId, trackingIds) {
