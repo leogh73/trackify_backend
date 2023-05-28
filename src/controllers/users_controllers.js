@@ -71,9 +71,9 @@ const trackingAction = async (req, res) => {
 const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 	try {
-		let lastestVersion = (await Models.Version.find({}))[0].version;
-		if (!version || version !== lastestVersion)
-			return res.status(200).json({ error: 'User not found' });
+		// let lastestVersion = (await Models.Version.find({}))[0].version;
+		// if (!version || version !== lastestVersion)
+		// 	return res.status(200).json({ error: 'User not found' });
 		let response = {};
 		let user = await update(userId, token);
 		if (user.error) {
