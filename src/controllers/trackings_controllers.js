@@ -69,10 +69,13 @@ async function findUpdatedTrackings(tracking, lastEventsUser) {
 
 function checkCompletedStatus(service, lastEvent) {
 	let status = false;
-	if (service === 'Andreani' && lastEvent.includes('Entregado' || 'Devuelto')) status = true;
+	if (service === 'Andreani') {
+		if (lastEvent.includes('Entregado') || lastEvent.includes('Devuelto')) status = true;
+	}
 	if (service === 'ClicOh' && lastEvent.includes('Entregado')) status = true;
-	if (service === 'Correo Argentino' && lastEvent.includes('ENTREGADO' || 'ENTREGA EN'))
-		status = true;
+	if (service === 'Correo Argentino') {
+		if (lastEvent.includes('ENTREGADO') || lastEvent.includes('ENTREGA EN')) status = true;
+	}
 	// if (service === 'DHL' && lastEvent.includes('Entregado')) status = true;
 	if (service === 'EcaPack' && lastEvent.includes('ENTREGADO')) status = true;
 	if (service === 'FastTrack' && lastEvent.includes('Entregado')) status = true;
