@@ -1,5 +1,6 @@
 import express from 'express';
 export const router = express.Router();
+import luxon from '../modules/luxon.js';
 import Models from '../modules/mongodb.js';
 import trackings from '../controllers/trackings_controllers.js';
 import user from '../controllers/users_controllers.js';
@@ -15,15 +16,15 @@ router.get('/cycle', async (req, res) => {
 		await trackings.checkCycle();
 		res.status(200).json({ message: 'CHECK CYCLE COMPLETED' });
 	} catch (error) {
-		await Models.storeLog('Check cycle', null, error, message.date, message.time);
-		res.status(500).json(message);
-		res.status(500).json({ error: 'CHECK CYCLE FAILED' });
+		console.log(error);
+		let message = luxon.errorMessage();
+		await Models.storeLog('Check cycle', error.toString(), error, message.date, message.time);
+		res.status(500).json({ error: 'CHECK CYCLE FAILED', message: error.toString() });
 	}
 });
 
 import vars from '../modules/crypto-js.js';
 import got from 'got';
-import sendNotification from '../modules/firebase_notification.js';
 
 router.get('/test', async (req, res) => {
 	try {
@@ -50,6 +51,8 @@ router.get('/test', async (req, res) => {
 		// 		})
 		// 	).body,
 		// );
+
+		let data = await renaper.checkStart('682257040');
 
 		res.json({
 			status: 200,

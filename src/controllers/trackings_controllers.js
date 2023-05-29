@@ -21,6 +21,7 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 			checkTime,
 			token: user.tokenFB,
 			result,
+			completed: false,
 		});
 	}
 
@@ -66,14 +67,32 @@ async function findUpdatedTrackings(tracking, lastEventsUser) {
 	return null;
 }
 
+function checkCompletedStatus(service, lastEvent) {
+	let status = false;
+	if (service === 'Andreani' && lastEvent.includes('Entregado' || 'Devuelto')) status = true;
+	if (service === 'ClicOh' && lastEvent.includes('Entregado')) status = true;
+	if (service === 'Correo Argentino' && lastEvent.includes('ENTREGADO' || 'ENTREGA EN'))
+		status = true;
+	// if (service === 'DHL' && lastEvent.includes('Entregado')) status = true;
+	if (service === 'EcaPack' && lastEvent.includes('ENTREGADO')) status = true;
+	if (service === 'FastTrack' && lastEvent.includes('Entregado')) status = true;
+	if (service === 'OCA' && lastEvent.includes('Entregado')) status = true;
+	if (service === 'OCASA' && lastEvent.includes('Entregamos')) status = true;
+	if (service === 'Renaper' && lastEvent.includes('ENTREGADO')) status = true;
+	if (service === 'Urbano' && lastEvent.includes('entregado')) status = true;
+	if (service === 'ViaCargo' && lastEvent.includes('ENTREGADA')) status = true;
+	return status;
+}
+
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
 	let response = await checkTracking(tracking);
-	if (response.result.events.length) await updateDatabase(response, tracking);
+	let completedStatus = checkCompletedStatus(response.service, response.lastEvent);
+	if (response.result.events.length) await updateDatabase(response, tracking, completedStatus);
 	return response;
 }
 
-async function updateDatabase(response, tracking) {
+async function updateDatabase(response, tracking, completedStatus) {
 	await Models.Tracking.findByIdAndUpdate(
 		{ _id: tracking.id },
 		{
@@ -82,6 +101,7 @@ async function updateDatabase(response, tracking) {
 			},
 			$set: {
 				'result.lastEvent': response.result.lastEvent,
+				completed: completedStatus,
 			},
 		},
 		{ upsert: true, new: true, useFindAndModify: false },
@@ -139,7 +159,8 @@ async function checkCycle() {
 }
 
 async function userCheck(token) {
-	let userTrackings = await Models.Tracking.find({ token: token });
+	let userTrackings = await Models.Tracking.find({ token: token, completed: false });
+	if (!userTrackings.length) return { fulfilled: [], rejected: [] };
 	let userData = { token: token, results: [] };
 	let userResults = await Promise.allSettled(
 		userTrackings.map((tracking) => checkTracking(tracking)),
@@ -147,12 +168,15 @@ async function userCheck(token) {
 	userData.results = userResults
 		.filter((result) => result.status == 'fulfilled' && result.value.result.events?.length)
 		.map((result) => result.value);
-
 	if (userData.results.length) {
 		await Promise.allSettled(
 			userData.results.map((result) => {
 				let index = userTrackings.findIndex((tracking) => tracking.id === result.idMDB);
-				return updateDatabase(result, userTrackings[index]);
+				return updateDatabase(
+					result,
+					userTrackings[index],
+					checkCompletedStatus(result.service, result.lastEvent),
+				);
 			}),
 		);
 		sendNotification(userData);
