@@ -21,7 +21,7 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 			checkTime,
 			token: user.tokenFB,
 			result,
-			completed: false,
+			completed: checkCompletedStatus(service, result.lastEvent),
 		});
 	}
 
