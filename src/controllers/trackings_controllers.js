@@ -76,7 +76,7 @@ function checkCompletedStatus(service, lastEvent) {
 	if (service === 'Correo Argentino') {
 		if (lastEvent.includes('ENTREGADO') || lastEvent.includes('ENTREGA EN')) status = true;
 	}
-	// if (service === 'DHL' && lastEvent.includes('Entregado')) status = true;
+	if (service === 'DHL' && lastEvent.includes('entregado')) status = true;
 	if (service === 'EcaPack' && lastEvent.includes('ENTREGADO')) status = true;
 	if (service === 'FastTrack' && lastEvent.includes('Entregado')) status = true;
 	if (service === 'OCA' && lastEvent.includes('Entregado')) status = true;
