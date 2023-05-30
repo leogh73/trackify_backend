@@ -16,6 +16,7 @@ router.get('/cycle', async (req, res) => {
 		await trackings.checkCycle();
 		res.status(200).json({ message: 'CHECK CYCLE COMPLETED' });
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		await Models.storeLog('Check cycle', error.toString(), error, message.date, message.time);
 		res.status(500).json({ error: 'CHECK CYCLE FAILED', message: error.toString() });

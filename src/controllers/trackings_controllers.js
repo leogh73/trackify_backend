@@ -178,7 +178,7 @@ async function userCheck(token) {
 				return updateDatabase(
 					result,
 					userTrackings[index],
-					checkCompletedStatus(result.service, result.lastEvent),
+					checkCompletedStatus(result.service, result.result.lastEvent),
 				);
 			}),
 		);
