@@ -90,7 +90,9 @@ function checkCompletedStatus(service, lastEvent) {
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
 	let response = await checkTracking(tracking);
-	let completedStatus = checkCompletedStatus(response.service, response.lastEvent);
+	let completedStatus = response.result.lastEvent
+		? checkCompletedStatus(response.service, response.result.lastEvent)
+		: tracking.completed;
 	if (response.result.events.length) await updateDatabase(response, tracking, completedStatus);
 	return response;
 }
