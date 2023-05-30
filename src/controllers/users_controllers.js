@@ -23,7 +23,6 @@ const initialize = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -63,7 +62,6 @@ const trackingAction = async (req, res) => {
 				message.date,
 				message.time,
 			);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -96,7 +94,6 @@ const sincronize = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -109,7 +106,6 @@ const check = async (req, res) => {
 	} catch (error) {
 		let message = luxon.errorMessage();
 		await Models.storeLog('Check', { trackingId }, error, message.date, message.time);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -176,7 +172,6 @@ const contactForm = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };

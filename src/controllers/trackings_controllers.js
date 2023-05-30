@@ -3,12 +3,12 @@ import luxon from '../modules/luxon.js';
 import sendNotification from '../modules/firebase_notification.js';
 
 import user from './users_controllers.js';
-import selectService from '../services/_select.js';
+import servicesList from '../services/_servicesList.js';
 
 async function add(userId, title, service, code, checkDate, checkTime, fromDrive, driveData) {
 	let result = fromDrive
-		? selectService(service).convertFromDrive(driveData)
-		: await selectService(service).checkStart(code);
+		? servicesList[service].convertFromDrive(driveData)
+		: await servicesList[service].checkStart(code);
 	let user = await Models.User.findById(userId);
 
 	let newTracking;
@@ -191,7 +191,7 @@ async function userCheck(token) {
 }
 
 async function checkTracking(tracking) {
-	let result = await selectService(tracking.service).checkUpdate(
+	let result = await servicesList[tracking.service].checkUpdate(
 		tracking.code,
 		tracking.result.lastEvent,
 	);

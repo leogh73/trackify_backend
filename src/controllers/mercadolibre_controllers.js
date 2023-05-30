@@ -41,7 +41,6 @@ const initialize = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -70,7 +69,6 @@ const consult = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -90,7 +88,6 @@ const loadMore = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -124,7 +121,6 @@ async function checkShippingOrders(userId, consultType) {
 			return await checkShippingOrders(userId, consultType);
 		} else {
 			let message = luxon.errorMessage();
-			console.log(error);
 			return await Models.storeLog(
 				'MercadoLibre check shipping orders',
 				{ userId, consultType },
@@ -180,7 +176,7 @@ async function checkShipping(shippingOrder, httpHeaders) {
 		headers: httpHeaders,
 	});
 	let response = JSON.parse(consult.body);
-	if (shippingOrder.id == 41673694032) console.log(response);
+
 	let shipping = {
 		title: shippingOrder.items[0],
 		code: response.tracking_number,
