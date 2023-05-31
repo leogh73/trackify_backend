@@ -147,7 +147,9 @@ async function updateDatabase(response, tracking, completedStatus) {
 }
 
 async function checkCycle() {
-	let tokenCollection = await user.checkCycle();
+	let tokenCollection = (await Models.User.find({}))
+		.filter((user) => user.trackings.length)
+		?.map((user) => user.tokenFB);
 	if (!tokenCollection.length) return;
 	let rejectedChecks = (await Promise.all(tokenCollection.map((token) => userCheck(token))))
 		.map((result) => (result.rejected.length ? result.rejected : null))

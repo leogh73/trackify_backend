@@ -26,8 +26,6 @@ function sendNotification(data) {
 		},
 	};
 
-	console.log(notification);
-
 	admin
 		.messaging()
 		.send(notification)

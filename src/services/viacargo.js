@@ -5,7 +5,6 @@ async function checkStart(code) {
 	try {
 		return await startCheck(code, null);
 	} catch (error) {
-		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 		};
@@ -28,7 +27,6 @@ async function checkUpdate(code, lastEvent) {
 
 async function startCheck(code, lastEvent) {
 	let response = await got.post(`${vars.VIACARGO_API_URL.replace('code', code)}`);
-	console.log(response);
 	let data = JSON.parse(response.body).ok[0].objeto;
 
 	let eventsList = data.listaEventos.map((e) => {

@@ -110,52 +110,6 @@ const check = async (req, res) => {
 	}
 };
 
-const remove = async (userId, trackingsData) => {
-	let removeTasks = [];
-	removeTasks.push(Models.User.findOneAndDelete({ _id: userId }));
-	if (trackingsData.trackings.length)
-		removeTasks.push(Models.Tracking.deleteMany({ token: trackingsData.token }));
-	await Promise.all(removeTasks);
-};
-
-const update = async (userId, token) => {
-	let user = await Models.User.findById(userId);
-	if (!user) return { error: 'User not found' };
-	user.lastActivity = new Date(Date.now());
-	if (token !== user.tokenFB) {
-		await Models.Tracking.updateMany({ token: user.tokenFB }, { $set: { token: token } });
-		user.tokenFB = token;
-	}
-	await user.save();
-	return user;
-};
-
-const checkCycle = async () => {
-	let usersCollection = (await Models.User.find({})).map((user) => {
-		return {
-			id: user._id,
-			token: user.tokenFB,
-			lastActivity: user.lastActivity,
-			trackings: user.trackings,
-		};
-	});
-	let removeUsers = [];
-	for (let userData of usersCollection) {
-		let dateToday = new Date(Date.now());
-		let difference = dateToday.getTime() - userData.lastActivity.getTime();
-		let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-		if (totalDays > 31)
-			removeUsers.push(
-				remove(userData.id, { token: userData.token, trackings: userData.trackings }),
-			);
-	}
-	await Promise.all(removeUsers);
-	let activeTokens = usersCollection
-		.filter((user) => user.trackings.length)
-		?.map((user) => user.token);
-	return activeTokens;
-};
-
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
 	try {
@@ -176,12 +130,71 @@ const contactForm = async (req, res) => {
 	}
 };
 
+const trackingsCycle = async (req, res) => {
+	try {
+		await tracking.checkCycle();
+		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED.' });
+	} catch (error) {
+		console.log(error);
+		let message = luxon.errorMessage();
+		await Models.storeLog('Check cycle', error.toString(), error, message.date, message.time);
+		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
+	}
+};
+
+const usersCycle = async (req, res) => {
+	try {
+		await checkCycle();
+		res.status(200).json({ message: 'Users check cycle completed' });
+	} catch (error) {
+		let message = luxon.errorMessage();
+		await Models.storeLog('User check cycle', error.toString(), error, message.date, message.time);
+		res.status(500).json({ error: 'USERS CHECK CYCLE FAILED', message: error.toString() });
+	}
+};
+
+const checkCycle = async () => {
+	let usersCollection = await Models.User.find({});
+	let removeUsers = [];
+	for (let userData of usersCollection) {
+		let dateToday = new Date(Date.now());
+		let difference = dateToday.getTime() - userData.lastActivity.getTime();
+		let totalDays = Math.floor(difference / (1000 * 3600 * 24));
+		if (totalDays > 31)
+			removeUsers.push(
+				remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
+			);
+	}
+	await Promise.all(removeUsers);
+};
+
+const remove = async (userId, trackingsData) => {
+	let removeTasks = [];
+	removeTasks.push(Models.User.findOneAndDelete({ _id: userId }));
+	if (trackingsData.trackings.length)
+		removeTasks.push(Models.Tracking.deleteMany({ token: trackingsData.token }));
+	await Promise.all(removeTasks);
+};
+
+const update = async (userId, token) => {
+	let user = await Models.User.findById(userId);
+	if (!user) return { error: 'User not found' };
+	user.lastActivity = new Date(Date.now());
+	if (token !== user.tokenFB) {
+		await Models.Tracking.updateMany({ token: user.tokenFB }, { $set: { token: token } });
+		user.tokenFB = token;
+	}
+	await user.save();
+	return user;
+};
+
 export default {
 	initialize,
 	trackingAction,
 	sincronize,
 	check,
-	remove,
-	checkCycle,
 	contactForm,
+	trackingsCycle,
+	usersCycle,
+	remove,
 };

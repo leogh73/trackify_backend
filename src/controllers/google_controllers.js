@@ -43,7 +43,6 @@ const initialize = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -59,8 +58,7 @@ const consult = async (req, res) => {
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);
-		console.log(error);
+		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);;
 		res.status(500).json(message);
 	}
 };
@@ -94,7 +92,6 @@ const createUpdate = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -129,7 +126,6 @@ const restore = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -155,7 +151,6 @@ const remove = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		console.log(error);
 		res.status(500).json(message);
 	}
 };
@@ -235,7 +230,6 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 				body: userData,
 			},
 		});
-		console.log('UPDATE!');
 	} else {
 		result = await drive.files.create({
 			requestBody: {
