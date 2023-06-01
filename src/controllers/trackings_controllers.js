@@ -90,12 +90,13 @@ function checkCompletedStatus(service, lastEvent) {
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
 	if (tracking.completed) {
+		const { _id, title, service, checkDate, checkTime } = tracking;
 		return {
-			idMDB: tracking._id,
-			title: tracking.title,
-			service: tracking.service,
-			checkDate: luxon.getDate(),
-			checkTime: luxon.getTime(),
+			idMDB: _id,
+			title,
+			service,
+			checkDate,
+			checkTime,
 			result: { events: [] },
 		};
 	}
