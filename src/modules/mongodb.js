@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import luxon from './luxon.js';
 import vars from './crypto-js.js';
 const Schema = mongoose.Schema;
 
@@ -67,14 +68,34 @@ const versionSchema = new Schema({
 	date: { type: String },
 });
 
+// const lastCycleCheckSchema = new Schema({
+// 	success: { type: Boolean },
+// 	timeStamp: { type: Date },
+// });
+
 const User = mongoose.model('User', userSchema);
 const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
 const Version = mongoose.model('Version', versionSchema);
+// const LastCycleCheck = mongoose.model('Last Cycle Check', lastCycleCheckSchema);
 
 const storeLog = async (actionName, actionDetail, errorMessage, date, time) =>
 	await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
 
-export default { User, Tracking, GoogleDrive, Contact, Version, storeLog };
+// const storeLastCheck = async (success) =>
+// 	await LastCycleCheck.findByIdAndUpdate(
+// 		{ _id: '6478b9c8339f044f1baf132b' },
+// 		{ $set: { success: success ?? true, timeStamp: new Date(Date.now()) } },
+// 	);
+
+export default {
+	User,
+	Tracking,
+	GoogleDrive,
+	Contact,
+	Version,
+	storeLog,
+	// storeLastCheck,
+};

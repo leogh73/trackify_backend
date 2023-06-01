@@ -135,14 +135,45 @@ const contactForm = async (req, res) => {
 const trackingsCycle = async (req, res) => {
 	try {
 		await tracking.checkCycle();
-		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED.' });
+		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED' });
 	} catch (error) {
 		console.log(error);
-		let message = luxon.errorMessage();
-		await Models.storeLog('Check cycle', error.toString(), error, message.date, message.time);
 		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
 	}
 };
+
+// const checkAndStore = async (success) => {
+// 		if (success) await tracking.checkCycle();
+// 		await Models.storeLastCheck(success);
+// 	};
+
+// 	try {
+// 		let response;
+// 		let dateNow = new Date(Date.now());
+// 		let lastCheckStatus = await Models.LastCycleCheck.findById('6478b9c8339f044f1baf132b');
+// 		let lastCheckRecent =
+// 			Math.floor(
+// 				(dateNow.getTime() - lastCheckStatus.timeStamp.getTime()) / (1000 * 3600 * 24 * 60),
+// 			) < 30
+// 				? true
+// 				: false;
+// 		if (lastCheckStatus.success && lastCheckRecent) {
+// 			await checkAndStore(null);
+// 			response = { message: 'CHECK CYCLE SKIPPED' };
+// 		}
+// 		if (
+// 			(!lastCheckStatus.success && lastCheckRecent) ||
+// 			(lastCheckStatus.success && !lastCheckRecent)
+// 		) {
+// 			await checkAndStore(true);
+// 			response = { message: 'TRACKINGS CHECK CYCLE COMPLETED' };
+// 		}
+// 		res.status(200).json(response);
+// 	} catch (error) {
+// 		await Models.storeLastCheck(false);
+// 		console.log(error);
+// 		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
+// 	}
 
 const usersCycle = async (req, res) => {
 	try {
