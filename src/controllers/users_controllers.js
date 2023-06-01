@@ -68,6 +68,7 @@ const trackingAction = async (req, res) => {
 
 const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
+
 	try {
 		// let lastestVersion = (await Models.Version.find({}))[0].version;
 		// if (!version || version !== lastestVersion)
@@ -84,6 +85,7 @@ const sincronize = async (req, res) => {
 					? await google.sincronizeDrive(userId, currentDate)
 					: 'Not logged in';
 		}
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();

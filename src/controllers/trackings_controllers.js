@@ -48,7 +48,7 @@ async function remove(userId, trackingIds) {
 }
 
 async function sincronize(user, lastEventsUser) {
-	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings } });
+	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings }, completed: false });
 	let responseTrackings = (
 		await Promise.all(
 			trackingsDB.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser)),
@@ -89,6 +89,16 @@ function checkCompletedStatus(service, lastEvent) {
 
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
+	if (tracking.completed) {
+		return {
+			idMDB: tracking._id,
+			title: tracking.title,
+			service: tracking.service,
+			checkDate: luxon.getDate(),
+			checkTime: luxon.getTime(),
+			result: { events: [] },
+		};
+	}
 	let response = await checkTracking(tracking);
 	let completedStatus = response.result.lastEvent
 		? checkCompletedStatus(response.service, response.result.lastEvent)
