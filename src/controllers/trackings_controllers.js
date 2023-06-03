@@ -125,7 +125,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 	if (tracking.service === 'DHL') {
 		let status = response.result.shipping.status;
 		await Models.Tracking.findByIdAndUpdate(
-			{ _id: tracking._id },
+			{ _id: tracking.id },
 			{
 				$set: {
 					'result.shipping.status.date': status.date,
@@ -141,7 +141,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 	}
 	if (tracking.service === 'ViaCargo') {
 		await Models.Tracking.findByIdAndUpdate(
-			{ _id: tracking._id },
+			{ _id: tracking.id },
 			{
 				$set: {
 					'result.destiny.dateDelivered': response.result.destiny.dateDelivered,
@@ -151,58 +151,45 @@ async function updateDatabase(response, tracking, completedStatus) {
 			{ upsert: true, new: true, useFindAndModify: false },
 		);
 	}
-
 	tracking.checkDate = response.checkDate;
 	tracking.checkTime = response.checkTime;
 	await tracking.save();
 }
 
 async function checkCycle() {
-	let tokenCollection = (await Models.User.find({}))
-		.filter((user) => user.trackings.length)
-		?.map((user) => user.tokenFB);
-	if (!tokenCollection.length) return;
-	let rejectedChecks = (await Promise.all(tokenCollection.map((token) => userCheck(token))))
-		.map((result) => (result.rejected.length ? result.rejected : null))
-		.filter((value) => !!value);
-	if (rejectedChecks.length) {
-		await Models.storeLog(
-			'check cycle',
-			rejectedChecks,
-			'rejected promises',
-			luxon.getDate(),
-			luxon.getTime(),
-		);
+	let trackingsCollection = await Models.Tracking.find({ completed: false });
+	let checkCycleResults = (
+		await Promise.allSettled(trackingsCollection.map((tracking) => checkTracking(tracking)))
+	)
+		.filter((check) => check.status === 'fulfilled' && check.value.result.events.length)
+		.map((check) => check.value);
+	if (!checkCycleResults.length) return;
+	let totalResults = [];
+	for (let checkResult of checkCycleResults) {
+		let userResult = { token: checkResult.token };
+		let resultIndex = totalResults.findIndex((r) => r.token === checkResult.token);
+		if (resultIndex == -1) {
+			userResult.results = [checkResult];
+			totalResults.push(userResult);
+		} else {
+			totalResults[resultIndex].results.push(checkResult);
+		}
 	}
-}
-
-async function userCheck(token) {
-	let userTrackings = await Models.Tracking.find({ token: token, completed: false });
-	if (!userTrackings.length) return { fulfilled: [], rejected: [] };
-	let userData = { token: token, results: [] };
-	let userResults = await Promise.allSettled(
-		userTrackings.map((tracking) => checkTracking(tracking)),
-	);
-	userData.results = userResults
-		.filter((result) => result.status == 'fulfilled' && result.value.result.events?.length)
-		.map((result) => result.value);
-	if (userData.results.length) {
-		await Promise.allSettled(
-			userData.results.map((result) => {
-				let index = userTrackings.findIndex((tracking) => tracking.id === result.idMDB);
+	await Promise.all(
+		totalResults.map((userResult) => {
+			userResult.results.map((result) => {
+				let trackingIndex = trackingsCollection.findIndex(
+					(tracking) => tracking.id === result.idMDB,
+				);
 				return updateDatabase(
 					result,
-					userTrackings[index],
+					trackingsCollection[trackingIndex],
 					checkCompletedStatus(result.service, result.result.lastEvent),
 				);
-			}),
-		);
-		sendNotification(userData);
-	}
-	let failedChecks = userResults
-		.filter((result) => result.status == 'rejected')
-		.map((result) => result.value);
-	return { fulfilled: userData.results, rejected: failedChecks };
+			});
+			sendNotification(userResult);
+		}),
+	);
 }
 
 async function checkTracking(tracking) {
@@ -213,6 +200,7 @@ async function checkTracking(tracking) {
 
 	return {
 		idMDB: tracking.id,
+		token: tracking.token,
 		title: tracking.title,
 		service: tracking.service,
 		checkDate: luxon.getDate(),
