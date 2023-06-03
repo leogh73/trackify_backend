@@ -142,63 +142,26 @@ const trackingsCycle = async (req, res) => {
 	}
 };
 
-// const checkAndStore = async (success) => {
-// 		if (success) await tracking.checkCycle();
-// 		await Models.storeLastCheck(success);
-// 	};
-
-// 	try {
-// 		let response;
-// 		let dateNow = new Date(Date.now());
-// 		let lastCheckStatus = await Models.LastCycleCheck.findById('6478b9c8339f044f1baf132b');
-// 		let lastCheckRecent =
-// 			Math.floor(
-// 				(dateNow.getTime() - lastCheckStatus.timeStamp.getTime()) / (1000 * 3600 * 24 * 60),
-// 			) < 30
-// 				? true
-// 				: false;
-// 		if (lastCheckStatus.success && lastCheckRecent) {
-// 			await checkAndStore(null);
-// 			response = { message: 'CHECK CYCLE SKIPPED' };
-// 		}
-// 		if (
-// 			(!lastCheckStatus.success && lastCheckRecent) ||
-// 			(lastCheckStatus.success && !lastCheckRecent)
-// 		) {
-// 			await checkAndStore(true);
-// 			response = { message: 'TRACKINGS CHECK CYCLE COMPLETED' };
-// 		}
-// 		res.status(200).json(response);
-// 	} catch (error) {
-// 		await Models.storeLastCheck(false);
-// 		console.log(error);
-// 		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
-// 	}
-
 const usersCycle = async (req, res) => {
 	try {
-		await checkCycle();
-		res.status(200).json({ message: 'Users check cycle completed' });
+		let usersCollection = await Models.User.find({});
+		let removeUsers = [];
+		for (let userData of usersCollection) {
+			let dateToday = new Date(Date.now());
+			let difference = dateToday.getTime() - userData.lastActivity.getTime();
+			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
+			if (totalDays > 31)
+				removeUsers.push(
+					remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
+				);
+		}
+		await Promise.all(removeUsers);
+		res.status(200).json({ message: 'USERS CHECK CYCLE COMPLETED' });
 	} catch (error) {
 		let message = luxon.errorMessage();
 		await Models.storeLog('User check cycle', error.toString(), error, message.date, message.time);
 		res.status(500).json({ error: 'USERS CHECK CYCLE FAILED', message: error.toString() });
 	}
-};
-
-const checkCycle = async () => {
-	let usersCollection = await Models.User.find({});
-	let removeUsers = [];
-	for (let userData of usersCollection) {
-		let dateToday = new Date(Date.now());
-		let difference = dateToday.getTime() - userData.lastActivity.getTime();
-		let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-		if (totalDays > 31)
-			removeUsers.push(
-				remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
-			);
-	}
-	await Promise.all(removeUsers);
 };
 
 const remove = async (userId, trackingsData) => {
