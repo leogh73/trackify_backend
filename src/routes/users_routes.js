@@ -32,8 +32,6 @@ router.get('/usersCycle', user.usersCycle);
 // 	).body,
 // );
 
-// 	let data = await renaper.checkStart('682257040');
-
 // 	res.json({
 // 		status: 200,
 // 		message: data,
