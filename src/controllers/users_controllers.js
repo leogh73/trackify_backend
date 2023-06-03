@@ -85,7 +85,6 @@ const sincronize = async (req, res) => {
 					? await google.sincronizeDrive(userId, currentDate)
 					: 'Not logged in';
 		}
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
@@ -101,13 +100,14 @@ const sincronize = async (req, res) => {
 };
 
 const check = async (req, res) => {
-	const { trackingId } = req.body;
+	const { userId, trackingData } = req.body;
 	try {
-		let response = await tracking.check(trackingId);
+		let response = await tracking.check(JSON.parse(trackingData).idMDB);
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
-		await Models.storeLog('Check', { trackingId }, error, message.date, message.time);
+		await Models.storeLog('Check', { userId, tracking }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -144,18 +144,20 @@ const trackingsCycle = async (req, res) => {
 
 const usersCycle = async (req, res) => {
 	try {
-		let usersCollection = await Models.User.find({});
-		let removeUsers = [];
-		for (let userData of usersCollection) {
-			let dateToday = new Date(Date.now());
-			let difference = dateToday.getTime() - userData.lastActivity.getTime();
-			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-			if (totalDays > 31)
-				removeUsers.push(
-					remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
-				);
-		}
-		await Promise.all(removeUsers);
+		let tracking = await Models.Tracking.findById('6477e5f29a871e9306156fb9');
+		console.log(tracking);
+		// let usersCollection = await Models.User.find({});
+		// let removeUsers = [];
+		// for (let userData of usersCollection) {
+		// 	let dateToday = new Date(Date.now());
+		// 	let difference = dateToday.getTime() - userData.lastActivity.getTime();
+		// 	let totalDays = Math.floor(difference / (1000 * 3600 * 24));
+		// 	if (totalDays > 31)
+		// 		removeUsers.push(
+		// 			remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
+		// 		);
+		// }
+		// await Promise.all(removeUsers);
 		res.status(200).json({ message: 'USERS CHECK CYCLE COMPLETED' });
 	} catch (error) {
 		let message = luxon.errorMessage();
