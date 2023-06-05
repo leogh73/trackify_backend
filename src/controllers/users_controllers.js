@@ -152,7 +152,6 @@ const usersCycle = async (req, res) => {
 			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
 			if (totalDays > 31) removeUsers.push(remove(userData.tokenFB));
 		}
-		console.log(removeUsers);
 		await Promise.all(removeUsers);
 		res.status(200).json({ message: 'USERS CHECK CYCLE COMPLETED' });
 	} catch (error) {
