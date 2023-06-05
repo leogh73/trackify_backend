@@ -48,7 +48,7 @@ async function remove(userId, trackingIds) {
 }
 
 async function sincronize(user, lastEventsUser) {
-	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings }, completed: false });
+	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings } });
 	let responseTrackings = (
 		await Promise.all(
 			trackingsDB.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser)),
@@ -89,17 +89,6 @@ function checkCompletedStatus(service, lastEvent) {
 
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
-	if (tracking.completed) {
-		const { _id, title, service, checkDate, checkTime } = tracking;
-		return {
-			idMDB: _id,
-			title,
-			service,
-			checkDate,
-			checkTime,
-			result: { events: [] },
-		};
-	}
 	let response = await checkTracking(tracking);
 	let completedStatus = response.result.lastEvent
 		? checkCompletedStatus(response.service, response.result.lastEvent)
@@ -192,7 +181,6 @@ async function checkCycle() {
 	let failedResults = checkCycleResults
 		.filter((check) => check.status === 'rejected')
 		.map((check) => !!check.value);
-	console.log(failedResults);
 	if (failedResults.length)
 		await Models.storeLog(
 			'check cycle',
@@ -216,6 +204,7 @@ async function checkTracking(tracking) {
 		service: tracking.service,
 		checkDate: luxon.getDate(),
 		checkTime: luxon.getTime(),
+		completed: checkCompletedStatus(tracking.service, result.lastEvent),
 		result: result,
 	};
 }

@@ -43,10 +43,11 @@ router.get('/usersCycle', user.usersCycle);
 // });
 
 // import Models from '../modules/mongodb.js';
+// import luxon from '../modules/luxon.js';
 
 // router.post('/test', async (req, res) => {
 // 	const { code } = req.body;
-// 	let userId = '647baad346e7b78499743e45';
+// 	let userId = '647e3c7efd76075fe8cb6302';
 
 // 	let checkDate = luxon.getDate();
 // 	let checkTime = luxon.getTime();
@@ -85,7 +86,7 @@ router.get('/usersCycle', user.usersCycle);
 // 			checkDate,
 // 			checkTime,
 // 			token:
-// 				'ecm2Is1wIRcmZ2Ynu2K_eyW:APA91bHKJI6RLdWtS_a4c7Y_tQYW_iJifIlyPoz4hILVYCSf3DuDMTdWv2NAW7TTMQ_imZ_f9JSU8kFIudkA04hcPmmrTF5zH_NxQe93BKGEw2CoNF7RHdCNOCGLeRyqql_Stxi5dyJT',
+// 				'fRnqCnKRQoWxGYtrWSR5df:APA91bETcJBg69fW5DjWb0zfHM_u-_VrtiZBvaqbSKZzMgJ4nznyoMGE79OLvhUjHBi6KzF37KQIPsFr-oZJdw_LE_zaoHvb0tGKa9x-gpPb6IYqis2NG8zZ2ijVoDx2iINWUnBJN-Bq',
 // 			result,
 // 			completed: false,
 // 		});
