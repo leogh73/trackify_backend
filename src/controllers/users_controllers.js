@@ -150,11 +150,9 @@ const usersCycle = async (req, res) => {
 			let dateToday = new Date(Date.now());
 			let difference = dateToday.getTime() - userData.lastActivity.getTime();
 			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-			if (totalDays > 31)
-				removeUsers.push(
-					remove(userData.id, { token: userData.tokenFB, trackings: userData.trackings }),
-				);
+			if (totalDays > 31) removeUsers.push(remove(userData.tokenFB));
 		}
+		console.log(removeUsers);
 		await Promise.all(removeUsers);
 		res.status(200).json({ message: 'USERS CHECK CYCLE COMPLETED' });
 	} catch (error) {
@@ -165,10 +163,10 @@ const usersCycle = async (req, res) => {
 };
 
 const remove = async (token) => {
-	let user = await Models.User.findOne({ tokenFB: token });
 	let removeTasks = [];
 	removeTasks.push(Models.User.findOneAndDelete({ tokenFB: token }));
-	if (user.trackings.length) removeTasks.push(Models.Tracking.deleteMany({ token: token }));
+	if ((await Models.User.findOne({ tokenFB: token })).trackings.length)
+		removeTasks.push(Models.Tracking.deleteMany({ token: token }));
 	await Promise.all(removeTasks);
 };
 
