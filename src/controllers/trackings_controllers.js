@@ -158,14 +158,15 @@ async function updateDatabase(response, tracking, completedStatus) {
 
 async function checkCycle() {
 	let trackingsCollection = await Models.Tracking.find({ completed: false });
-	let checkCycleResults = (
-		await Promise.allSettled(trackingsCollection.map((tracking) => checkTracking(tracking)))
-	)
+	let checkCycleResults = await Promise.allSettled(
+		trackingsCollection.map((tracking) => checkTracking(tracking)),
+	);
+	let succededResults = checkCycleResults
 		.filter((check) => check.status === 'fulfilled' && check.value.result.events.length)
 		.map((check) => check.value);
 	if (!checkCycleResults.length) return;
 	let totalResults = [];
-	for (let checkResult of checkCycleResults) {
+	for (let checkResult of succededResults) {
 		let userResult = { token: checkResult.token };
 		let resultIndex = totalResults.findIndex((r) => r.token === checkResult.token);
 		if (resultIndex == -1) {
@@ -175,21 +176,28 @@ async function checkCycle() {
 			totalResults[resultIndex].results.push(checkResult);
 		}
 	}
+	for (let userResult of totalResults) sendNotification(userResult);
 	await Promise.all(
-		totalResults.map((userResult) => {
-			userResult.results.map((result) => {
-				let trackingIndex = trackingsCollection.findIndex(
-					(tracking) => tracking.id === result.idMDB,
-				);
-				return updateDatabase(
-					result,
-					trackingsCollection[trackingIndex],
-					checkCompletedStatus(result.service, result.result.lastEvent),
-				);
-			});
-			sendNotification(userResult);
+		succededResults.map((check) => {
+			let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
+			return updateDatabase(
+				check,
+				trackingsCollection[trackingIndex],
+				checkCompletedStatus(check.service, check.result.lastEvent),
+			);
 		}),
 	);
+	let failedResults = checkCycleResults
+		.filter((check) => check.status === 'rejected')
+		.map((check) => check.value);
+	if (failedResults.length)
+		await Models.storeLog(
+			'check cycle',
+			failedResults,
+			'rejected promises',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
 }
 
 async function checkTracking(tracking) {

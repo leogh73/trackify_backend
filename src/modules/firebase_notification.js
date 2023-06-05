@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import vars from './crypto-js.js';
+import user from '../controllers/users_controllers.js';
 const serviceAccount = vars.GOOGLE_SERVICE_ACCOUNT;
 
 admin.initializeApp({
