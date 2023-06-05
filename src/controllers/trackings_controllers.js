@@ -164,7 +164,7 @@ async function checkCycle() {
 	let succededResults = checkCycleResults
 		.filter((check) => check.status === 'fulfilled' && check.value.result.events.length)
 		.map((check) => check.value);
-	if (!checkCycleResults.length) return;
+	if (!succededResults.length) return;
 	let totalResults = [];
 	for (let checkResult of succededResults) {
 		let userResult = { token: checkResult.token };
