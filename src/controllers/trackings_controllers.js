@@ -110,7 +110,7 @@ async function check(trackingId) {
 
 async function updateDatabase(response, tracking, completedStatus) {
 	await Models.Tracking.findByIdAndUpdate(
-		{ _id: tracking.id },
+		{ _id: tracking._id },
 		{
 			$push: {
 				'result.events': { $each: response.result.events, $position: 0 },
@@ -125,7 +125,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 	if (tracking.service === 'DHL') {
 		let status = response.result.shipping.status;
 		await Models.Tracking.findByIdAndUpdate(
-			{ _id: tracking.id },
+			{ _id: tracking._id },
 			{
 				$set: {
 					'result.shipping.status.date': status.date,
@@ -135,17 +135,19 @@ async function updateDatabase(response, tracking, completedStatus) {
 					'result.shipping.status.status': status.status,
 					'result.shipping.status.description': status.description,
 				},
+				completed: completedStatus,
 			},
 			{ upsert: true, new: true, useFindAndModify: false },
 		);
 	}
 	if (tracking.service === 'ViaCargo') {
 		await Models.Tracking.findByIdAndUpdate(
-			{ _id: tracking.id },
+			{ _id: tracking._id },
 			{
 				$set: {
 					'result.destiny.dateDelivered': response.result.destiny.dateDelivered,
 					'result.destiny.timeDelivered': response.result.destiny.timeDelivered,
+					completed: completedStatus,
 				},
 			},
 			{ upsert: true, new: true, useFindAndModify: false },
@@ -190,6 +192,7 @@ async function checkCycle() {
 	let failedResults = checkCycleResults
 		.filter((check) => check.status === 'rejected')
 		.map((check) => check.value);
+	console.log(failedResults);
 	if (failedResults.length)
 		await Models.storeLog(
 			'check cycle',
