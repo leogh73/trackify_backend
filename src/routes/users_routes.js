@@ -41,3 +41,66 @@ router.get('/usersCycle', user.usersCycle);
 // 		return res.status(500).send({ 'Server Error': `${error}` });
 // 	}
 // });
+
+// import Models from '../modules/mongodb.js';
+
+// router.post('/test', async (req, res) => {
+// 	const { code } = req.body;
+// 	let userId = '647baad346e7b78499743e45';
+
+// 	let checkDate = luxon.getDate();
+// 	let checkTime = luxon.getTime();
+// 	console.log('EC2FQ31777987');
+
+// 	try {
+// 		let result = {
+// 			events: [
+// 				{
+// 					date: '27/05/2022',
+// 					time: '01:48:00',
+// 					detail: 'El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+// 				},
+// 				{
+// 					date: '24/05/2022',
+// 					time: '18:51:45',
+// 					detail:
+// 						'Pasamos a buscar el envío por el domicilio del remitente y lo estamos llevando a nuestra planta para iniciar el proceso de entrega.',
+// 				},
+// 				{
+// 					date: '24/05/2022',
+// 					time: '18:51:45',
+// 					detail:
+// 						'El envío ya está confirmado para que lo retiremos por el domicilio del remitente.',
+// 				},
+// 			],
+// 			trackingNumber: '41395878142',
+// 			lastEvent:
+// 				'27/05/2022 - 01:48:00 - El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+// 		};
+
+// 		let newTracking = new Models.Tracking({
+// 			title: 'title',
+// 			service: 'OCASA',
+// 			code,
+// 			checkDate,
+// 			checkTime,
+// 			token:
+// 				'ecm2Is1wIRcmZ2Ynu2K_eyW:APA91bHKJI6RLdWtS_a4c7Y_tQYW_iJifIlyPoz4hILVYCSf3DuDMTdWv2NAW7TTMQ_imZ_f9JSU8kFIudkA04hcPmmrTF5zH_NxQe93BKGEw2CoNF7RHdCNOCGLeRyqql_Stxi5dyJT',
+// 			result,
+// 			completed: false,
+// 		});
+// 		const addedTracking = await newTracking.save();
+// 		let trackingId = addedTracking._id;
+// 		let user = await Models.User.findById(userId);
+// 		user.trackings.push(trackingId);
+// 		user.save();
+// 		result.checkDate = checkDate;
+// 		result.checkTime = checkTime;
+// 		result.trackingId = trackingId;
+
+// 		res.status(200).json(result);
+// 	} catch (error) {
+// 		console.error(error);
+// 		return res.status(500).send({ 'Server Error': `${error}` });
+// 	}
+// });

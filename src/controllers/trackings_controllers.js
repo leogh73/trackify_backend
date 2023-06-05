@@ -191,7 +191,7 @@ async function checkCycle() {
 	);
 	let failedResults = checkCycleResults
 		.filter((check) => check.status === 'rejected')
-		.map((check) => check.value);
+		.map((check) => !!check.value);
 	console.log(failedResults);
 	if (failedResults.length)
 		await Models.storeLog(
