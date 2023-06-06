@@ -78,13 +78,15 @@ const sincronize = async (req, res) => {
 		if (user.error) {
 			response.error = user.error;
 		} else {
-			response.data =
-				lastEvents !== '[]' ? await tracking.sincronize(user, JSON.parse(lastEvents)) : [];
+			response.data = lastEvents.length
+				? await tracking.sincronize(user, JSON.parse(lastEvents))
+				: [];
 			response.driveStatus =
 				driveLoggedIn == 'true'
 					? await google.sincronizeDrive(userId, currentDate)
 					: 'Not logged in';
 		}
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
