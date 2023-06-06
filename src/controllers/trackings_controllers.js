@@ -204,7 +204,6 @@ async function checkTracking(tracking) {
 		service: tracking.service,
 		checkDate: luxon.getDate(),
 		checkTime: luxon.getTime(),
-		completed: checkCompletedStatus(tracking.service, result.lastEvent),
 		result: result,
 	};
 }
