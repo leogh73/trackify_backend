@@ -107,7 +107,7 @@ const check = async (req, res) => {
 	} catch (error) {
 		console.log(error);
 		let message = luxon.errorMessage();
-		await Models.storeLog('Check', { userId, tracking }, error, message.date, message.time);
+		await Models.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
