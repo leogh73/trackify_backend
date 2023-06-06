@@ -104,8 +104,8 @@ const sincronize = async (req, res) => {
 const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 	try {
-		let trackingId = req.body.trackingId ?? JSON.parse(trackingData).idMDB;
-		let response = await tracking.check(trackingId);
+		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		console.log(error);
