@@ -1,33 +1,9 @@
 import vars from '../modules/crypto-js.js';
 import got from 'got';
 
-async function checkStart(code) {
-	try {
-		return await startCheck(code, null);
-	} catch (error) {
-		return {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-	}
-}
-
-async function checkUpdate(code, lastEvent) {
-	try {
-		return await startCheck(code, lastEvent);
-	} catch (error) {
-		return {
-			service: 'ViaCargo',
-			code,
-			lastEvent,
-			detail: error,
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-	}
-}
-
-async function startCheck(code, lastEvent) {
-	let response = await got.post(`${vars.VIACARGO_API_URL.replace('code', code)}`);
-	let data = JSON.parse(response.body).ok[0].objeto;
+async function check(code, lastEvent) {
+	let consult = await got.post(`${vars.VIACARGO_API_URL.replace('code', code)}`);
+	let data = JSON.parse(consult.body).ok[0].objeto;
 
 	let eventsList = data.listaEventos.map((e) => {
 		return {
@@ -79,6 +55,7 @@ async function startCheck(code, lastEvent) {
 		return newText;
 	}
 
+	let response;
 	if (!lastEvent) {
 		response = startResponse(eventsList, origin, destiny, aditional);
 	} else {
@@ -156,7 +133,6 @@ function convertFromDrive(driveData) {
 }
 
 export default {
-	checkStart,
-	checkUpdate,
+	check,
 	convertFromDrive,
 };

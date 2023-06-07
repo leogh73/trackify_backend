@@ -3,12 +3,12 @@ import luxon from '../modules/luxon.js';
 import sendNotification from '../modules/firebase_notification.js';
 
 import user from './users_controllers.js';
-import servicesList from '../services/_servicesList.js';
+import services from '../services/_services.js';
 
 async function add(userId, title, service, code, checkDate, checkTime, fromDrive, driveData) {
 	let result = fromDrive
-		? servicesList[service].convertFromDrive(driveData)
-		: await servicesList[service].checkStart(code);
+		? services.list[service].convertFromDrive(driveData)
+		: await services.checkHandler(service, code, null);
 	let user = await Models.User.findById(userId);
 
 	let newTracking;
@@ -149,55 +149,49 @@ async function updateDatabase(response, tracking, completedStatus) {
 
 async function checkCycle() {
 	let trackingsCollection = await Models.Tracking.find({ completed: false });
-	let checkCycleResults = await Promise.allSettled(
+	let checkCycleResults = await Promise.all(
 		trackingsCollection.map((tracking) => checkTracking(tracking)),
 	);
-	let succededResults = checkCycleResults
-		.filter(
-			(check) =>
-				check.status === 'fulfilled' &&
-				!check.value.result.error &&
-				check.value.result.events.length,
-		)
-		.map((check) => check.value);
-	if (!succededResults.length) return;
-	let totalResults = [];
-	for (let checkResult of succededResults) {
+	let succededChecks = checkCycleResults.filter((check) => check.result.events?.length);
+	if (!succededChecks.length) return;
+	let totalUserResults = [];
+	for (let checkResult of succededChecks) {
 		let userResult = { token: checkResult.token };
-		let resultIndex = totalResults.findIndex((r) => r.token === checkResult.token);
+		let resultIndex = totalUserResults.findIndex((r) => r.token === checkResult.token);
 		if (resultIndex == -1) {
 			userResult.results = [checkResult];
-			totalResults.push(userResult);
+			totalUserResults.push(userResult);
 		} else {
-			totalResults[resultIndex].results.push(checkResult);
+			totalUserResults[resultIndex].results.push(checkResult);
 		}
-	}
-	for (let userResult of totalResults) sendNotification(userResult);
-	await Promise.all(
-		succededResults.map((check) => {
-			let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
-			return updateDatabase(
-				check,
-				trackingsCollection[trackingIndex],
-				checkCompletedStatus(check.service, check.result.lastEvent),
-			);
-		}),
-	);
-	let failedResults = checkCycleResults
-		.filter((check) => check.status === 'rejected')
-		.map((check) => check.value);
-	if (failedResults.length)
-		await Models.storeLog(
-			'check cycle',
-			failedResults,
-			'rejected promises',
-			luxon.getDate(),
-			luxon.getTime(),
+		for (let userResult of totalUserResults) sendNotification(userResult);
+		await Promise.all(
+			succededChecks.map((check) => {
+				let trackingIndex = trackingsCollection.findIndex(
+					(tracking) => tracking.id === check.idMDB,
+				);
+				return updateDatabase(
+					check,
+					trackingsCollection[trackingIndex],
+					checkCompletedStatus(check.service, check.result.lastEvent),
+				);
+			}),
 		);
+		let failedChecks = checkCycleResults.filter((check) => check.result.error);
+		if (failedChecks.length)
+			await Models.storeLog(
+				'check cycle',
+				failedChecks,
+				'rejected promises',
+				luxon.getDate(),
+				luxon.getTime(),
+			);
+	}
 }
 
 async function checkTracking(tracking) {
-	let result = await servicesList[tracking.service].checkUpdate(
+	let result = await services.checkHandler(
+		tracking.service,
 		tracking.code,
 		tracking.result.lastEvent,
 	);

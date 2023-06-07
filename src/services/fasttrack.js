@@ -2,31 +2,7 @@ import vars from '../modules/crypto-js.js';
 import got from 'got';
 import { load } from 'cheerio';
 
-async function checkStart(code) {
-	try {
-		return await startCheck(code, null);
-	} catch (error) {
-		return {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-	}
-}
-
-async function checkUpdate(code, lastEvent) {
-	try {
-		return await startCheck(code, lastEvent);
-	} catch (error) {
-		return {
-			service: 'FastTrack',
-			code,
-			lastEvent,
-			detail: error,
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-	}
-}
-
-async function startCheck(code, lastEvent) {
+async function check(code, lastEvent) {
 	let response1 = await got(`${vars.FASTTRACK_API_URL1}`);
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
@@ -84,7 +60,6 @@ function convertFromDrive(driveData) {
 }
 
 export default {
-	checkStart,
-	checkUpdate,
+	check,
 	convertFromDrive,
 };

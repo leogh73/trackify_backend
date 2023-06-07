@@ -1,32 +1,7 @@
 import vars from '../modules/crypto-js.js';
 import got from 'got';
 
-async function checkStart(code) {
-	try {
-		return await startCheck(code, null);
-	} catch (error) {
-		return {
-			error: 'Ha ocurrido un error. Reintente más tarde',
-			lastEvent: error.response.statusCode === 404 ? 'No hay datos' : null,
-		};
-	}
-}
-
-async function checkUpdate(code, lastEvent) {
-	try {
-		return await startCheck(code, lastEvent);
-	} catch (error) {
-		return {
-			service: 'Andreani',
-			code,
-			lastEvent,
-			detail: error,
-			error: 'Ha ocurrido un error. Reintente más tarde',
-		};
-	}
-}
-
-async function startCheck(code, lastEvent) {
+async function check(code, lastEvent) {
 	const events = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`, {
 		timeout: { response: 10000 },
 	});
@@ -115,7 +90,6 @@ function convertFromDrive(driveData) {
 }
 
 export default {
-	checkStart,
-	checkUpdate,
+	check,
 	convertFromDrive,
 };

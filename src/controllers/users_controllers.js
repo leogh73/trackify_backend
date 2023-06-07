@@ -86,7 +86,6 @@ const sincronize = async (req, res) => {
 					? await google.sincronizeDrive(userId, currentDate)
 					: 'Not logged in';
 		}
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
@@ -105,7 +104,6 @@ const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 	try {
 		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		console.log(error);

@@ -10,7 +10,7 @@ import renaper from './renaper.js';
 import urbano from './urbano.js';
 import viaCargo from './viacargo.js';
 
-const servicesList = {
+const list = {
 	Andreani: andreani,
 	ClicOh: clicOh,
 	'Correo Argentino': correoArgentino,
@@ -24,4 +24,18 @@ const servicesList = {
 	ViaCargo: viaCargo,
 };
 
-export default servicesList;
+const checkHandler = async (service, code, lastEvent) => {
+	try {
+		return await list[service].check(code, lastEvent);
+	} catch (error) {
+		return {
+			error: 'Ha ocurrido un error. Reintente más tarde',
+			lastEvent: error.response.statusCode === 404 ? 'No hay datos' : lastEvent,
+			service,
+			code,
+			detail: error,
+		};
+	}
+};
+
+export default { list, checkHandler };
