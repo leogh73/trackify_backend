@@ -202,8 +202,6 @@ async function checkTracking(tracking) {
 		tracking.result.lastEvent,
 	);
 
-	console.log(result);
-
 	return {
 		idMDB: tracking.id,
 		token: tracking.token,
