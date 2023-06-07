@@ -164,29 +164,27 @@ async function checkCycle() {
 		} else {
 			totalUserResults[resultIndex].results.push(checkResult);
 		}
-		for (let userResult of totalUserResults) sendNotification(userResult);
-		await Promise.all(
-			succededChecks.map((check) => {
-				let trackingIndex = trackingsCollection.findIndex(
-					(tracking) => tracking.id === check.idMDB,
-				);
-				return updateDatabase(
-					check,
-					trackingsCollection[trackingIndex],
-					checkCompletedStatus(check.service, check.result.lastEvent),
-				);
-			}),
-		);
-		let failedChecks = checkCycleResults.filter((check) => check.result.error);
-		if (failedChecks.length)
-			await Models.storeLog(
-				'check cycle',
-				failedChecks,
-				'rejected promises',
-				luxon.getDate(),
-				luxon.getTime(),
-			);
 	}
+	for (let userResult of totalUserResults) sendNotification(userResult);
+	await Promise.all(
+		succededChecks.map((check) => {
+			let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
+			return updateDatabase(
+				check,
+				trackingsCollection[trackingIndex],
+				checkCompletedStatus(check.service, check.result.lastEvent),
+			);
+		}),
+	);
+	let failedChecks = checkCycleResults.filter((check) => check.result.error);
+	if (failedChecks.length)
+		await Models.storeLog(
+			'check cycle',
+			failedChecks,
+			'rejected promises',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
 }
 
 async function checkTracking(tracking) {
