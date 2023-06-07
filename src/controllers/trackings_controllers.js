@@ -153,7 +153,12 @@ async function checkCycle() {
 		trackingsCollection.map((tracking) => checkTracking(tracking)),
 	);
 	let succededResults = checkCycleResults
-		.filter((check) => check.status === 'fulfilled' && check.value.result.events.length)
+		.filter(
+			(check) =>
+				check.status === 'fulfilled' &&
+				!check.value.result.error &&
+				check.value.result.events.length,
+		)
 		.map((check) => check.value);
 	if (!succededResults.length) return;
 	let totalResults = [];
@@ -196,6 +201,8 @@ async function checkTracking(tracking) {
 		tracking.code,
 		tracking.result.lastEvent,
 	);
+
+	console.log(result);
 
 	return {
 		idMDB: tracking.id,
