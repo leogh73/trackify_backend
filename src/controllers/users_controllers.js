@@ -70,9 +70,10 @@ const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
+		// if (!version) return res.status(200).json({ error: 'User not found' });
 		// let lastestVersion = (await Models.Version.find({}))[0].version;
-		// if (!version || version !== lastestVersion)
-		// 	return res.status(200).json({ error: 'User not found' });
+		// if (version !== lastestVersion)
+		// 	return res.status(200).json({ error: 'Lastest version not found' });
 		let response = {};
 		let user = await update(userId, token);
 		if (user.error) {
@@ -106,7 +107,6 @@ const check = async (req, res) => {
 		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		let message = luxon.errorMessage();
 		await Models.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);
@@ -138,7 +138,6 @@ const trackingsCycle = async (req, res) => {
 		await tracking.checkCycle();
 		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED' });
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
 	}
 };

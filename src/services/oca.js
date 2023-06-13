@@ -7,6 +7,8 @@ async function check(code, lastEvent) {
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
 
+	if (!resultEvents.length) return { lastEvent: 'No hay datos' };
+
 	let eventsList = resultEvents.map((e) => {
 		return {
 			date: e.DateShow.split(' ')[0],
