@@ -70,23 +70,18 @@ const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
-		// if (!version) return res.status(200).json({ error: 'User not found' });
-		// let lastestVersion = (await Models.Version.find({}))[0].version;
-		// if (version !== lastestVersion)
+		let queries = await Promise.all([Models.User.findById(userId), Models.Version.find({})]);
+		// if (!queries[0]) return res.status(200).json({ error: 'User not found' });
+		// if (queries[1][0].version !== lastestVersion)
 		// 	return res.status(200).json({ error: 'Lastest version not found' });
+		let eventsList = JSON.parse(lastEvents);
 		let response = {};
-		let user = await update(userId, token);
-		if (user.error) {
-			response.error = user.error;
-		} else {
-			response.data = lastEvents.length
-				? await tracking.sincronize(user, JSON.parse(lastEvents))
-				: [];
-			response.driveStatus =
-				driveLoggedIn == 'true'
-					? await google.sincronizeDrive(userId, currentDate)
-					: 'Not logged in';
-		}
+		await update(queries[0], token);
+		response.data = eventsList.length ? await tracking.sincronize(queries[0], eventsList) : [];
+		response.driveStatus =
+			driveLoggedIn == 'true'
+				? await google.sincronizeDrive(queries[0].id, currentDate)
+				: 'Not logged in';
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
@@ -169,8 +164,7 @@ const remove = async (token) => {
 	await Promise.all(removeTasks);
 };
 
-const update = async (userId, token) => {
-	let user = await Models.User.findById(userId);
+const update = async (user, token) => {
 	if (!user) return { error: 'User not found' };
 	user.lastActivity = new Date(Date.now());
 	if (token !== user.tokenFB) {
@@ -178,7 +172,6 @@ const update = async (userId, token) => {
 		user.tokenFB = token;
 	}
 	await user.save();
-	return user;
 };
 
 export default {

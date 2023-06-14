@@ -28,7 +28,6 @@ const checkHandler = async (service, code, lastEvent) => {
 	try {
 		return await list[service].check(code, lastEvent);
 	} catch (error) {
-		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 			lastEvent: error.response?.statusCode === 404 ? 'No hay datos' : lastEvent,

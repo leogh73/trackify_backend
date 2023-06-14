@@ -42,66 +42,66 @@ router.get('/usersCycle', user.usersCycle);
 // 	}
 // });
 
-// import Models from '../modules/mongodb.js';
-// import luxon from '../modules/luxon.js';
+import Models from '../modules/mongodb.js';
+import luxon from '../modules/luxon.js';
 
-// router.post('/test', async (req, res) => {
-// 	const { code } = req.body;
-// 	let userId = '6483431f1d2d8cd1bdfcb958';
+router.post('/test', async (req, res) => {
+	const { code } = req.body;
+	let userId = '648a462c11599687032094ad';
 
-// 	let checkDate = luxon.getDate();
-// 	let checkTime = luxon.getTime();
-// 	console.log('EC2FQ31777987');
+	let checkDate = luxon.getDate();
+	let checkTime = luxon.getTime();
+	console.log('EC2FQ31777987');
 
-// 	try {
-// 		let result = {
-// 			events: [
-// 				{
-// 					date: '27/05/2022',
-// 					time: '01:48:00',
-// 					detail: 'El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
-// 				},
-// 				{
-// 					date: '24/05/2022',
-// 					time: '18:51:45',
-// 					detail:
-// 						'Pasamos a buscar el envío por el domicilio del remitente y lo estamos llevando a nuestra planta para iniciar el proceso de entrega.',
-// 				},
-// 				{
-// 					date: '24/05/2022',
-// 					time: '18:51:45',
-// 					detail:
-// 						'El envío ya está confirmado para que lo retiremos por el domicilio del remitente.',
-// 				},
-// 			],
-// 			trackingNumber: '41395878142',
-// 			lastEvent:
-// 				'27/05/2022 - 01:48:00 - El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
-// 		};
+	try {
+		let result = {
+			events: [
+				{
+					date: '27/05/2022',
+					time: '01:48:00',
+					detail: 'El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+				},
+				{
+					date: '24/05/2022',
+					time: '18:51:45',
+					detail:
+						'Pasamos a buscar el envío por el domicilio del remitente y lo estamos llevando a nuestra planta para iniciar el proceso de entrega.',
+				},
+				{
+					date: '24/05/2022',
+					time: '18:51:45',
+					detail:
+						'El envío ya está confirmado para que lo retiremos por el domicilio del remitente.',
+				},
+			],
+			trackingNumber: '41395878142',
+			lastEvent:
+				'27/05/2022 - 01:48:00 - El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+		};
 
-// 		let newTracking = new Models.Tracking({
-// 			title: code,
-// 			service: 'OCASA',
-// 			code,
-// 			checkDate,
-// 			checkTime,
-// 			token:
-// 				'e07ha0kVSFGvkxuC174abZ:APA91bHjtCbb8HnPlcoQhYYrt-oevx0KaB9uS_4_TU_XNkim4si0_zIg4PkdbK1x1CmBxHVstnExqpA3rYg8Z1Dp63hmD-hafH8h9andNcp2mlr50iBsAtezgALE2vEXE0hqDMeJNazk',
-// 			result,
-// 			completed: false,
-// 		});
-// 		const addedTracking = await newTracking.save();
-// 		let trackingId = addedTracking._id;
-// 		let user = await Models.User.findById(userId);
-// 		user.trackings.push(trackingId);
-// 		user.save();
-// 		result.checkDate = checkDate;
-// 		result.checkTime = checkTime;
-// 		result.trackingId = trackingId;
+		let newTracking = new Models.Tracking({
+			title: code,
+			service: 'OCASA',
+			code,
+			checkDate,
+			checkTime,
+			token:
+				'dNxIVJHVS_2VAEmX2qE_V4:APA91bGCbYsudFklot95YOJIG1BCofVfCzQNS0_hHd4oAkEsaff2i7gLJhM0HTtLrdwFMPb3XS0hRFxJvvkUxVJ1W_Dwpa2nsOuNEX71WwthPONQzSRrVVEwndZGf4wX-vfUXqlHA8A7',
+			result,
+			completed: false,
+		});
+		const addedTracking = await newTracking.save();
+		let trackingId = addedTracking._id;
+		let user = await Models.User.findById(userId);
+		user.trackings.push(trackingId);
+		user.save();
+		result.checkDate = checkDate;
+		result.checkTime = checkTime;
+		result.trackingId = trackingId;
 
-// 		res.status(200).json(result);
-// 	} catch (error) {
-// 		console.error(error);
-// 		return res.status(500).send({ 'Server Error': `${error}` });
-// 	}
-// });
+		res.status(200).json(result);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ 'Server Error': `${error}` });
+	}
+});
