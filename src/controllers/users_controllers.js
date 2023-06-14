@@ -70,7 +70,10 @@ const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
-		let queries = await Promise.all([Models.User.findById(userId), Models.Version.find({})]);
+		let queries = await Promise.all([
+			Models.User.findById(userId),
+			// Models.Version.find({}),
+		]);
 		// if (!queries[0]) return res.status(200).json({ error: 'User not found' });
 		// if (queries[1][0].version !== lastestVersion)
 		// 	return res.status(200).json({ error: 'Lastest version not found' });
