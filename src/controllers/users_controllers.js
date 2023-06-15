@@ -74,7 +74,7 @@ const sincronize = async (req, res) => {
 			Models.User.findById(userId),
 			// Models.Version.find({}),
 		]);
-		console.log(queries[0]);
+		// console.log(queries[0]);
 		// if (!queries[0]) return res.status(200).json({ error: 'User not found' });
 		// if (queries[1][0].version !== lastestVersion)
 		// 	return res.status(200).json({ error: 'Lastest version not found' });
@@ -86,6 +86,7 @@ const sincronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.sincronizeDrive(queries[0].id, currentDate)
 				: 'Not logged in';
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
