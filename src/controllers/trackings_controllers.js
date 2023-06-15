@@ -49,11 +49,9 @@ async function remove(userId, trackingIds) {
 
 async function sincronize(user, lastEventsUser) {
 	let trackingsDB = await Models.Tracking.find({ _id: { $in: user.trackings } });
-	let responseTrackings = (
-		await Promise.all(
-			trackingsDB.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser)),
-		)
-	).filter((result) => !!result);
+	let responseTrackings = trackingsDB
+		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
+		.filter((result) => !!result);
 	return responseTrackings;
 }
 
