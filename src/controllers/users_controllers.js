@@ -89,6 +89,7 @@ const sincronize = async (req, res) => {
 		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		await Models.storeLog(
 			'Sincronize',

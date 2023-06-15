@@ -58,7 +58,7 @@ async function sincronize(user, lastEventsUser) {
 function findUpdatedTrackings(tracking, lastEventsUser) {
 	let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
 	if (
-		trackingIndex == -1 &&
+		trackingIndex !== -1 &&
 		lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent
 	) {
 		return tracking;
