@@ -47,7 +47,7 @@ import luxon from '../modules/luxon.js';
 
 router.post('/test', async (req, res) => {
 	const { code } = req.body;
-	let userId = '648a462c11599687032094ad';
+	let userId = '648df6dc381fc1008ae46884';
 
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();
@@ -86,7 +86,7 @@ router.post('/test', async (req, res) => {
 			checkDate,
 			checkTime,
 			token:
-				'dNxIVJHVS_2VAEmX2qE_V4:APA91bGCbYsudFklot95YOJIG1BCofVfCzQNS0_hHd4oAkEsaff2i7gLJhM0HTtLrdwFMPb3XS0hRFxJvvkUxVJ1W_Dwpa2nsOuNEX71WwthPONQzSRrVVEwndZGf4wX-vfUXqlHA8A7',
+				'dTdQalTZR8G9mzsUJteusn:APA91bGKVspzvrpgN896wRxpQ8xezrhGVnVosfPFdKehE-VwiB8MnuYWu03tiI80J7wa0D4hDpkEfU1XqX3PzWd23YeKrMyfWtFTEhASlXj4CTDowkoup9QqEVsqN1KHtVU5Xo4nFCU9',
 			result,
 			completed: false,
 		});

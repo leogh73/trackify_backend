@@ -61,6 +61,21 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 		trackingIndex !== -1 &&
 		lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent
 	) {
+		let lastEventData = lastEventsUser[trackingIndex].eventDescription.split(' - ');
+		let endIndex = tracking.result.events.findIndex(
+			(e) => e.date === lastEventData[0] && e.time === lastEventData[1],
+		);
+		// const { id, service, checkDate, checkTime, result } = tracking;
+		// return {
+		// 	id,
+		// 	service,
+		// 	checkDate,
+		// 	checkTime,
+		// 	result: {
+		// 		...result,
+		// 		events: result.events.slice(0, endIndex),
+		// 	},
+		// };
 		return tracking;
 	}
 	return null;
@@ -165,25 +180,26 @@ async function checkCycle() {
 		}
 	}
 	for (let userResult of totalUserResults) sendNotification(userResult);
-	await Promise.all(
-		succededChecks.map((check) => {
-			let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
-			return updateDatabase(
-				check,
-				trackingsCollection[trackingIndex],
-				checkCompletedStatus(check.service, check.result.lastEvent),
-			);
-		}),
-	);
-	let failedChecks = checkCycleResults.filter((check) => check.result.error);
-	if (failedChecks.length)
-		await Models.storeLog(
-			'check cycle',
-			failedChecks,
-			'failed checks',
-			luxon.getDate(),
-			luxon.getTime(),
+	let databaseUpdates = succededChecks.map((check) => {
+		let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
+		return updateDatabase(
+			check,
+			trackingsCollection[trackingIndex],
+			checkCompletedStatus(check.service, check.result.lastEvent),
 		);
+	});
+	if (checkCycleResults.filter((check) => check.result.error).length) {
+		databaseUpdates.push(
+			Models.storeLog(
+				'check cycle',
+				failedChecks,
+				'failed checks',
+				luxon.getDate(),
+				luxon.getTime(),
+			),
+		);
+	}
+	await Promise.all(databaseUpdates);
 }
 
 async function checkTracking(tracking) {
