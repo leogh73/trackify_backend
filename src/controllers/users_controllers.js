@@ -78,7 +78,7 @@ const sincronize = async (req, res) => {
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
 		await update(user, token);
-		response.data = eventsList.length ? await tracking.sincronize(queries[0], eventsList) : [];
+		response.data = eventsList.length ? await tracking.sincronize(user, eventsList) : [];
 		response.driveStatus =
 			driveLoggedIn == 'true'
 				? await google.sincronizeDrive(user.id, currentDate)
