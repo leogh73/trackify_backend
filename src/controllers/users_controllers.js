@@ -70,7 +70,7 @@ const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
-		// let user = await Models.User.findById(userId);
+		let user = await Models.User.findById(userId);
 		// if (!user || !version)
 		// 	return res
 		// 		.status(200)
