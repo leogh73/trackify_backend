@@ -70,21 +70,18 @@ const sincronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
-		let queries = await Promise.all([
-			Models.User.findById(userId),
-			// Models.Version.find({}),
-		]);
-		// console.log(queries[0]);
-		// if (!queries[0]) return res.status(200).json({ error: 'User not found' });
-		// if (queries[1][0].version !== lastestVersion)
-		// 	return res.status(200).json({ error: 'Lastest version not found' });
+		// let user = await Models.User.findById(userId);
+		// if (!user || !version)
+		// 	return res
+		// 		.status(200)
+		// 		.json({ error: !user ? 'User not found' : 'Lastest version not found' });
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
-		await update(queries[0], token);
+		await update(user, token);
 		response.data = eventsList.length ? await tracking.sincronize(queries[0], eventsList) : [];
 		response.driveStatus =
 			driveLoggedIn == 'true'
-				? await google.sincronizeDrive(queries[0].id, currentDate)
+				? await google.sincronizeDrive(user.id, currentDate)
 				: 'Not logged in';
 		res.status(200).json(response);
 	} catch (error) {
@@ -169,7 +166,6 @@ const remove = async (token) => {
 };
 
 const update = async (user, token) => {
-	if (!user) return { error: 'User not found' };
 	user.lastActivity = new Date(Date.now());
 	if (token !== user.tokenFB) {
 		await Models.Tracking.updateMany({ token: user.tokenFB }, { $set: { token: token } });
