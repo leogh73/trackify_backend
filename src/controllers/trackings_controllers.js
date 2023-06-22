@@ -188,7 +188,8 @@ async function checkCycle() {
 			checkCompletedStatus(check.service, check.result.lastEvent),
 		);
 	});
-	if (checkCycleResults.filter((check) => check.result.error).length) {
+	let failedChecks = checkCycleResults.filter((check) => check.result.error);
+	if (failedChecks.length) {
 		databaseUpdates.push(
 			Models.storeLog(
 				'check cycle',
