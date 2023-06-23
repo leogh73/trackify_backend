@@ -16,21 +16,15 @@ import got from 'got';
 
 // router.get('/test', async (req, res) => {
 // 	try {
-// 		let data = JSON.parse(
-// 			(
-// 				await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-// 					json: { code: '682257040' },
-// 				})
-// 			).body,
-// 		);
+// let data = JSON.parse(
+// 	(
+// 		await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
+// 			json: { code: '682257040' },
+// 		})
+// 	).body,
+// );
 
-// 		let data = JSON.parse(
-// 			(
-// 				await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
-// 					json: { code: 'HWUIN94250' },
-// 				})
-// 			).body,
-// 		);
+// 		let data = await _services.checkHandler('DHL', '2271618790', null);
 
 // 		res.json({
 // 			status: 200,
@@ -44,6 +38,7 @@ import got from 'got';
 
 import Models from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
+import _services from '../services/_services.js';
 
 router.post('/test', async (req, res) => {
 	const { code } = req.body;

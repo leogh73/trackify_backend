@@ -33,7 +33,7 @@ const checkHandler = async (service, code, lastEvent) => {
 			lastEvent: error.response?.statusCode === 404 ? 'No hay datos' : lastEvent,
 			service,
 			code,
-			detail: error,
+			detail: error.toString(),
 		};
 	}
 };
