@@ -83,7 +83,6 @@ const sincronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.sincronizeDrive(user.id, currentDate)
 				: 'Not logged in';
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();

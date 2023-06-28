@@ -26,7 +26,13 @@ const list = {
 
 const checkHandler = async (service, code, lastEvent) => {
 	try {
-		return await list[service].check(code, lastEvent);
+		const timeout = () =>
+			new Promise((resolve, reject) => {
+				setTimeout(() => {
+					reject('FUNCTION TIMEOUT');
+				}, 6000);
+			});
+		return await Promise.race([list[service].check(code, lastEvent), timeout()]);
 	} catch (error) {
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',

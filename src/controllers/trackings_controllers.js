@@ -21,7 +21,7 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 			checkTime,
 			token: user.tokenFB,
 			result,
-			completed: checkCompletedStatus(service, result.lastEvent),
+			completed: checkCompletedStatus(result.lastEvent),
 		});
 	}
 
@@ -81,84 +81,73 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 	return null;
 }
 
-function checkCompletedStatus(service, lastEvent) {
+function checkCompletedStatus(lastEvent) {
 	let status = false;
-	if (service === 'Andreani') {
-		if (lastEvent.includes('Entregado') || lastEvent.includes('Devuelto')) status = true;
+	let includedWords = ['entregado', 'entregamos', 'devuelto', 'entrega en', 'devolución'];
+	for (let word of includedWords) {
+		if (!status && lastEvent.toLowerCase().includes(word)) status = true;
 	}
-	if (service === 'ClicOh' && lastEvent.includes('Entregado')) status = true;
-	if (service === 'Correo Argentino') {
-		if (lastEvent.includes('ENTREGADO') || lastEvent.includes('ENTREGA EN')) status = true;
-	}
-	if (service === 'DHL' && lastEvent.includes('entregado')) status = true;
-	if (service === 'EcaPack' && lastEvent.includes('ENTREGADO')) status = true;
-	if (service === 'FastTrack' && lastEvent.includes('Entregado')) status = true;
-	if (service === 'OCA' && lastEvent.includes('Entregado')) status = true;
-	if (service === 'OCASA' && lastEvent.includes('Entregamos')) status = true;
-	if (service === 'Renaper' && lastEvent.includes('ENTREGADO')) status = true;
-	if (service === 'Urbano' && lastEvent.includes('entregado')) status = true;
-	if (service === 'ViaCargo' && lastEvent.includes('ENTREGADA')) status = true;
 	return status;
 }
 
 async function check(trackingId) {
 	let tracking = await Models.Tracking.findById(trackingId);
 	let response = await checkTracking(tracking);
-	let completedStatus = response.result.lastEvent
-		? checkCompletedStatus(response.service, response.result.lastEvent)
-		: tracking.completed;
-	if (response.result.events.length) await updateDatabase(response, tracking, completedStatus);
+	if (response.result.events?.length)
+		await updateDatabase(response, tracking, checkCompletedStatus(response.result.lastEvent));
 	return response;
 }
 
 async function updateDatabase(response, tracking, completedStatus) {
-	await Models.Tracking.findByIdAndUpdate(
-		{ _id: tracking._id },
-		{
-			$push: {
-				'result.events': { $each: response.result.events, $position: 0 },
-			},
-			$set: {
-				'result.lastEvent': response.result.lastEvent,
-				completed: completedStatus,
-			},
-		},
-		{ upsert: true, new: true, useFindAndModify: false },
-	);
-	if (tracking.service === 'DHL') {
-		let status = response.result.shipping.status;
-		await Models.Tracking.findByIdAndUpdate(
+	let databaseUpdates = [];
+	databaseUpdates.push(
+		Models.Tracking.findOneAndUpdate(
 			{ _id: tracking._id },
 			{
-				$set: {
-					'result.shipping.status.date': status.date,
-					'result.shipping.status.time': status.time,
-					'result.shipping.status.location': status.location,
-					'result.shipping.status.statusCode': status.statusCode,
-					'result.shipping.status.status': status.status,
-					'result.shipping.status.description': status.description,
+				$push: {
+					'result.events': { $each: response.result.events, $position: 0 },
 				},
-				completed: completedStatus,
-			},
-			{ upsert: true, new: true, useFindAndModify: false },
-		);
-	}
-	if (tracking.service === 'ViaCargo') {
-		await Models.Tracking.findByIdAndUpdate(
-			{ _id: tracking._id },
-			{
 				$set: {
-					'result.destiny.dateDelivered': response.result.destiny.dateDelivered,
-					'result.destiny.timeDelivered': response.result.destiny.timeDelivered,
+					'result.lastEvent': response.result.lastEvent,
+					checkDate: response.checkDate,
+					checkTime: response.checkTime,
 					completed: completedStatus,
 				},
 			},
-			{ upsert: true, new: true, useFindAndModify: false },
+		),
+	);
+	if (tracking.service === 'DHL') {
+		let status = response.result.shipping.status;
+		databaseUpdates.push(
+			Models.Tracking.findOneAndUpdate(
+				{ _id: tracking._id },
+				{
+					$set: {
+						'result.shipping.status.date': status.date,
+						'result.shipping.status.time': status.time,
+						'result.shipping.status.location': status.location,
+						'result.shipping.status.statusCode': status.statusCode,
+						'result.shipping.status.status': status.status,
+						'result.shipping.status.description': status.description,
+					},
+				},
+			),
 		);
 	}
-	tracking.checkDate = response.checkDate;
-	tracking.checkTime = response.checkTime;
-	await tracking.save();
+	if (tracking.service === 'ViaCargo') {
+		databaseUpdates.push(
+			Models.Tracking.findOneAndUpdate(
+				{ _id: tracking._id },
+				{
+					$set: {
+						'result.destiny.dateDelivered': response.result.destiny.dateDelivered,
+						'result.destiny.timeDelivered': response.result.destiny.timeDelivered,
+					},
+				},
+			),
+		);
+	}
+	await Promise.all(databaseUpdates);
 }
 
 async function checkCycle() {
@@ -185,7 +174,7 @@ async function checkCycle() {
 		return updateDatabase(
 			check,
 			trackingsCollection[trackingIndex],
-			checkCompletedStatus(check.service, check.result.lastEvent),
+			checkCompletedStatus(check.result.lastEvent),
 		);
 	});
 	let failedChecks = checkCycleResults.filter((check) => check.result.error);
