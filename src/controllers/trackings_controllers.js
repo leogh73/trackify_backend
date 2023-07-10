@@ -61,22 +61,21 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 		trackingIndex !== -1 &&
 		lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent
 	) {
-		// let lastEventData = lastEventsUser[trackingIndex].eventDescription.split(' - ');
-		// let endIndex = tracking.result.events.findIndex(
-		// 	(e) => e.date === lastEventData[0] && e.time === lastEventData[1],
-		// );
-		// const { id, service, checkDate, checkTime, result } = tracking;
-		// return {
-		// 	id,
-		// 	service,
-		// 	checkDate,
-		// 	checkTime,
-		// 	result: {
-		// 		...result,
-		// 		events: result.events.slice(0, endIndex),
-		// 	},
-		// };
-		return tracking;
+		let lastEventData = lastEventsUser[trackingIndex].eventDescription.split(' - ');
+		let endIndex = tracking.result.events.findIndex(
+			(e) => e.date === lastEventData[0] && e.time === lastEventData[1],
+		);
+		const { id, service, checkDate, checkTime, result } = tracking;
+		return {
+			id,
+			service,
+			checkDate,
+			checkTime,
+			result: {
+				...result,
+				events: result.events.slice(0, endIndex),
+			},
+		};
 	} else return null;
 }
 
