@@ -121,8 +121,8 @@ function translateText(text) {
 		text = text.replace('Delivered - Signed for by', 'Envío entregado - Firmado por');
 	} else if (text.startsWith('With delivery courier')) {
 		text = text.replace('With delivery courier', 'Envío en route de entrega');
-	} else if (text.startsWith('Arrived at Delivery Facility in')) {
-		text = text.replace('Arrived at Delivery Facility in', 'Llegado a oficinas de DHL en');
+	} else if (text.startsWith('Arrived at DHL Delivery Facility')) {
+		text = text.replace('Arrived at DHL Delivery Facility', 'Llegado a oficinas de DHL');
 	} else if (text.startsWith('Departed Facility in')) {
 		text = text.replace('Departed Facility in', 'Salida de un centro de tránsito de DHL en');
 	} else if (text.startsWith('Shipment on hold')) {
@@ -174,7 +174,7 @@ function translateText(text) {
 	} else if (text.startsWith('Shipment is out with courier for delivery')) {
 		text = text.replace(
 			'Shipment is out with courier for delivery',
-			'Envío en route con un mensajero para su entrega',
+			'Envío en ruta con un mensajero para su entrega',
 		);
 	}
 	return text;

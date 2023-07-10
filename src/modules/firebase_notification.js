@@ -7,7 +7,7 @@ admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
 });
 
-function sendNotification(data) {
+async function sendNotification(data) {
 	let notificationTitle = 'Actualización de envío';
 	let notificationBody = data.results[0].title;
 	if (data.results.length > 1) {
@@ -27,17 +27,14 @@ function sendNotification(data) {
 		},
 	};
 
-	admin
-		.messaging()
-		.send(notification)
-		.then((response) => {
-			console.log({ 'Notification sended': response });
-		})
-		.catch(async (error) => {
-			if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
-				return await user.remove(data.token);
-			}
-		});
+	try {
+		let response = await admin.messaging().send(notification);
+		console.log({ 'Notification sended': response });
+	} catch (error) {
+		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
+			await user.remove(data.token);
+		}
+	}
 }
 
 export default sendNotification;

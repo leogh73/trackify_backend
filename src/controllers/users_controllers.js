@@ -2,9 +2,10 @@ import Models from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_controllers.js';
+import emailCheck from 'node-email-check';
 
 const initialize = async (req, res) => {
-	if (req.body.token === 'BLACKLISTED') return res.status(400).json({ error: 'token not valid' });
+	if (req.body.token === 'BLACKLISTED') return;
 	const newUser = new Models.User({
 		lastActivity: new Date(Date.now()),
 		tokenFB: req.body.token,
@@ -53,6 +54,7 @@ const trackingAction = async (req, res) => {
 		let statusCode = response.lastEvent == 'No hay datos' ? 404 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		if (req.body.service !== 'Correo Argentino')
 			await Models.storeLog(
@@ -71,14 +73,16 @@ const sincronize = async (req, res) => {
 
 	try {
 		let user = await Models.User.findById(userId);
-		// if (!user || !version)
+		// if (!user || !version) {
+		// 	await remove(token);
 		// 	return res
 		// 		.status(200)
 		// 		.json({ error: !user ? 'User not found' : 'Lastest version not found' });
+		// }
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
 		await update(user, token);
-		response.data = eventsList.length ? await tracking.sincronize(user, eventsList) : [];
+		response.data = await tracking.sincronize(user, eventsList);
 		response.driveStatus =
 			driveLoggedIn == 'true'
 				? await google.sincronizeDrive(user.id, currentDate)
@@ -114,6 +118,8 @@ const contactForm = async (req, res) => {
 	try {
 		if (message.includes('text ') || email.includes('text '))
 			return res.status(404).json({ error: 'content not valid' });
+		let emailIsValid = await emailCheck.isValid(email);
+		if (!emailIsValid) return res.status(400).json({ error: 'email not valid' });
 		const { id } = await new Models.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {

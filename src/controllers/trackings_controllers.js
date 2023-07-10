@@ -77,13 +77,21 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 		// 	},
 		// };
 		return tracking;
-	}
-	return null;
+	} else return null;
 }
 
 function checkCompletedStatus(lastEvent) {
 	let status = false;
-	let includedWords = ['entregado', 'entregamos', 'devuelto', 'entrega en', 'devolución'];
+	let includedWords = [
+		'entregado',
+		'entregada',
+		'entregamos',
+		'devuelto',
+		'entrega en',
+		'devolución',
+		'rehusado',
+		'no pudo ser retirado',
+	];
 	for (let word of includedWords) {
 		if (!status && lastEvent.toLowerCase().includes(word)) status = true;
 	}
@@ -168,18 +176,22 @@ async function checkCycle() {
 			totalUserResults[resultIndex].results.push(checkResult);
 		}
 	}
-	for (let userResult of totalUserResults) sendNotification(userResult);
-	let databaseUpdates = succededChecks.map((check) => {
-		let trackingIndex = trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB);
-		return updateDatabase(
-			check,
-			trackingsCollection[trackingIndex],
-			checkCompletedStatus(check.result.lastEvent),
+	let operationsCollection = [];
+	for (let userResult of totalUserResults) operationsCollection.push(sendNotification(userResult));
+	for (check of succededChecks) {
+		operationsCollection.push(
+			updateDatabase(
+				check,
+				trackingsCollection[
+					trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB)
+				],
+				checkCompletedStatus(check.result.lastEvent),
+			),
 		);
-	});
+	}
 	let failedChecks = checkCycleResults.filter((check) => check.result.error);
 	if (failedChecks.length) {
-		databaseUpdates.push(
+		operationsCollection.push(
 			Models.storeLog(
 				'check cycle',
 				failedChecks,
@@ -189,7 +201,7 @@ async function checkCycle() {
 			),
 		);
 	}
-	await Promise.all(databaseUpdates);
+	await Promise.all(operationsCollection);
 }
 
 async function checkTracking(tracking) {

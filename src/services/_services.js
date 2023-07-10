@@ -4,6 +4,7 @@ import correoArgentino from './correoargentino.js';
 import dhl from './dhl.js';
 import ecaPack from './ecapack.js';
 import fastTrack from './fasttrack.js';
+import mdCargas from './mdcargas.js';
 import ocasa from './ocasa.js';
 import oca from './oca.js';
 import renaper from './renaper.js';
@@ -17,6 +18,7 @@ const list = {
 	DHL: dhl,
 	EcaPack: ecaPack,
 	FastTrack: fastTrack,
+	MDCargas: mdCargas,
 	OCA: oca,
 	OCASA: ocasa,
 	Renaper: renaper,

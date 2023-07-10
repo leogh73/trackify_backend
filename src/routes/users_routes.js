@@ -14,74 +14,108 @@ router.get('/usersCycle', user.usersCycle);
 import vars from '../modules/crypto-js.js';
 import got from 'got';
 
-// router.get('/test', async (req, res) => {
-// 	try {
-// let data = JSON.parse(
-// 	(
-// 		await got.post(`${vars.PLAYWRIGHT_API_RENAPER_URL}`, {
-// 			json: { code: '682257040' },
-// 		})
-// 	).body,
-// );
+router.get('/test1', async (req, res) => {
+	try {
+		// let trackingIds = (await Models.Log.find({ actionName: 'check cycle' })).map((log) => log.id);
+		// await Models.Log.deleteMany({ _id: { $in: trackingIds } });
 
-// 		let data = await _services.checkHandler('DHL', '2271618790', null);
+		// let data = await _services.checkHandler(
+		// 	'MDCargas',
+		// 	'R050500020601',
+		// 	'04/07/2023 - 19:30:08 - Se encuentra recibido en Agencia RIO TERCERO (CADETERIA)',
+		// );
 
-// 		res.json({
-// 			status: 200,
-// 			message: data,
-// 		});
-// 	} catch (error) {
-// 		console.error(error);
-// 		return res.status(500).send({ 'Server Error': `${error}` });
-// 	}
-// });
+		let trackings = await Models.Tracking.find({ completed: false });
+		let operations = [];
+		let includedWords = [
+			'entregado',
+			'entregada',
+			'entregamos',
+			'devuelto',
+			'entrega en',
+			'devolución',
+			'rehusado',
+			'no pudo ser retirado',
+		];
+		for (let t of trackings) {
+			for (let w of includedWords) {
+				if (t.result.lastEvent.toLowerCase().includes(w))
+					operations.push(
+						Models.Tracking.findOneAndUpdate({ _id: t._id }, { $set: { completed: true } }),
+					);
+			}
+		}
+		await Promise.all(operations);
+
+		res.json({
+			status: 200,
+			message: 'included',
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ 'Server Error': `${error}` });
+	}
+});
 
 import Models from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import _services from '../services/_services.js';
 
-router.post('/test', async (req, res) => {
+router.post('/test2', async (req, res) => {
 	const { code } = req.body;
-	let userId = '6498817ba63f5db0d945240d';
+	let userId = '64aaaf6c7d4785821aec2b6f';
 
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();
 	console.log('EC2FQ31777987');
+	console.log('R-0487-00009330');
 
 	try {
+		// let result = {
+		// 	events: [
+		// 		{
+		// 			date: '27/05/2022',
+		// 			time: '01:48:00',
+		// 			detail: 'El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+		// 		},
+		// 		{
+		// 			date: '24/05/2022',
+		// 			time: '18:51:45',
+		// 			detail:
+		// 				'Pasamos a buscar el envío por el domicilio del remitente y lo estamos llevando a nuestra planta para iniciar el proceso de entrega.',
+		// 		},
+		// 		{
+		// 			date: '24/05/2022',
+		// 			time: '18:51:45',
+		// 			detail:
+		// 				'El envío ya está confirmado para que lo retiremos por el domicilio del remitente.',
+		// 		},
+		// 	],
+		// 	trackingNumber: '41395878142',
+		// 	lastEvent:
+		// 		'27/05/2022 - 01:48:00 - El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+		// };
+
 		let result = {
 			events: [
 				{
-					date: '27/05/2022',
-					time: '01:48:00',
-					detail: 'El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
-				},
-				{
-					date: '24/05/2022',
-					time: '18:51:45',
-					detail:
-						'Pasamos a buscar el envío por el domicilio del remitente y lo estamos llevando a nuestra planta para iniciar el proceso de entrega.',
-				},
-				{
-					date: '24/05/2022',
-					time: '18:51:45',
-					detail:
-						'El envío ya está confirmado para que lo retiremos por el domicilio del remitente.',
+					date: '04/07/2023',
+					time: '19:30:08',
+					status: 'Se encuentra recibido en Agencia RIO TERCERO (CADETERIA)',
 				},
 			],
-			trackingNumber: '41395878142',
 			lastEvent:
-				'27/05/2022 - 01:48:00 - El envío ha salido del centro de distribución de OCASA (Iriarte - Argentina).',
+				'04/07/2023 - 19:30:08 - Se encuentra recibido en Agencia RIO TERCERO (CADETERIA)',
 		};
 
 		let newTracking = new Models.Tracking({
 			title: code,
-			service: 'OCASA',
+			service: 'MDCargas',
 			code,
 			checkDate,
 			checkTime,
 			token:
-				'c5XARMvySHCuz13UQVTJFR:APA91bGQpYoATmjyP4B5AS9zE0SbgZQ3hMETwIqlf9sveJFL55oq6FoDxPE1sBpOblm5la5xBFz9MfizquzPdlkLbiEWEgczvq8jfDDORE587IRqC2DKvivCe5Hpa2k9gpxqO0PNNM7_',
+				'e8Z-gUPCRbuFFfyxLgmPR7:APA91bGxEI2pYAFvHpYa5PQmZ7BGN8pDKufaSdqH0KuahpC0Cdj7WFCnlaT5eX6rLv50qYDXv6W6JYhZrb8VbFR6_8aJnhDro1KhtqX82RhfyNe-rDY_TpPipZONJKkPLHnaljrj__Bv',
 			result,
 			completed: false,
 		});

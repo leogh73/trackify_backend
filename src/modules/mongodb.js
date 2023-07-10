@@ -76,5 +76,6 @@ export default {
 	Tracking,
 	GoogleDrive,
 	Contact,
+	Log,
 	storeLog,
 };

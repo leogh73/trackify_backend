@@ -8,7 +8,7 @@ import trackings from './trackings_controllers.js';
 const oauth2Client = new google.auth.OAuth2(
 	vars.GOOGLE_CLIENT_ID,
 	vars.GOOGLE_CLIENT_SECRET,
-	'https://trackify-6120f.firebaseapp.com/__/auth/handler',
+	vars.GOOGLE_REDIRECT_URI,
 );
 
 const initialize = async (req, res) => {
@@ -58,7 +58,7 @@ const consult = async (req, res) => {
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);;
+		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -72,12 +72,13 @@ const createUpdate = async (req, res) => {
 		let result = await createUpdateBackup(user, driveAuth, drive, backupFiles, userData);
 		let response;
 		if (result.data.id) {
-			const { date, time, activeTrackings, archivedTrackings } = JSON.parse(userData);
+			const { date, time, activeTrackings, archivedTrackings, deviceModel } = JSON.parse(userData);
 			response = {
 				id: result.data.id,
 				date: `${date} - ${time}`,
 				activeTrackings: activeTrackings.length,
 				archivedTrackings: archivedTrackings.length,
+				deviceModel,
 				currentDevice: true,
 				selected: false,
 			};
@@ -198,7 +199,7 @@ const findBackups = async (user, driveAuth, drive) => {
 };
 
 const readBackup = async (drive, backupId) => {
-	const { date, time, activeTrackings, archivedTrackings } = (
+	const { date, time, activeTrackings, archivedTrackings, deviceModel } = (
 		await drive.files.get({
 			fileId: backupId,
 			alt: 'media',
@@ -210,6 +211,7 @@ const readBackup = async (drive, backupId) => {
 		date: `${date} - ${time}`,
 		activeTrackings: activeTrackings.length,
 		archivedTrackings: archivedTrackings.length,
+		deviceModel,
 		currentDevice: false,
 		selected: false,
 	};
@@ -233,7 +235,7 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 	} else {
 		result = await drive.files.create({
 			requestBody: {
-				name: 'Trackify',
+				name: 'TrackeAR',
 			},
 			media: {
 				mimeType: 'application/json',

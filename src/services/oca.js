@@ -2,7 +2,7 @@ import vars from '../modules/crypto-js.js';
 import got from 'got';
 
 async function check(code, lastEvent) {
-	let consultEvents = await got.post(`${vars.OCA_API_URL}`, {
+	let consultEvents = await got.post(`${vars.OCA_TRACKING_API_URL}`, {
 		json: { numberOfSend: code },
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
@@ -24,10 +24,9 @@ async function check(code, lastEvent) {
 
 	let originData;
 	if (!lastEvent) {
-		let consultOrigin = await got.post(
-			'http://www5.oca.com.ar/ocaepakNet/Views/ConsultaTracking/TrackingOrigin.aspx/GetOrigen',
-			{ json: { idOrdenRetiro: resultEvents[0].IdOrdenRetiro } },
-		);
+		let consultOrigin = await got.post(`${vars.OCA_ORIGIN_API_URL}`, {
+			json: { idOrdenRetiro: resultEvents[0].IdOrdenRetiro },
+		});
 		let resultOrigin = JSON.parse(consultOrigin.body).d;
 
 		originData = {
