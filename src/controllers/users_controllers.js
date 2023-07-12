@@ -195,7 +195,7 @@ const cleanUpCycle = async (req, res) => {
 			}
 		}
 		if (removeOperations.length) await Promise.all(removeOperations);
-		res.status(200).json({ message: 'CLEAN UP COMPLETED' });
+		res.status(200).json({ message: 'CLEAN UP CYCLE COMPLETED' });
 	} catch (error) {
 		let message = luxon.errorMessage();
 		await Models.storeLog(
@@ -205,7 +205,7 @@ const cleanUpCycle = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		res.status(500).json({ error: 'CLEAN UP FAILED', message: error.toString() });
+		res.status(500).json({ error: 'CLEAN UP CYCLE FAILED', message: error.toString() });
 	}
 };
 
