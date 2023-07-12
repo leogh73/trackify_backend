@@ -38,8 +38,12 @@ function startResponse(event) {
 }
 
 function updateResponse(eventsList, lastEvent) {
+	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.status}`);
+	let eventIndex = eventsText.indexOf(
+		`${lastEvent.date} - ${lastEvent.time} - ${lastEvent.status}`,
+	);
 	let eventsResponse = [];
-	if (eventsList[0].status !== lastEvent.status) eventsResponse.push(lastEvent);
+	if (eventIndex === -1) eventsResponse.push(lastEvent);
 
 	let response = { events: eventsResponse };
 	if (eventsResponse.length)
