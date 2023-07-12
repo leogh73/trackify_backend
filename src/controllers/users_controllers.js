@@ -3,6 +3,7 @@ import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_controllers.js';
 import emailCheck from 'node-email-check';
+import trackings_controllers from './trackings_controllers.js';
 
 const initialize = async (req, res) => {
 	if (req.body.token === 'BLACKLISTED') return;
@@ -144,19 +145,43 @@ const trackingsCycle = async (req, res) => {
 	}
 };
 
-const usersCycle = async (req, res) => {
+const cleanUp = async (req, res) => {
+	let dateToday = new Date(Date.now());
+	const calculateDays = (timeStamp) => {
+		let difference = dateToday.getTime() - timeStamp.getTime();
+		return Math.floor(difference / (1000 * 3600 * 24));
+	};
+
 	try {
 		let usersCollection = await Models.User.find({});
-		let removeUsers = [];
-		for (let userData of usersCollection) {
-			let dateToday = new Date(Date.now());
-			let difference = dateToday.getTime() - userData.lastActivity.getTime();
-			let totalDays = Math.floor(difference / (1000 * 3600 * 24));
-			if (totalDays > 31) removeUsers.push(remove(userData.tokenFB));
+		let trackingsCollection = await Models.Tracking.find({ completed: true });
+		let removeOperations = [];
+		for (let user of usersCollection) {
+			let daysElapsed = calculateDays(user.lastActivity);
+			if (daysElapsed > 31) removeOperations.push(remove(user.tokenFB));
 		}
-		await Promise.all(removeUsers);
-		res.status(200).json({ message: 'USERS CHECK CYCLE COMPLETED' });
+		let userTrackingResults = [];
+		for (let tracking of trackingsCollection) {
+			let daysElapsed = calculateDays(tracking.lastCheck);
+			if (daysElapsed > 14) {
+				let user = await Models.User.findOne({ tokenFB: tracking.token });
+				let userTrackings = { userId: user._id, ids: [], token: tracking.token };
+				let resultIndex = userTrackingResults.findIndex((r) => r.token === tracking.token);
+				if (resultIndex == -1) {
+					userTrackings.ids.push(tracking._id);
+					userTrackingResults.push(userTrackings);
+				} else {
+					userTrackingResults[resultIndex].ids.push(tracking._id);
+				}
+			}
+		}
+		for (let userResult of userTrackingResults) {
+			removeOperations.push(trackings_controllers.remove(userResult.userId, userResult.ids));
+		}
+		if (removeOperations.length) await Promise.all(removeOperations);
+		res.status(200).json({ message: 'CLEAN UP OPERATION COMPLETED' });
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		await Models.storeLog('User check cycle', error.toString(), error, message.date, message.time);
 		res.status(500).json({ error: 'USERS CHECK CYCLE FAILED', message: error.toString() });
@@ -187,6 +212,6 @@ export default {
 	check,
 	contactForm,
 	trackingsCycle,
-	usersCycle,
+	cleanUp,
 	remove,
 };

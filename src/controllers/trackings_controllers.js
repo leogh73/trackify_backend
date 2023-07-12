@@ -19,6 +19,7 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 			code,
 			checkDate,
 			checkTime,
+			lastCheck: new Date(Date.now()),
 			token: user.tokenFB,
 			result,
 			completed: checkCompletedStatus(result.lastEvent),
@@ -118,6 +119,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 					'result.lastEvent': response.result.lastEvent,
 					checkDate: response.checkDate,
 					checkTime: response.checkTime,
+					lastCheck: response.lastCheck,
 					completed: completedStatus,
 				},
 			},
@@ -217,6 +219,7 @@ async function checkTracking(tracking) {
 		service: tracking.service,
 		checkDate: luxon.getDate(),
 		checkTime: luxon.getTime(),
+		lastCheck: new Date(Date.now()),
 		result: result,
 	};
 }

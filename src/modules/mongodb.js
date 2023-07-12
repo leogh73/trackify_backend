@@ -23,6 +23,7 @@ const trackingSchema = new Schema({
 	service: { type: String, required: true },
 	checkDate: { type: String, required: true },
 	checkTime: { type: String, required: true },
+	lastCheck: { type: Date, required: true },
 	token: { type: String, required: true },
 	result: {
 		type: Object,
