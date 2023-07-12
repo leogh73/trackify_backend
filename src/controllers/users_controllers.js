@@ -135,59 +135,6 @@ const contactForm = async (req, res) => {
 		res.status(500).json(message);
 	}
 };
-
-const trackingsCycle = async (req, res) => {
-	try {
-		await tracking.checkCycle();
-		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED' });
-	} catch (error) {
-		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
-	}
-};
-
-const cleanUp = async (req, res) => {
-	let dateToday = new Date(Date.now());
-	const calculateDays = (timeStamp) => {
-		let difference = dateToday.getTime() - timeStamp.getTime();
-		return Math.floor(difference / (1000 * 3600 * 24));
-	};
-
-	try {
-		let usersCollection = await Models.User.find({});
-		let trackingsCollection = await Models.Tracking.find({ completed: true });
-		let removeOperations = [];
-		for (let user of usersCollection) {
-			let daysElapsed = calculateDays(user.lastActivity);
-			if (daysElapsed > 31) removeOperations.push(remove(user.tokenFB));
-		}
-		let userTrackingResults = [];
-		for (let tracking of trackingsCollection) {
-			let daysElapsed = calculateDays(tracking.lastCheck);
-			if (daysElapsed > 14) {
-				let user = await Models.User.findOne({ tokenFB: tracking.token });
-				let userTrackings = { userId: user._id, ids: [], token: tracking.token };
-				let resultIndex = userTrackingResults.findIndex((r) => r.token === tracking.token);
-				if (resultIndex == -1) {
-					userTrackings.ids.push(tracking._id);
-					userTrackingResults.push(userTrackings);
-				} else {
-					userTrackingResults[resultIndex].ids.push(tracking._id);
-				}
-			}
-		}
-		for (let userResult of userTrackingResults) {
-			removeOperations.push(trackings_controllers.remove(userResult.userId, userResult.ids));
-		}
-		if (removeOperations.length) await Promise.all(removeOperations);
-		res.status(200).json({ message: 'CLEAN UP OPERATION COMPLETED' });
-	} catch (error) {
-		console.log(error);
-		let message = luxon.errorMessage();
-		await Models.storeLog('User check cycle', error.toString(), error, message.date, message.time);
-		res.status(500).json({ error: 'USERS CHECK CYCLE FAILED', message: error.toString() });
-	}
-};
-
 const remove = async (token) => {
 	let removeTasks = [];
 	removeTasks.push(Models.User.findOneAndDelete({ tokenFB: token }));
@@ -205,13 +152,70 @@ const update = async (user, token) => {
 	await user.save();
 };
 
+const trackingsCycle = async (req, res) => {
+	try {
+		await tracking.checkCycle();
+		res.status(200).json({ message: 'TRACKINGS CHECK CYCLE COMPLETED' });
+	} catch (error) {
+		res.status(500).json({ error: 'TRACKINGS CHECK CYCLE FAILED', message: error.toString() });
+	}
+};
+
+const cleanUpCycle = async (req, res) => {
+	let dateToday = new Date(Date.now());
+	const calculateDays = (timeStamp) => {
+		let difference = dateToday.getTime() - timeStamp.getTime();
+		return Math.floor(difference / (1000 * 3600 * 24));
+	};
+
+	try {
+		let dbQueries = await Promise.all([
+			Models.User.find({}),
+			Models.Tracking.find({ completed: true }),
+		]);
+		let removeOperations = [];
+		for (let user of dbQueries[0]) {
+			let daysElapsed = calculateDays(user.lastActivity);
+			if (daysElapsed > 31) removeOperations.push(remove(user.tokenFB));
+		}
+		let userTrackingResults = dbQueries[0].map((user) => {
+			return { userId: user._id, ids: [], token: user.tokenFB };
+		});
+		for (let tracking of dbQueries[1]) {
+			let daysElapsed = calculateDays(tracking.lastCheck);
+			if (daysElapsed > 14)
+				userTrackingResults[
+					userTrackingResults.findIndex((t) => t.token === tracking.token)
+				].ids.push(tracking._id);
+		}
+		let filteredResults = userTrackingResults.filter((r) => r.ids.length);
+		if (filteredResults.length) {
+			for (let userResult of filteredResults) {
+				removeOperations.push(trackings_controllers.remove(userResult.userId, userResult.ids));
+			}
+		}
+		if (removeOperations.length) await Promise.all(removeOperations);
+		res.status(200).json({ message: 'CLEAN UP COMPLETED' });
+	} catch (error) {
+		let message = luxon.errorMessage();
+		await Models.storeLog(
+			'Clean up operation',
+			error.toString(),
+			error,
+			message.date,
+			message.time,
+		);
+		res.status(500).json({ error: 'CLEAN UP FAILED', message: error.toString() });
+	}
+};
+
 export default {
 	initialize,
 	trackingAction,
 	sincronize,
 	check,
 	contactForm,
-	trackingsCycle,
-	cleanUp,
 	remove,
+	trackingsCycle,
+	cleanUpCycle,
 };
