@@ -8,6 +8,3 @@ router.post('/:userId/:action', user.trackingAction);
 router.post('/sincronize', user.syncronize);
 router.post('/check', user.check);
 router.post('/contact', user.contactForm);
-
-router.get('/trackingsCycle', user.trackingsCycle);
-router.get('/cleanUpCycle', user.cleanUpCycle);
