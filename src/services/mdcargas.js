@@ -1,9 +1,9 @@
 import vars from '../modules/crypto-js.js';
 import luxon from '../modules/luxon.js';
 import got from 'got';
-import Models from '../modules/mongodb.js';
+import db from '../modules/mongodb.js';
 
-async function check(code, lastEvent) {
+async function check(code, lastEvent, trackingId) {
 	let dividedCode = code.split('-');
 	let consult = await got(
 		`${vars.MDCARGAS_API_URL.replace('type', dividedCode[0])
@@ -21,7 +21,8 @@ async function check(code, lastEvent) {
 	if (!lastEvent) {
 		response = startResponse(event);
 	} else {
-		let tracking = await Models.Tracking.findOne({ code: code });
+		let tracking = await db.Tracking.findById(trackingId);
+		if (!tracking) return tracking;
 		response = updateResponse(tracking.result.events, event);
 	}
 

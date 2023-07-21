@@ -1,5 +1,5 @@
 import got from 'got';
-import Models from '../modules/mongodb.js';
+import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import vars from '../modules/crypto-js.js';
 
@@ -28,13 +28,13 @@ const initialize = async (req, res) => {
 			userId: response.user_id,
 			refresh_token: response.refresh_token,
 		};
-		let user = await Models.User.findById(userId);
+		let user = await db.User.findById(userId);
 		user.mercadoLibre = meLiResponse;
 		await user.save();
 		res.status(200).json(meLiResponse);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
+		await db.storeLog(
 			'MercadoLibre initialize',
 			{ userId, code },
 			error,
@@ -62,7 +62,7 @@ const consult = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
+		await db.storeLog(
 			'MercadoLibre consult',
 			{ userId, consultType },
 			error,
@@ -81,7 +81,7 @@ const loadMore = async (req, res) => {
 		res.status(200).json(results);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
+		await db.storeLog(
 			'MercadoLibre load more',
 			{ shippingIds, httpHeaders },
 			error,
@@ -93,7 +93,7 @@ const loadMore = async (req, res) => {
 };
 
 const checkUser = async (userId) => {
-	let user = await Models.User.findById(userId);
+	let user = await db.User.findById(userId);
 	let userData = {
 		model: user,
 		id: user.mercadoLibre.userId,
@@ -120,13 +120,12 @@ async function checkShippingOrders(userId, consultType) {
 			await renewTokenML(userData.model);
 			return await checkShippingOrders(userId, consultType);
 		} else {
-			let message = luxon.errorMessage();
-			return await Models.storeLog(
+			return await db.storeLog(
 				'MercadoLibre check shipping orders',
 				{ userId, consultType },
 				error,
-				message.date,
-				message.time,
+				luxon.getDate(),
+				luxon.getTime(),
 			);
 		}
 	}
