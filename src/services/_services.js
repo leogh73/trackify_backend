@@ -26,17 +26,16 @@ const list = {
 	ViaCargo: viaCargo,
 };
 
-const checkHandler = async (service, code, lastEvent) => {
+const checkHandler = async (service, code, lastEvent, trackingId) => {
 	try {
 		const timeout = () =>
 			new Promise((resolve, reject) => {
 				setTimeout(() => {
 					reject('FUNCTION TIMEOUT');
-				}, 6000);
+				}, 9000);
 			});
-		return await Promise.race([list[service].check(code, lastEvent), timeout()]);
+		return await Promise.race([list[service].check(code, lastEvent, trackingId), timeout()]);
 	} catch (error) {
-		console.log(error);
 		return {
 			error: 'Ha ocurrido un error. Reintente más tarde',
 			lastEvent: error.response?.statusCode === 404 ? 'No hay datos' : lastEvent,

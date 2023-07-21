@@ -1,8 +1,7 @@
 import { google } from 'googleapis';
-import Models from '../modules/mongodb.js';
+import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import vars from '../modules/crypto-js.js';
-
 import trackings from './trackings_controllers.js';
 
 const oauth2Client = new google.auth.OAuth2(
@@ -17,8 +16,8 @@ const initialize = async (req, res) => {
 	try {
 		let userTokens = await oauth2Client.getToken(authCode);
 		let userAuth = userTokens.tokens;
-		let user = await Models.User.findById(userId);
-		let existingAuth = await Models.GoogleDrive.findOne({ email: email });
+		let user = await db.User.findById(userId);
+		let existingAuth = await db.GoogleDrive.findOne({ email: email });
 		if (existingAuth) {
 			user.googleDrive.auth = existingAuth.id;
 			if (userAuth.refresh_token) {
@@ -26,7 +25,7 @@ const initialize = async (req, res) => {
 				await existingAuth.save();
 			}
 		} else {
-			const { id } = await new Models.GoogleDrive({
+			const { id } = await new db.GoogleDrive({
 				auth: userAuth,
 				email,
 			}).save();
@@ -36,7 +35,7 @@ const initialize = async (req, res) => {
 		res.status(200).json(userAuth);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
+		await db.storeLog(
 			'Google initialize',
 			{ userId, authCode, email },
 			error,
@@ -58,7 +57,7 @@ const consult = async (req, res) => {
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog('Google consult', { userId }, error, message.date, message.time);
+		await db.storeLog('Google consult', { userId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -86,7 +85,7 @@ const createUpdate = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
+		await db.storeLog(
 			'Google create/update',
 			{ userId, userData },
 			error,
@@ -120,13 +119,7 @@ const restore = async (req, res) => {
 		res.status(200).json(userData);
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
-			'Google restore',
-			{ userId, backupId },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.storeLog('Google restore', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -135,7 +128,7 @@ const remove = async (req, res) => {
 	const { userId, backupId } = req.body;
 	try {
 		const { driveAuth, drive } = await userDriveInstance(userId);
-		let userDB = await Models.User.findOne({ 'googleDrive.backupId': backupId });
+		let userDB = await db.User.findOne({ 'googleDrive.backupId': backupId });
 		let userAuth = userDB.googleDrive.auth;
 		userDB.googleDrive = { auth: userAuth };
 		driveAuth.backupIds.splice(driveAuth.backupIds.indexOf(backupId), 1);
@@ -145,13 +138,7 @@ const remove = async (req, res) => {
 		res.status(200).json({ message: 'OK' });
 	} catch (error) {
 		let message = luxon.errorMessage();
-		await Models.storeLog(
-			'Google remove',
-			{ userId, backupId },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.storeLog('Google remove', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -173,8 +160,8 @@ const addTracking = async (tracking, userId) => {
 };
 
 const userDriveInstance = async (userId) => {
-	let user = await Models.User.findById(userId);
-	let googleDrive = await Models.GoogleDrive.findById(user.googleDrive.auth);
+	let user = await db.User.findById(userId);
+	let googleDrive = await db.GoogleDrive.findById(user.googleDrive.auth);
 	oauth2Client.setCredentials(googleDrive.auth);
 	return {
 		user,
@@ -251,7 +238,7 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 	return result;
 };
 
-const sincronizeDrive = async (userId, currentDate) => {
+const syncronizeDrive = async (userId, currentDate) => {
 	const { user, driveAuth, drive } = await userDriveInstance(userId);
 	let driveStatus = 'Backup not found';
 	if (user.googleDrive.backupId)
@@ -288,7 +275,7 @@ export default {
 	createUpdate,
 	restore,
 	remove,
-	sincronizeDrive,
+	syncronizeDrive,
 	userDriveInstance,
 	backupDriveStatus,
 };

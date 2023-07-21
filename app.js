@@ -8,6 +8,7 @@ import dotenv from 'dotenv/config';
 import { router as user } from './src/routes/users_routes.js';
 import { router as mercadoLibre } from './src/routes/mercadolibre_routes.js';
 import { router as google } from './src/routes/google_routes.js';
+import { router as cronJobs } from './src/routes/cron_jobs_routes.js';
 
 app.use(compression());
 app.setMaxListeners(20);
@@ -19,6 +20,7 @@ app.use(helmet());
 app.use('/api/user', user);
 app.use('/api/google', google);
 app.use('/api/mercadolibre', mercadoLibre);
+app.use('/api/cronjobs', cronJobs);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));
