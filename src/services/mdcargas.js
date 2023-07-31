@@ -39,10 +39,8 @@ function startResponse(event) {
 }
 
 function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.status}`);
-	let eventIndex = eventsText.indexOf(
-		`${lastEvent.date} - ${lastEvent.time} - ${lastEvent.status}`,
-	);
+	let eventsText = eventsList.map((e) => e.status);
+	let eventIndex = eventsText.indexOf(lastEvent.status);
 	let eventsResponse = [];
 	if (eventIndex === -1) eventsResponse.push(lastEvent);
 

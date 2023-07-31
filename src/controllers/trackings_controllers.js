@@ -87,6 +87,7 @@ async function check(trackingId) {
 
 async function checkTracking(tracking) {
 	const { id, token, title, service, code, result } = tracking;
+
 	let checkResult = await services.checkHandler(service, code, result.lastEvent, id);
 
 	return {
