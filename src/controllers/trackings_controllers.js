@@ -86,22 +86,18 @@ async function check(trackingId) {
 }
 
 async function checkTracking(tracking) {
-	let result = await services.checkHandler(
-		tracking.service,
-		tracking.code,
-		tracking.result.lastEvent,
-		tracking.id,
-	);
+	const { id, token, title, service, code, result } = tracking;
+	let checkResult = await services.checkHandler(service, code, result.lastEvent, id);
 
 	return {
-		idMDB: tracking.id,
-		token: tracking.token,
-		title: tracking.title,
-		service: tracking.service,
+		idMDB: id,
+		token,
+		title,
+		service,
 		checkDate: luxon.getDate(),
 		checkTime: luxon.getTime(),
 		lastCheck: new Date(Date.now()),
-		result: result,
+		result: checkResult,
 	};
 }
 
