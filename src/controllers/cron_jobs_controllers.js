@@ -110,4 +110,22 @@ const cleanUp = async (req, res) => {
 	}
 };
 
-export default { checkTrackings, cleanUp };
+const newInstalls = async (req, res) => {
+	let dateToday = luxon.getDate();
+	try {
+		let usersCollection = await db.User.find({});
+		let result = usersCollection.filter((user) => {
+			let date = `${user.lastActivity.getDate().toString().padStart(2, 0)}/${(
+				user.lastActivity.getMonth() + 1
+			)
+				.toString()
+				.padStart(2, 0)}/${user.lastActivity.getFullYear()}`;
+			if (date === dateToday) return user;
+		});
+		return res.status(200).json({ newInstalls: result.length });
+	} catch (error) {
+		res.status(500).json({ error: error.toString() });
+	}
+};
+
+export default { checkTrackings, cleanUp, newInstalls };
