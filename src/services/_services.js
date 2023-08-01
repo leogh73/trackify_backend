@@ -3,6 +3,7 @@ import clicOh from './clicoh.js';
 import correoArgentino from './correoargentino.js';
 import dhl from './dhl.js';
 import ecaPack from './ecapack.js';
+import envioPack from './enviopack.js';
 import fastTrack from './fasttrack.js';
 import mdCargas from './mdcargas.js';
 import ocasa from './ocasa.js';
@@ -17,6 +18,7 @@ const list = {
 	'Correo Argentino': correoArgentino,
 	DHL: dhl,
 	EcaPack: ecaPack,
+	Enviopack: envioPack,
 	FastTrack: fastTrack,
 	MDCargas: mdCargas,
 	OCA: oca,
@@ -46,4 +48,27 @@ const checkHandler = async (service, code, lastEvent, trackingId) => {
 	}
 };
 
-export default { list, checkHandler };
+import db from '../modules/mongodb.js';
+
+const checkService = async (service, code) => {
+	let status = 'failed';
+	let check = await checkHandler(service, code);
+	if (check.events) status = 'ok';
+	if (check.detail === 'FUNCTION TIMEOUT') status = 'delayed';
+	return {
+		service,
+		status,
+	};
+};
+
+const statusCheck = async (req, res) => {
+	let user = await db.User.findById(req.body.userId);
+	if (!user) return res.status(401).json({ error: 'Not authorized' });
+	let testCodes = await db.TestCode.find({});
+	let checkResults = await Promise.all(
+		testCodes.map((data) => checkService(data.service, data.code)),
+	);
+	res.status(200).json({ checkResults });
+};
+
+export default { list, checkHandler, statusCheck };

@@ -1,6 +1,7 @@
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import services from '../services/_services.js';
+import vars from '../modules/crypto-js.js';
 
 async function add(userId, title, service, code, checkDate, checkTime, fromDrive, driveData) {
 	let result = fromDrive
@@ -26,7 +27,13 @@ async function add(userId, title, service, code, checkDate, checkTime, fromDrive
 	if (result.lastEvent != 'No hay datos') {
 		const addedTracking = await newTracking.save();
 		user.trackings.push(addedTracking.id);
-		await user.save();
+		await Promise.all([
+			user.save(),
+			db.TestCode.findOneAndUpdate(
+				{ service: newTracking.service },
+				{ $set: { code: newTracking.code } },
+			),
+		]);
 		result.trackingId = addedTracking.id;
 	}
 
@@ -112,7 +119,9 @@ function checkCompletedStatus(lastEvent) {
 		'entrega en',
 		'devolución',
 		'rehusado',
+		'recibido en destino',
 		'no pudo ser retirado',
+		'entrega en sucursal',
 	];
 	for (let word of includedWords) {
 		if (!status && lastEvent.toLowerCase().includes(word)) status = true;

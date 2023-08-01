@@ -63,11 +63,17 @@ const logSchema = new Schema({
 	time: { type: String, required: true },
 });
 
+const testCodeSchema = new Schema({
+	service: { type: String, required: true },
+	code: { type: String, required: true },
+});
+
 const User = mongoose.model('User', userSchema);
 const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
+const TestCode = mongoose.model('TestCode', testCodeSchema);
 
 const storeLog = async (actionName, actionDetail, errorMessage, date, time) =>
 	await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
@@ -78,5 +84,6 @@ export default {
 	GoogleDrive,
 	Contact,
 	Log,
+	TestCode,
 	storeLog,
 };
