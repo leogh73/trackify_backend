@@ -34,7 +34,7 @@ const checkHandler = async (service, code, lastEvent, trackingId) => {
 			new Promise((resolve, reject) => {
 				setTimeout(() => {
 					reject('FUNCTION TIMEOUT');
-				}, 9000);
+				}, 8000);
 			});
 		return await Promise.race([list[service].check(code, lastEvent, trackingId), timeout()]);
 	} catch (error) {
