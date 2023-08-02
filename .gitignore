@@ -69,3 +69,7 @@ node_modules/
 codigos.txt
 git rm --cached codigos.txt
 .vercel
+
+# test files
+test_routes.js
+test_controllers.js

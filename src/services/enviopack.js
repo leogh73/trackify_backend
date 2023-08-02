@@ -12,7 +12,7 @@ async function check(code, lastEvent) {
 		return {
 			date: e.fecha.split(time)[0].trim(),
 			time,
-			status: e.mensaje,
+			detail: e.mensaje,
 		};
 	});
 	eventsList.reverse();
@@ -37,14 +37,14 @@ function startResponse(eventsList, otherData) {
 	let response = {
 		events: eventsList,
 		otherData,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].status}`,
+		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].detail}`,
 	};
 
 	return response;
 }
 
 function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.status}`);
+	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.detail}`);
 	let eventIndex = eventsText.indexOf(lastEvent);
 
 	let listEventsFinal = [];
@@ -68,7 +68,7 @@ function convertFromDrive(driveData) {
 			locality: otherData[0][1],
 			state: otherData[0][2],
 		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].status}`,
+		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].detail}`,
 	};
 }
 

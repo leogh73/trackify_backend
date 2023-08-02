@@ -30,22 +30,12 @@ const initialize = async (req, res) => {
 
 const trackingAction = async (req, res) => {
 	const { userId, action } = req.params;
+
 	try {
 		let response;
 		if (action == 'add') {
 			const { title, service, code } = req.body;
-			let checkDate = luxon.getDate();
-			let checkTime = luxon.getTime();
-			response = await tracking.add(
-				userId,
-				title,
-				service,
-				code,
-				checkDate,
-				checkTime,
-				false,
-				null,
-			);
+			response = await tracking.add(userId, title, service, code, false, null);
 		} else {
 			const { trackingIds } = req.body;
 			await tracking.remove(userId, JSON.parse(trackingIds));
@@ -86,8 +76,10 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		await db.storeLog(
 			'syncronize',
@@ -104,8 +96,10 @@ const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 	try {
 		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
+		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage();
 		await db.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);

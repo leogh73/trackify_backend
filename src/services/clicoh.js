@@ -38,7 +38,7 @@ function startResponse(events, data) {
 		};
 	})();
 
-	let destiny = (() => {
+	let destination = (() => {
 		const { address, locality, country, administrative_area_level_1, postal_code } = data.to;
 		return {
 			address,
@@ -66,7 +66,7 @@ function startResponse(events, data) {
 	let response = {
 		events,
 		origin,
-		destiny,
+		destination,
 		receiver,
 		otherData,
 		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
@@ -122,7 +122,7 @@ function convertFromDrive(driveData) {
 			administrative_area_level_1: otherData[0][4],
 			postal_code: otherData[0][5],
 		},
-		destiny: {
+		destination: {
 			address: otherData[1][0],
 			locality: otherData[1][1],
 			country: otherData[1][2],

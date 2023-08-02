@@ -24,7 +24,7 @@ async function check(code, lastEvent) {
 		time: data.fechaHoraAdmision.split(' ')[1],
 	};
 
-	let destiny = {
+	let destination = {
 		receiverName: capitalizeText(data.nombreDestinatario),
 		receiverDni: data.nitDestinatario,
 		address: capitalizeText(data.direccionDestinatario),
@@ -57,19 +57,19 @@ async function check(code, lastEvent) {
 
 	let response;
 	if (!lastEvent) {
-		response = startResponse(eventsList, origin, destiny, aditional);
+		response = startResponse(eventsList, origin, destination, aditional);
 	} else {
-		response = updateResponse(eventsList, destiny, lastEvent);
+		response = updateResponse(eventsList, destination, lastEvent);
 	}
 
 	return response;
 }
 
-function startResponse(eventsList, origin, destiny, aditional) {
+function startResponse(eventsList, origin, destination, aditional) {
 	let response = {
 		events: eventsList,
 		origin,
-		destiny,
+		destination,
 		aditional,
 		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].status}`,
 	};
@@ -77,7 +77,7 @@ function startResponse(eventsList, origin, destiny, aditional) {
 	return response;
 }
 
-function updateResponse(eventsList, destiny, lastEvent) {
+function updateResponse(eventsList, destination, lastEvent) {
 	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.location} - ${e.status}`);
 	let eventIndex = eventsText.indexOf(lastEvent);
 
@@ -89,9 +89,9 @@ function updateResponse(eventsList, destiny, lastEvent) {
 	};
 
 	if (eventsResponse.length) {
-		response.destiny = {
-			dateDelivered: destiny.dateDelivered,
-			timeDelivered: destiny.timeDelivered,
+		response.destination = {
+			dateDelivered: destination.dateDelivered,
+			timeDelivered: destination.timeDelivered,
 		};
 		response.lastEvent = eventsText[0];
 	}
@@ -112,7 +112,7 @@ function convertFromDrive(driveData) {
 			date: otherData[0][5],
 			time: otherData[0][6],
 		},
-		destiny: {
+		destination: {
 			receiverName: otherData[1][0],
 			receiverDni: otherData[1][1],
 			address: otherData[1][2],

@@ -1,41 +1,42 @@
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import services from '../services/_services.js';
-import vars from '../modules/crypto-js.js';
 
-async function add(userId, title, service, code, checkDate, checkTime, fromDrive, driveData) {
+async function add(userId, title, service, code, fromDrive, driveData) {
 	let result = fromDrive
 		? services.list[service].convertFromDrive(driveData)
 		: await services.checkHandler(service, code, null);
+
+	if (result.lastEvent === 'No hay datos') return result;
+	if (result.error) return;
+
+	let checkDate = luxon.getDate();
+	let checkTime = luxon.getTime();
+
 	let user = await db.User.findById(userId);
 
-	let newTracking;
-	if (!result.error) {
-		newTracking = new db.Tracking({
-			title,
-			service,
-			code,
-			checkDate,
-			checkTime,
-			lastCheck: new Date(Date.now()),
-			token: user.tokenFB,
-			result,
-			completed: checkCompletedStatus(result.lastEvent),
-		});
-	}
+	let newTracking = await new db.Tracking({
+		title,
+		service,
+		code,
+		checkDate,
+		checkTime,
+		lastCheck: new Date(Date.now()),
+		token: user.tokenFB,
+		result,
+		completed: checkCompletedStatus(result.lastEvent),
+	}).save();
 
-	if (result.lastEvent != 'No hay datos') {
-		const addedTracking = await newTracking.save();
-		user.trackings.push(addedTracking.id);
-		await Promise.all([
-			user.save(),
-			db.TestCode.findOneAndUpdate(
-				{ service: newTracking.service },
-				{ $set: { code: newTracking.code } },
-			),
-		]);
-		result.trackingId = addedTracking.id;
-	}
+	user.trackings.push(newTracking.id);
+	result.trackingId = newTracking.id;
+
+	await Promise.all([
+		user.save(),
+		db.TestCode.findOneAndUpdate(
+			{ service: newTracking.service },
+			{ $set: { code: newTracking.code } },
+		),
+	]);
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
@@ -172,8 +173,8 @@ async function updateDatabase(response, tracking, completedStatus) {
 				{ _id: tracking._id },
 				{
 					$set: {
-						'result.destiny.dateDelivered': response.result.destiny.dateDelivered,
-						'result.destiny.timeDelivered': response.result.destiny.timeDelivered,
+						'result.destination.dateDelivered': response.result.destination.dateDelivered,
+						'result.destination.timeDelivered': response.result.destination.timeDelivered,
 					},
 				},
 			),

@@ -183,7 +183,7 @@ async function checkShipping(shippingOrder, httpHeaders) {
 		creationDate: convertDate(response.date_created),
 		lastUpdate: convertDate(response.last_updated),
 		origin: `${response.origin.shipping_address.address_line} - ${response.origin.shipping_address.city.name} - ${response.origin.shipping_address.state.name}`,
-		destiny: {
+		destination: {
 			address: `${response.destination.shipping_address.address_line} - ${response.destination.shipping_address.city.name} - ${response.destination.shipping_address.state.name}`,
 			name: `${response.destination.receiver_name}`,
 		},

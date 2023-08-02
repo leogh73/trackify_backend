@@ -34,7 +34,7 @@ function startResponse(data, eventsList) {
 		id: data.id,
 		service: data.service,
 		origin: data.origin.address.addressLocality,
-		destiny: data.destination.address.addressLocality,
+		destination: data.destination.address.addressLocality,
 		status: {
 			date: convertDate(data.status.timestamp.split('T')[0]),
 			time: data.status.timestamp.split('T')[1],
@@ -195,7 +195,7 @@ function convertFromDrive(driveData) {
 			id: otherData[0][0],
 			service: otherData[0][1],
 			origin: otherData[0][2],
-			destiny: otherData[0][3],
+			destination: otherData[0][3],
 		},
 		status: {
 			date: otherData[1][0],
