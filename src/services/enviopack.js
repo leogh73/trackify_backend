@@ -18,7 +18,8 @@ async function check(code, lastEvent) {
 	eventsList.reverse();
 
 	let otherData = {
-		service: data.correo ?? 'Sin datos',
+		serviceName: data.correo.nombre ?? 'Sin datos',
+		servicePhone: data.correo.telefono ?? 'Sin datos',
 		locality: data.localidad,
 		state: data.provincia,
 	};
