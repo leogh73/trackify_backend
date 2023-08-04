@@ -15,7 +15,7 @@ async function add(userId, title, service, code, fromDrive, driveData) {
 
 	let user = await db.User.findById(userId);
 
-	let newTracking = await new db.Tracking({
+	const { id } = await new db.Tracking({
 		title,
 		service,
 		code,
@@ -27,16 +27,15 @@ async function add(userId, title, service, code, fromDrive, driveData) {
 		completed: checkCompletedStatus(result.lastEvent),
 	}).save();
 
-	user.trackings.push(newTracking.id);
-	result.trackingId = newTracking.id;
+	user.trackings.push(id);
+	result.trackingId = id;
 
 	await Promise.all([
 		user.save(),
-		db.TestCode.findOneAndUpdate(
-			{ service: newTracking.service },
-			{ $set: { code: newTracking.code } },
-		),
+		db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } }),
 	]);
+
+	if (service === 'ViaCargo') result.destiny = result.destination;
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;

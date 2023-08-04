@@ -39,7 +39,7 @@ const trackingAction = async (req, res) => {
 		} else {
 			const { trackingIds } = req.body;
 			await tracking.remove(userId, JSON.parse(trackingIds));
-			response = { 'Eliminación completada': trackingIds };
+			response = { trackingIds };
 		}
 		let statusCode = response.lastEvent == 'No hay datos' ? 404 : 200;
 		res.status(statusCode).json(response);

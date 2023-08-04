@@ -22,8 +22,17 @@ const checkTrackings = async (req, res) => {
 			}
 		}
 		let operationsCollection = [];
-		for (let userResult of totalUserResults)
-			operationsCollection.push(sendNotification(userResult));
+		for (let userResult of totalUserResults) {
+			let title = 'Actualización de envío';
+			let body = userResult.results[0].title;
+			if (userResult.results.length > 1) {
+				title = 'Actualizaciones de envíos';
+				body = userResult.results.map((r) => r.title).join(' - ');
+			}
+			operationsCollection.push(
+				sendNotification(title, body, userResult.token, JSON.stringify(userResult.results)),
+			);
+		}
 		for (let check of succededChecks) {
 			operationsCollection.push(
 				tracking.updateDatabase(
@@ -57,7 +66,6 @@ const checkTrackings = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
 		await db.storeLog(
 			'trackings check',

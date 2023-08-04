@@ -7,22 +7,15 @@ admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
 });
 
-async function sendNotification(data) {
-	let notificationTitle = 'Actualización de envío';
-	let notificationBody = data.results[0].title;
-	if (data.results.length > 1) {
-		notificationTitle = 'Actualizaciones de envíos';
-		notificationBody = data.results.map((r) => r.title).join(' - ');
-	}
-
+const sendNotification = async (title, body, token, data) => {
 	const notification = {
 		notification: {
-			title: notificationTitle,
-			body: notificationBody,
+			title,
+			body,
 		},
-		token: data.token,
+		token,
 		data: {
-			data: JSON.stringify(data.results),
+			data,
 			click_action: 'FLUTTER_NOTIFICATION_CLICK',
 		},
 	};
@@ -30,11 +23,14 @@ async function sendNotification(data) {
 	try {
 		let response = await admin.messaging().send(notification);
 		console.log({ 'Notification sended': response });
+		// return response;
 	} catch (error) {
 		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
 			await user.remove(data.token);
 		}
+		console.log(error);
+		// return { error };
 	}
-}
+};
 
 export default sendNotification;
