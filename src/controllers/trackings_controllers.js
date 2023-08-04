@@ -7,8 +7,7 @@ async function add(userId, title, service, code, fromDrive, driveData) {
 		? services.list[service].convertFromDrive(driveData)
 		: await services.checkHandler(service, code, null);
 
-	if (result.lastEvent === 'No hay datos') return result;
-	if (result.error) return;
+	if (result.error) return result;
 
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();

@@ -41,7 +41,9 @@ const trackingAction = async (req, res) => {
 			await tracking.remove(userId, JSON.parse(trackingIds));
 			response = { trackingIds };
 		}
-		let statusCode = response.lastEvent == 'No hay datos' ? 404 : 200;
+		let statusCode = 200;
+		if (response.lastEvent === 'No hay datos') statusCode = 404;
+		if (response.error) statusCode = 400;
 		res.status(statusCode).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage();
@@ -76,10 +78,8 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		let message = luxon.errorMessage();
 		await db.storeLog(
 			'syncronize',
@@ -96,10 +96,8 @@ const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 	try {
 		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		let message = luxon.errorMessage();
 		await db.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);
