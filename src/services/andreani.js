@@ -35,14 +35,19 @@ async function check(code, lastEvent) {
 	});
 	if (!visitsList.length)
 		visitsList.push({
-			date: null,
-			time: null,
-			motive: null,
+			date: 'Sin datos',
+			time: 'Sin datos',
+			motive: 'Sin datos',
 		});
+
+	let pendingVisits =
+		typeof resultVisits.visitasPendientes === 'number'
+			? resultVisits.visitasPendientes
+			: 'Sin datos';
 
 	let newVisitList = {
 		visits: visitsList,
-		pendingVisits: resultVisits.visitasPendientes,
+		pendingVisits,
 	};
 
 	let response;
