@@ -33,6 +33,12 @@ async function check(code, lastEvent) {
 			motive: v.motivo,
 		};
 	});
+	if (!visitsList.length)
+		visitsList.push({
+			date: null,
+			time: null,
+			motive: null,
+		});
 
 	let newVisitList = {
 		visits: visitsList,
