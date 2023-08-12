@@ -6,10 +6,18 @@ import sendNotification from '../modules/firebase_notification.js';
 const checkTrackings = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
-		let checkCycleResults = await Promise.all(
+		let completedCheckIds = trackingsCollection
+			.filter((t) => tracking.checkCompletedStatus(t.result.lastEvent))
+			.map((t) => t.id);
+		let operationsCollection = [];
+		if (completedCheckIds.length)
+			operationsCollection.push(
+				db.Tracking.updateMany({ _id: { $in: completedCheckIds } }, { $set: { completed: true } }),
+			);
+		let trackingsCheckResult = await Promise.all(
 			trackingsCollection.map((t) => tracking.checkTracking(t)),
 		);
-		let succededChecks = checkCycleResults.filter((check) => check.result.events?.length);
+		let succededChecks = trackingsCheckResult.filter((check) => check.result.events?.length);
 		let totalUserResults = [];
 		for (let checkResult of succededChecks) {
 			let userResult = { token: checkResult.token };
@@ -21,7 +29,6 @@ const checkTrackings = async (req, res) => {
 				totalUserResults[resultIndex].results.push(checkResult);
 			}
 		}
-		let operationsCollection = [];
 		for (let userResult of totalUserResults) {
 			let title = 'Actualización de envío';
 			let body = userResult.results[0].title;
@@ -44,7 +51,7 @@ const checkTrackings = async (req, res) => {
 				),
 			);
 		}
-		let failedChecks = checkCycleResults.filter((check) => check.result.error);
+		let failedChecks = trackingsCheckResult.filter((check) => check.result.error);
 		if (failedChecks.length) {
 			operationsCollection.push(
 				db.storeLog(
@@ -60,12 +67,13 @@ const checkTrackings = async (req, res) => {
 		res.status(200).json({
 			message: 'Trackings Check Completed',
 			result: {
-				checked: checkCycleResults.length,
+				checked: trackingsCheckResult.length,
 				updated: succededChecks.length,
 				failed: failedChecks.length,
 			},
 		});
 	} catch (error) {
+		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
 		await db.storeLog(
 			'trackings check',
@@ -118,22 +126,4 @@ const cleanUp = async (req, res) => {
 	}
 };
 
-const newInstalls = async (req, res) => {
-	let dateToday = luxon.getDate();
-	try {
-		let usersCollection = await db.User.find({});
-		let result = usersCollection.filter((user) => {
-			let date = `${user.lastActivity.getDate().toString().padStart(2, 0)}/${(
-				user.lastActivity.getMonth() + 1
-			)
-				.toString()
-				.padStart(2, 0)}/${user.lastActivity.getFullYear()}`;
-			if (date === dateToday) return user;
-		});
-		return res.status(200).json({ newInstalls: result.length });
-	} catch (error) {
-		res.status(500).json({ error: error.toString() });
-	}
-};
-
-export default { checkTrackings, cleanUp, newInstalls };
+export default { checkTrackings, cleanUp };

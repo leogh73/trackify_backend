@@ -125,6 +125,13 @@ function checkCompletedStatus(lastEvent) {
 	for (let word of includedWords) {
 		if (!status && lastEvent.toLowerCase().includes(word)) status = true;
 	}
+	if (status) return status;
+	let eventDate = lastEvent.split(' - ')[0].split('/');
+	let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
+	let daysDifference = Math.floor(
+		(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
+	);
+	if (daysDifference > 7) status = true;
 	return status;
 }
 
