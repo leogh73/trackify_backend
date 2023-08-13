@@ -127,11 +127,11 @@ const cleanUp = async (req, res) => {
 			let daysElapsed = calculateDays(tracking.lastCheck);
 			if (daysElapsed > 14) trackingIds.push(tracking._id);
 		}
-		// let removeOperations = [];
-		// if (userIds.length) removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
-		// if (trackingIds.length)
-		// 	removeOperations.push(db.Tracking.deleteMany({ _id: { $in: trackingIds } }));
-		// if (removeOperations.length) await Promise.all(removeOperations);
+		let removeOperations = [];
+		if (userIds.length) removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
+		if (trackingIds.length)
+			removeOperations.push(db.Tracking.deleteMany({ _id: { $in: trackingIds } }));
+		if (removeOperations.length) await Promise.all(removeOperations);
 		res.status(200).json({
 			message: 'Clean Up Cycle Completed',
 			result: {
