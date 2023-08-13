@@ -64,12 +64,12 @@ const syncronize = async (req, res) => {
 
 	try {
 		let user = await db.User.findById(userId);
-		// if (!user || !version) {
-		// 	await remove(token);
-		// 	return res
-		// 		.status(200)
-		// 		.json({ error: !user ? 'User not found' : 'Lastest version not found' });
-		// }
+		if (!user || !version) {
+			await remove(token);
+			return res
+				.status(200)
+				.json({ error: !user ? 'User not found' : 'Lastest version not found' });
+		}
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
 		await update(user, token);
@@ -78,10 +78,8 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
-		console.log(response);
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		let message = luxon.errorMessage();
 		await db.storeLog(
 			'syncronize',
@@ -130,9 +128,11 @@ const contactForm = async (req, res) => {
 
 const remove = async (token) => {
 	let removeTasks = [];
-	removeTasks.push(db.User.findOneAndDelete({ tokenFB: token }));
-	if ((await db.User.findOne({ tokenFB: token })).trackings.length)
-		removeTasks.push(db.Tracking.deleteMany({ token: token }));
+	let user = await db.User.findOne({ tokenFB: token });
+	if (user) {
+		removeTasks.push(db.User.findOneAndDelete({ tokenFB: token }));
+		if (user.trackings.length) removeTasks.push(db.Tracking.deleteMany({ token: token }));
+	}
 	await Promise.all(removeTasks);
 };
 
