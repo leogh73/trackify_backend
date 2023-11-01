@@ -1,10 +1,8 @@
 import services from './_services.js';
-import mercadoLibre from '../controllers/mercadoLibre_controllers.js';
+import mercadoLibre from '../controllers/mercado_libre_controllers.js';
 
 async function check(code, lastEvent, service, token) {
 	let consult = await mercadoLibre.fetchTrackingData(code, token);
-
-	console.log(consult);
 
 	let result1 = JSON.parse(consult[0].body);
 

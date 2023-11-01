@@ -1,6 +1,6 @@
 import express from 'express';
 export const router = express.Router();
-import googleDrive from '../controllers/googleDrive_controllers.js';
+import googleDrive from '../controllers/google_drive_controllers.js';
 
 router.post('/initialize', googleDrive.initialize);
 router.post('/consult', googleDrive.consult);

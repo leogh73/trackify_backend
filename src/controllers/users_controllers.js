@@ -1,7 +1,7 @@
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
-import google from './googleDrive_controllers.js';
+import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
 
 const initialize = async (req, res) => {

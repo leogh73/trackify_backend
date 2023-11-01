@@ -13,9 +13,9 @@ app.use(helmet());
 app.use(compression());
 
 import { router as user } from './src/routes/users_routes.js';
-import { router as mercadoLibre } from './src/routes/mercadoLibre_routes.js';
-import { router as googleDrive } from './src/routes/googleDrive_routes.js';
-import { router as cronJobs } from './src/routes/cronJobs_routes.js';
+import { router as mercadoLibre } from './src/routes/mercado_libre_routes.js';
+import { router as googleDrive } from './src/routes/google_drive_routes.js';
+import { router as cronJobs } from './src/routes/cron_jobs_routes.js';
 // import { router as dev } from './src/routes/dev_routes.js';
 
 app.use('/api/user', user);
