@@ -22,24 +22,7 @@ app.use('/api/user', user);
 app.use('/api/googledrive', googleDrive);
 app.use('/api/mercadolibre', mercadoLibre);
 app.use('/api/cronjobs', cronJobs);
-app.use('/api/dev', dev);
-
-import db from './src/modules/mongodb.js';
-import vars from './src/modules/crypto-js.js';
-import got from 'got';
-
-app.get('/awake', async (req, res) => {
-	try {
-		await Promise.all([
-			got(`${vars.PLAYWRIGHT_API_URL}/awake`),
-			db.Tracking.find({ completed: false }),
-		]);
-		res.sendStatus(204);
-	} catch (error) {
-		console.log(error);
-		res.status(500).json({ error: error.toString() });
-	}
-});
+// app.use('/api/dev', dev);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));
