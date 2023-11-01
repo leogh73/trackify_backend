@@ -87,7 +87,7 @@ const awakeAPIs = async (req, res) => {
 			got(`${vars.PLAYWRIGHT_API_URL}/awake`),
 			db.Tracking.find({ completed: false }),
 		]);
-		res.sendStatus(204);
+		res.status(200).json({ success: 'APIs awaken successfully' });
 	} catch (error) {
 		console.log(error);
 		res.status(500).json({ error: error.toString() });
