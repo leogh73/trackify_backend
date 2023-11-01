@@ -32,6 +32,8 @@ async function check(code, lastEvent) {
 		};
 	});
 
+	let oldData = oldOtherData(JSON.parse(consults[2].body));
+
 	if (lastEvent) {
 		let response = services.updateResponseHandler(eventsList, lastEvent);
 		if (response.lastEvent) response.visits = oldData.newVisitList;
@@ -70,7 +72,7 @@ async function check(code, lastEvent) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	response = { ...response, ...oldOtherData(JSON.parse(consults[2].body)) };
+	response = { ...response, ...oldData };
 
 	return response;
 }
