@@ -1,5 +1,6 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
@@ -9,7 +10,12 @@ async function check(code, lastEvent) {
 			.replace('dividedCode1', dividedCode[1])
 			.replace('dividedCode2', dividedCode[2])}`,
 	);
+
 	const $ = load(consult.body);
+
+	if ($('div:nth-child(3) > p:nth-child(1) > strong').text() === 'Busqueda sin Resultado') {
+		return { error: 'No data' };
+	}
 
 	let rowList = [];
 	$('body > div > table > tbody > tr > td').each(function () {
@@ -35,47 +41,12 @@ async function check(code, lastEvent) {
 	}
 	eventsList.reverse();
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList);
-	} else {
-		response = updateResponse(eventsList, lastEvent);
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	return response;
-}
-
-function startResponse(eventsList) {
-	let response = {
-		events: eventsList,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].sign}`,
-	};
-
-	return response;
-}
-
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.location} - ${e.sign}`);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsListFinal = [];
-	if (eventIndex) eventsListFinal = eventsList.slice(0, eventIndex);
-
-	let response = { events: eventsListFinal };
-	if (eventsListFinal.length) response.lastEvent = eventsText[0];
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events } = driveData;
 	return {
-		events,
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].location} - ${events[0].sign}`,
+		events: eventsList,
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
 
-export default {
-	check,
-	convertFromDrive,
-};
+export default { check };

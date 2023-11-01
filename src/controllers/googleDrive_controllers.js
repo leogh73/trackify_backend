@@ -14,27 +14,28 @@ const initialize = async (req, res) => {
 	const { userId, authCode, email } = req.body;
 
 	try {
-		let userTokens = await oauth2Client.getToken(authCode);
-		let userAuth = userTokens.tokens;
+		let tokens = (await oauth2Client.getToken(authCode)).tokens;
 		let user = await db.User.findById(userId);
 		let existingAuth = await db.GoogleDrive.findOne({ email: email });
 		if (existingAuth) {
 			user.googleDrive.auth = existingAuth.id;
-			if (userAuth.refresh_token) {
-				existingAuth.auth.refresh_token = userAuth.refresh_token;
-				await existingAuth.save();
+			if (tokens.refresh_token) {
+				await db.GoogleDrive.findOneAndUpdate(
+					{ _id: existingAuth._id },
+					{ $set: { auth: tokens } },
+				);
 			}
 		} else {
 			const { id } = await new db.GoogleDrive({
-				auth: userAuth,
+				auth: tokens,
 				email,
 			}).save();
 			user.googleDrive.auth = id;
 		}
 		await user.save();
-		res.status(200).json(userAuth);
+		res.status(200).json(tokens);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'Google initialize',
 			{ userId, authCode, email },
@@ -56,7 +57,7 @@ const consult = async (req, res) => {
 			backupFiles.unshift({ date: null, currentDevice: true });
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog('Google consult', { userId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
@@ -84,7 +85,7 @@ const createUpdate = async (req, res) => {
 		}
 		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'Google create/update',
 			{ userId, userData },
@@ -118,7 +119,7 @@ const restore = async (req, res) => {
 		}
 		res.status(200).json(userData);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog('Google restore', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
@@ -137,24 +138,15 @@ const remove = async (req, res) => {
 		await drive.files.delete({ fileId: backupId });
 		res.status(200).json({ message: 'OK' });
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog('Google remove', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
 
 const addTracking = async (tracking, userId) => {
-	const { title, service, code, lastCheck, events, otherData } = tracking;
-	const { trackingId } = await trackings.add(
-		userId,
-		title,
-		service,
-		code,
-		lastCheck.split(' - ')[0],
-		lastCheck.split(' - ')[1],
-		true,
-		{ events, otherData },
-	);
+	const { title, service, code, lastCheck, events, moreData } = tracking;
+	const { trackingId } = await trackings.add(userId, title, service, code, { events, moreData });
 	tracking.idMDB = trackingId;
 	return tracking;
 };
@@ -174,7 +166,9 @@ const userDriveInstance = async (userId) => {
 };
 
 const findBackups = async (user, driveAuth, drive) => {
-	let backupFiles = await Promise.all(driveAuth.backupIds.map((id) => readBackup(drive, id)));
+	let backupFiles = [];
+	if (!driveAuth.backupIds.length) return backupFiles;
+	backupFiles = await Promise.all(driveAuth.backupIds.map((id) => readBackup(drive, id)));
 	if (user.googleDrive.backupId) {
 		let deviceBackup = backupFiles.filter((b) => b.id == user.googleDrive.backupId);
 		let dBackupIndex = backupFiles.indexOf(deviceBackup[0]);
@@ -210,13 +204,15 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 		data.mercadoLibre = user.mercadoLibre;
 		userData = data;
 	}
+
+
 	let result;
-	if (backupFiles[0]?.currentDevice) {
+	if (backupFiles.length && backupFiles[0]?.currentDevice) {
 		result = await drive.files.update({
 			fileId: backupFiles[0].id,
 			media: {
 				mimeType: 'application/json',
-				body: userData,
+				body: JSON.stringify(userData),
 			},
 		});
 	} else {
@@ -226,7 +222,7 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 			},
 			media: {
 				mimeType: 'application/json',
-				body: userData,
+				body: JSON.stringify(userData),
 			},
 			uploadType: 'media',
 		});

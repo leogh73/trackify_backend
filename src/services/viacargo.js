@@ -1,11 +1,18 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.VIACARGO_API_URL.replace('code', code)}`);
-	let data = JSON.parse(consult.body).ok[0].objeto;
+	let consult;
+	try {
+		consult = await got.post(`${vars.VIACARGO_API_URL}${code}`);
+	} catch (error) {
+		let response = services.errorResponseHandler(error.response);
+		if (response.body === 'No encontrado') return { error: 'No data' };
+	}
+	let result = JSON.parse(consult.body).ok[0].objeto;
 
-	let eventsList = data.listaEventos.map((e) => {
+	let eventsList = result.listaEventos.map((e) => {
 		return {
 			date: e.fechaEvento.split(' ')[0],
 			time: e.fechaEvento.split(' ')[1],
@@ -14,125 +21,112 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	let origin = {
-		senderName: capitalizeText(data.nombreRemitente),
-		senderDni: data.nitRemitente,
-		address: capitalizeText(data.direccionRemitente),
-		zipCode: data.codigoPostalRemitente,
-		state: data.poblacionRemitente,
-		date: data.fechaHoraAdmision.split(' ')[0],
-		time: data.fechaHoraAdmision.split(' ')[1],
+	let destination = {
+		'Nombre del destinatario': services.capitalizeText(false, result.nombreDestinatario),
+		'DNI del destinatario': result.nitDestinatario,
+		Dirección: services.capitalizeText(false, result.direccionDestinatario),
+		'Código postal': result.codigoPostalDestinatario,
+		Provincia: result.poblacionDestinatario,
+		Teléfono: result.telefonoDestinatario,
+		'Fecha de entrega': `${
+			result.fechaHoraEntrega?.split(' ')[0] ? result.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
+		}`,
+		'Hora de entrega': `${
+			result.fechaHoraEntrega?.split(' ')[1] ? result.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
+		}`,
 	};
 
+	if (lastEvent) {
+		let response = services.updateResponseHandler(eventsList, lastEvent);
+		if (response.lastEvent) {
+			response.destination = {
+				dateDelivered: destination['Fecha de entrega'],
+				timeDelivered: destination['Hora de entrega'],
+			};
+			response.moreData = [
+				{
+					title: 'DESTINO',
+					data: destination,
+				},
+			];
+		}
+		return response;
+	}
+
+	let origin = {
+		Nombre: services.capitalizeText(false, result.nombreRemitente),
+		DNI: result.nitRemitente,
+		Dirección: services.capitalizeText(false, result.direccionRemitente),
+		'Código postal': result.codigoPostalRemitente,
+		Provincia: result.poblacionRemitente,
+		Fecha: result.fechaHoraAdmision.split(' ')[0],
+		Hora: result.fechaHoraAdmision.split(' ')[1],
+	};
+
+	let otherData = {
+		'Peso declarado': `${result.kilos + ' kg.'}`,
+		'Número de piezas': result.numeroTotalPiezas,
+		Servicio: services.capitalizeText(false, result.descripcionServicio),
+		Firma: `${result.nifQuienRecibe ? result.nifQuienRecibe : '-'}`,
+	};
+
+	let response = {
+		events: eventsList,
+		moreData: [
+			{
+				title: 'DESTINO',
+				data: destination,
+			},
+			{
+				title: 'ORIGEN',
+				data: origin,
+			},
+			{
+				title: 'OTROS DATOS',
+				data: otherData,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
+	};
+
+	response = { ...response, ...oldApiData(result) };
+
+	return response;
+}
+
+export default { check };
+
+function oldApiData(result) {
 	let destination = {
-		receiverName: capitalizeText(data.nombreDestinatario),
-		receiverDni: data.nitDestinatario,
-		address: capitalizeText(data.direccionDestinatario),
-		zipCode: data.codigoPostalDestinatario,
-		state: data.poblacionDestinatario,
-		phone: data.telefonoDestinatario,
+		receiverName: services.capitalizeText(false, result.nombreDestinatario),
+		receiverDni: result.nitDestinatario,
+		address: services.capitalizeText(false, result.direccionDestinatario),
+		zipCode: result.codigoPostalDestinatario,
+		state: result.poblacionDestinatario,
+		phone: result.telefonoDestinatario,
 		dateDelivered: `${
-			data.fechaHoraEntrega?.split(' ')[0] ? data.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
+			result.fechaHoraEntrega?.split(' ')[0] ? result.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
 		}`,
 		timeDelivered: `${
-			data.fechaHoraEntrega?.split(' ')[1] ? data.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
+			result.fechaHoraEntrega?.split(' ')[1] ? result.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
 		}`,
+	};
+	let origin = {
+		senderName: services.capitalizeText(false, result.nombreRemitente),
+		senderDni: result.nitRemitente,
+		address: services.capitalizeText(false, result.direccionRemitente),
+		zipCode: result.codigoPostalRemitente,
+		state: result.poblacionRemitente,
+		date: result.fechaHoraAdmision.split(' ')[0],
+		time: result.fechaHoraAdmision.split(' ')[1],
 	};
 
 	let aditional = {
-		weightDeclared: `${data.kilos + ' kg.'}`,
-		numberOfPieces: data.numeroTotalPiezas,
-		service: capitalizeText(data.descripcionServicio),
-		sign: `${data.nifQuienRecibe ? data.nifQuienRecibe : '-'}`,
+		weightDeclared: `${result.kilos + ' kg.'}`,
+		numberOfPieces: result.numeroTotalPiezas,
+		service: services.capitalizeText(false, result.descripcionServicio),
+		sign: `${result.nifQuienRecibe ? result.nifQuienRecibe : '-'}`,
 	};
 
-	function capitalizeText(text) {
-		let newText = text
-			.toLowerCase()
-			.split(' ')
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(' ');
-		return newText;
-	}
-
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList, origin, destination, aditional);
-	} else {
-		response = updateResponse(eventsList, destination, lastEvent);
-	}
-
-	return response;
+	return { destination, origin, aditional };
 }
-
-function startResponse(eventsList, origin, destination, aditional) {
-	let response = {
-		events: eventsList,
-		origin,
-		destination,
-		aditional,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].status}`,
-	};
-
-	return response;
-}
-
-function updateResponse(eventsList, destination, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.location} - ${e.status}`);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsResponse = [];
-	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
-
-	let response = {
-		events: eventsResponse,
-	};
-
-	if (eventsResponse.length) {
-		response.destination = {
-			dateDelivered: destination.dateDelivered,
-			timeDelivered: destination.timeDelivered,
-		};
-		response.lastEvent = eventsText[0];
-	}
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		origin: {
-			senderName: otherData[0][0],
-			senderDni: otherData[0][1],
-			address: otherData[0][2],
-			zipCode: otherData[0][3],
-			state: otherData[0][4],
-			date: otherData[0][5],
-			time: otherData[0][6],
-		},
-		destination: {
-			receiverName: otherData[1][0],
-			receiverDni: otherData[1][1],
-			address: otherData[1][2],
-			zipCode: otherData[1][3],
-			state: otherData[1][4],
-			phone: otherData[1][5],
-			dateDelivered: otherData[1][6],
-			timeDelivered: otherData[1][7],
-		},
-		aditional: {
-			weightDeclared: otherData[2][0],
-			numberOfPieces: otherData[2][1],
-			service: otherData[2][2],
-			sign: otherData[2][3],
-		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].location} - ${events[0].status}`,
-	};
-}
-
-export default {
-	check,
-	convertFromDrive,
-};

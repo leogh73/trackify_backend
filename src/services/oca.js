@@ -1,5 +1,6 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
 	let consultEvents = await got.post(`${vars.OCA_TRACKING_API_URL}`, {
@@ -7,7 +8,7 @@ async function check(code, lastEvent) {
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
 
-	if (!resultEvents.length) return { lastEvent: 'No hay datos' };
+	if (!resultEvents.length) return { error: 'No data' };
 
 	let eventsList = resultEvents.map((e) => {
 		return {
@@ -30,76 +31,48 @@ async function check(code, lastEvent) {
 		let resultOrigin = JSON.parse(consultOrigin.body).d;
 
 		originData = {
-			name: resultOrigin.LastName,
-			address: resultOrigin.Street,
-			number: resultOrigin.Number,
-			zipCode: resultOrigin.ZipCode.trim(),
-			locality: resultOrigin.Locality.trim(),
-			state: resultOrigin.State.trim(),
-			email: resultOrigin.Email,
-			phone: resultOrigin.Conctact,
+			Nombre: resultOrigin.LastName,
+			Dirección: `${resultOrigin.Street} ${resultOrigin.Number}`,
+			'Código postal': resultOrigin.ZipCode.trim(),
+			Localidad: resultOrigin.Locality.trim(),
+			Estado: resultOrigin.State.trim(),
+			'Correo electrónico': resultOrigin.Email,
+			Teléfono: resultOrigin.Conctact,
 		};
 	}
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList, productNumber, originData);
-	} else {
-		response = updateResponse(eventsList, lastEvent);
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	return response;
-}
-
-function startResponse(eventsList, productNumber, originData) {
 	let response = {
 		events: eventsList,
-		origin: originData,
-		productNumber: productNumber,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].status} - ${eventsList[0].motive} - ${eventsList[0].location}`,
+		moreData: [
+			{
+				title: 'ORIGEN',
+				data: originData,
+			},
+			{
+				title: 'PRODUCTO',
+				data: { Número: productNumber },
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	return response;
-}
-
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map(
-		(e) => `${e.date} - ${e.time} - ${e.status} - ${e.motive} - ${e.location}`,
-	);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let listEventsFinal = [];
-	if (eventIndex) listEventsFinal = eventsList.slice(0, eventIndex);
-
-	let response = {
-		events: listEventsFinal,
-	};
-
-	if (listEventsFinal.length) response.lastEvent = eventsText[0];
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		origin: {
-			name: otherData[0][0],
-			address: otherData[0][1],
-			number: otherData[0][2],
-			zipCode: otherData[0][3],
-			locality: otherData[0][4],
-			state: otherData[0][5],
-			email: otherData[0][6],
-			phone: otherData[0][7],
+	response = {
+		...response,
+		otherData: {
+			name: originData.Nombre,
+			address: originData.Dirección,
+			zipCode: originData['Código postal'],
+			locality: originData.Localidad,
+			state: originData.Provincia,
+			email: originData['Correo electrónico'],
+			phone: originData.Teléfono,
 		},
-		productNumber: otherData[1][0],
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].status} - ${events[0].motive} - ${events[0].location}`,
+		productNumber,
 	};
+
+	return response;
 }
 
-export default {
-	check,
-	convertFromDrive,
-};
+export default { check };

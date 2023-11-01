@@ -1,13 +1,19 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let data = JSON.parse(
-		(await got.post(`${vars.PLAYWRIGHT_API_ENVIOPACK_URL}`, { json: { code } })).body,
-	)[0];
-	if (!data) return { lastEvent: 'No hay datos' };
+	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
+		json: { service: 'Enviopack', code },
+	});
+	let result = JSON.parse(consult.body);
 
-	let eventsList = data.tracking.map((e) => {
+	if (result.message === 'No existe un envío con el nº de tracking informado')
+		return { error: 'No data' };
+
+	const { tracking, correo, localidad, provincia } = result[0];
+
+	let eventsList = tracking.map((e) => {
 		let time = e.fecha.substr(e.fecha.length - 5);
 		return {
 			date: e.fecha.split(time)[0].trim(),
@@ -18,62 +24,36 @@ async function check(code, lastEvent) {
 	eventsList.reverse();
 
 	let otherData = {
-		serviceName: data.correo.nombre ?? 'Sin datos',
-		servicePhone: data.correo.telefono ?? 'Sin datos',
-		locality: data.localidad,
-		state: data.provincia,
+		Servicio: correo.nombre ?? 'Sin datos',
+		Teléfono: correo.telefono ?? 'Sin datos',
+		Localidad: localidad,
+		Provincia: provincia,
 	};
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList, otherData);
-	} else {
-		response = updateResponse(eventsList, lastEvent);
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	return response;
-}
-
-function startResponse(eventsList, otherData) {
 	let response = {
 		events: eventsList,
-		otherData,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].detail}`,
+		moreData: [
+			{
+				title: 'OTROS DATOS',
+				data: otherData,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	return response;
-}
-
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.detail}`);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let listEventsFinal = [];
-	if (eventIndex) listEventsFinal = eventsList.slice(0, eventIndex);
-
-	let response = {
-		events: listEventsFinal,
-	};
-
-	if (listEventsFinal.length) response.lastEvent = eventsText[0];
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
+	response = {
+		...response,
 		otherData: {
-			service: otherData[0][0],
-			locality: otherData[0][1],
-			state: otherData[0][2],
+			serviceName: otherData.Servicio,
+			servicePhone: otherData.Telefóno,
+			locality: otherData.Localidad,
+			state: otherData.Provincia,
 		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].detail}`,
 	};
+
+	return response;
 }
 
-export default {
-	check,
-	convertFromDrive,
-};
+export default { check };

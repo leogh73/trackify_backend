@@ -1,120 +1,125 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
-	const consult = await got(`${vars.DHL_API_URL.replace('code', code)}`, {
-		headers: {
-			Accept: 'application/json',
-			'DHL-API-Key': `${vars.DHL_API_KEY}`,
-		},
-	});
-	const data = JSON.parse(consult.body).shipments[0];
+	let consult;
+	try {
+		consult = await got(`${vars.DHL_API_URL}${code}`, {
+			headers: {
+				Accept: 'application/json',
+				'DHL-API-Key': `${vars.DHL_API_KEY}`,
+			},
+		});
+	} catch (error) {
+		if (JSON.parse(error.response.body).detail === 'No shipment with given tracking number found.')
+			return { error: 'No data' };
+	}
+	let result = JSON.parse(consult.body).shipments[0];
 
-	let eventsList = data.events.map((e) => {
+	let eventsList = result.events.map((e) => {
 		return {
 			date: convertDate(e.timestamp.split('T')[0]),
-			time: e.timestamp.split('T')[1],
+			time: e.timestamp.split('T')[1].split(':00')[0],
 			location: e.location.address.addressLocality,
 			description: translateText(e.description),
 		};
 	});
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(data, eventsList);
-	} else {
-		response = updateResponse(data, eventsList, lastEvent);
-	}
+	const { id, service, origin, destination, status, details } = result;
 
-	return response;
-}
-
-function startResponse(data, eventsList) {
-	const shipping = {
-		id: data.id,
-		service: data.service,
-		origin: data.origin.address.addressLocality,
-		destination: data.destination.address.addressLocality,
-		status: {
-			date: convertDate(data.status.timestamp.split('T')[0]),
-			time: data.status.timestamp.split('T')[1],
-			location: data.status.location.address.addressLocality,
-			moreDetails: 'Sin datos',
-			nextStep: 'Sin datos',
-			statusCode: translateText(data.status.statusCode),
-			status: translateText(data.status.status),
-			description: translateText(data.status.description),
-		},
+	let shippingStatus = {
+		Fecha: convertDate(status.timestamp.split('T')[0]),
+		Hora: status.timestamp.split('T')[1],
+		Ubicación: status.location.address.addressLocality,
+		'Más detalles': 'Sin datos',
+		'Próximo paso': 'Sin datos',
+		'Código de estado': translateText(status.statusCode),
+		Estado: translateText(status.status),
+		Descripción: translateText(status.description),
 	};
-	if (data.status.remark) {
-		shipping.status.moreDetails = translateText(data.status.remark);
-		shipping.status.nextStep = translateText(data.status.nextSteps);
-	}
 
-	const details = {
-		totalPieces: data.details.totalNumberOfPieces,
-		pieceIds: data.details.pieceIds,
-		signatureUrl: 'Sin datos',
-		documentUrl: 'Sin datos',
-		date: 'Sin datos',
-		time: 'Sin datos',
-		signedType: 'Sin datos',
-		signedName: 'Sin datos',
-	};
-	if (data.details.proofOfDelivery) {
-		details.signatureUrl = data.details.proofOfDelivery.signatureUrl;
-		details.documentUrl = data.details.proofOfDelivery.documentUrl;
-		if (data.details.proofOfDelivery.timestamp) {
-			details.date = convertDate(data.details.proofOfDelivery.timestamp.split('T')[0]);
-			details.time = data.details.proofOfDelivery.timestamp.split('T')[1];
+	if (lastEvent) {
+		if (result.status.remark !== undefined) {
+			shippingStatus['Más detalles'] = translateText(result.status.remark);
+			shippingStatus['Próximo paso'] = translateText(result.status.nextSteps);
 		}
-		if (data.details.proofOfDelivery.signed) {
-			details.signedType = data.details.proofOfDelivery.signed.type;
-			details.signedName = data.details.proofOfDelivery.signed.name;
+
+		let response = services.updateResponseHandler(eventsList, lastEvent);
+
+		if (response.lastEvent) {
+			response.moreData = [
+				{
+					title: 'ESTADO DE ENVIO',
+					data: shippingStatus,
+				},
+			];
+		}
+
+		return response;
+	}
+
+	let shippingDetail = {
+		Número: id,
+		Servicio: service,
+		Origen: origin.address.addressLocality,
+		Destino: destination.address.addressLocality,
+	};
+
+	if (status.remark) {
+		shipping.status.moreDetails = translateText(status.remark);
+		shipping.status.nextStep = translateText(status.nextSteps);
+	}
+
+	let detailsData = {
+		'Cantidad de piezas': details.totalNumberOfPieces,
+		'Números de piezas': details.pieceIds,
+		'Link de firma': 'Sin datos',
+		'Link de documento': 'Sin datos',
+		Fecha: 'Sin datos',
+		Hora: 'Sin datos',
+		'Tipo de firma': 'Sin datos',
+		'Firmado por': 'Sin datos',
+	};
+
+	if (details.proofOfDelivery) {
+		detailsData['Link de firma'] = details.proofOfDelivery.signatureUrl;
+		detailsData['Link de documento'] = details.proofOfDelivery.documentUrl;
+		if (details.proofOfDelivery.timestamp) {
+			detailsData.Fecha = convertDate(details.proofOfDelivery.timestamp.split('T')[0]);
+			detailsData.Hora = details.proofOfDelivery.timestamp.split('T')[1];
+		}
+		if (details.proofOfDelivery.signed) {
+			detailsData['Tipo de firma'] = result.details.proofOfDelivery.signed.type;
+			detailsData['Firmado por'] = result.details.proofOfDelivery.signed.name;
 		}
 	}
 
 	let response = {
 		events: eventsList,
-		shipping,
-		details,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].description}`,
+		moreData: [
+			{
+				title: 'DETALLE DE ENVIO',
+				data: shippingDetail,
+			},
+			{
+				title: 'ESTADO DE ENVIO',
+				data: shippingStatus,
+			},
+			{
+				title: 'DETALLE',
+				data: detailsData,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
+
+	response = { ...response, ...oldApiData(result) };
 
 	return response;
 }
 
-function updateResponse(data, eventsList, lastEvent) {
-	const status = {
-		date: convertDate(data.status.timestamp.split('T')[0]),
-		time: data.status.timestamp.split('T')[1],
-		location: data.status.location.address.addressLocality,
-		statusCode: translateText(data.status.statusCode),
-		status: translateText(data.status.status),
-		description: translateText(data.status.description),
-	};
-
-	if (data.status.remark !== undefined) {
-		status['moreDetails'] = translateText(data.status.remark);
-		status['nextStep'] = translateText(data.status.nextSteps);
-	}
-
-	let eventsText = eventsList.map(
-		(e) => `${e.date} - ${e.time} - ${e.location} - ${e.description}`,
-	);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsListFinal = [];
-	if (eventIndex) eventsListFinal = eventsList.slice(0, eventIndex);
-
-	let response = { events: eventsListFinal };
-	if (eventsListFinal.length) {
-		response.status = status;
-		response.lastEvent = eventsText[0];
-	}
-
-	return response;
-}
+export default { check };
 
 function translateText(text) {
 	if (text.startsWith('Delivered - Signed for by')) {
@@ -183,45 +188,63 @@ function translateText(text) {
 function convertDate(date) {
 	let dateToday = new Date(date);
 	let newDate =
-		dateToday.getDate() + '/' + (dateToday.getMonth() + 1) + '/' + dateToday.getFullYear();
+		dateToday.getDate() +
+		'/' +
+		(dateToday.getMonth() + 1).toString().padStart(2, 0) +
+		'/' +
+		dateToday.getFullYear();
 	return newDate;
 }
 
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		service: {
-			id: otherData[0][0],
-			service: otherData[0][1],
-			origin: otherData[0][2],
-			destination: otherData[0][3],
-		},
-		status: {
-			date: otherData[1][0],
-			time: otherData[1][1],
-			location: otherData[1][2],
-			moreDetails: otherData[1][3],
-			nextStep: otherData[1][4],
-			statusCode: otherData[1][5],
-			status: otherData[1][6],
-			description: otherData[1][7],
-		},
-		details: {
-			totalPieces: otherData[2][0],
-			pieceIds: otherData[3][0].split(' - '),
-			signatureUrl: otherData[2][1],
-			documentUrl: otherData[2][2],
-			date: otherData[2][3],
-			time: otherData[2][4],
-			signedType: otherData[2][5],
-			signedName: otherData[2][6],
-		},
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].description}`,
-	};
-}
+function oldApiData(result) {
+	const { id, service, origin, destination, status, details } = result;
 
-export default {
-	check,
-	convertFromDrive,
-};
+	let shippingDetail = {
+		id: id,
+		service: service,
+		origin: origin.address.addressLocality,
+		destination: destination.address.addressLocality,
+	};
+
+	let shippingStatus = {
+		date: convertDate(status.timestamp.split('T')[0]),
+		time: status.timestamp.split('T')[1],
+		location: status.location.address.addressLocality,
+		moreDetails: 'Sin datos',
+		nextStep: 'Sin datos',
+		statusCode: translateText(status.statusCode),
+		status: translateText(status.status),
+		description: translateText(status.description),
+	};
+
+	if (status.remark) {
+		shipping.status.moreDetails = translateText(status.remark);
+		shipping.status.nextStep = translateText(status.nextSteps);
+	}
+
+	let detailsData = {
+		totalPieces: details.totalNumberOfPieces,
+		pieceIds: details.pieceIds,
+		signatureUrl: 'Sin datos',
+		documentUrl: 'Sin datos',
+		date: 'Sin datos',
+		time: 'Sin datos',
+		signedType: 'Sin datos',
+		signedName: 'Sin datos',
+	};
+
+	if (details.proofOfDelivery) {
+		detailsData.signatureUrl = details.proofOfDelivery.signatureUrl;
+		detailsData.documentUrl = details.proofOfDelivery.documentUrl;
+		if (details.proofOfDelivery.timestamp) {
+			detailsData.date = convertDate(details.proofOfDelivery.timestamp.split('T')[0]);
+			detailsData.time = details.proofOfDelivery.timestamp.split('T')[1];
+		}
+		if (details.proofOfDelivery.signed) {
+			detailsData.signedType = result.details.proofOfDelivery.signed.type;
+			detailsData.signedName = result.details.proofOfDelivery.signed.name;
+		}
+	}
+
+	return { shippingDetail, shippingStatus, detailsData };
+}

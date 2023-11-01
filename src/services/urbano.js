@@ -1,10 +1,11 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let url;
-	if (code.toString().includes('00000000')) {
+	if (code.toString().length > 16) {
 		code = code.toString().split('00000000')[1];
 		url = vars.URBANO_API_URL1.replace('shicode', '002273').replace(
 			'clicode',
@@ -16,6 +17,7 @@ async function check(code, lastEvent) {
 			code.substring(4),
 		);
 	}
+
 	let response1 = await got(url);
 
 	const $1 = load(response1.body);
@@ -26,28 +28,37 @@ async function check(code, lastEvent) {
 			.split('}')[0]
 			.replace(/&quot;/g, '"') + '}';
 	let client = {
-		code: $1(
+		Código: $1(
 			'body > div > div.col-xs-12.col-sm-12.col-md-12.col-lg-12 > div > div.panel-body > div.col-md-6.col-lg-4.col-sm-12.col-xs-12',
 		)
 			.text()
 			.trim()
 			.split('/n')[0],
-		name: $1(
+		Nombre: $1(
 			'body > div > div.col-xs-12.col-sm-12.col-md-12.col-lg-12 > div > div.panel-body > div.col-md-3.col-lg-5.col-sm-12.col-xs-12 > span',
 		)
 			.text()
 			.trim(),
 	};
+
+	let serviceData = [];
+	$1('body > div > div:nth-child(4) > table > tbody > tr > td').each(function () {
+		serviceData.push($1(this).text());
+	});
+
 	let service = {
-		line: $1('body > div > div:nth-child(4) > table > tbody > tr > td:nth-child(2)').text(),
-		product: $1('body > div > div:nth-child(4) > table > tbody > tr > td:nth-child(3)').text(),
-		service: $1('body > div > div:nth-child(4) > table > tbody > tr > td:nth-child(4)').text(),
+		Linea: serviceData[0],
+		Producto: serviceData[1],
+		Servicio: serviceData[2],
 	};
 
+	if (!JSON.parse(param1).producto) return { error: 'No data' };
+
 	let response2 = await got.post(`${vars.URBANO_API_URL2}`, {
-		form: { accion: 'getDetalle', param1: param1 },
+		form: { accion: 'getDetalle', param1 },
 	});
 	const $2 = load(response2.body);
+
 	let data2 = $2('table > tbody > tr').text();
 	client['locality'] = $2('div > div.panel-body > div:nth-child(12)').text().split('\n')[0];
 
@@ -79,58 +90,34 @@ async function check(code, lastEvent) {
 	});
 	eventsList.reverse();
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList, client, service);
-	} else {
-		response = updateResponse(eventsList, lastEvent);
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	return response;
-}
-
-function startResponse(eventsList, client, service) {
 	let response = {
 		events: eventsList,
-		client: client,
-		service: service,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].status} - ${eventsList[0].location}`,
+		moreData: [
+			{
+				title: 'CLIENTE',
+				data: client,
+			},
+			{
+				title: 'SERVICIO',
+				data: service,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	return response;
-}
-
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map((e) => `${e.date} - ${e.time} - ${e.status} - ${e.location}`);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsResponse = [];
-	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
-
-	let response = { events: eventsResponse };
-	if (eventsResponse.length) response.lastEvent = eventsText[0];
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		client: {
-			code: otherData[0][0],
-			name: otherData[0][1],
-		},
+	response = {
+		...response,
+		client: { code: client.Código, name: client.Nombre },
 		service: {
-			line: otherData[1][0],
-			product: otherData[1][1],
-			service: otherData[1][1],
+			line: client.Linea,
+			product: client.Producto,
+			service: client.Servicio,
 		},
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].status} - ${eventsList[0].location}`,
 	};
+
+	return response;
 }
 
-export default {
-	check,
-	convertFromDrive,
-};
+export default { check };

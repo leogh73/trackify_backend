@@ -1,0 +1,287 @@
+import db from '../modules/mongodb.js';
+import luxon from '../modules/luxon.js';
+import vars from '../modules/crypto-js.js';
+import sendNotification from '../modules/firebase_notification.js';
+import notifyAdmin from '../modules/nodemailer.js';
+import tracking from './trackings_controllers.js';
+import got from 'got';
+
+const checkTrackings = async (req, res) => {
+	try {
+		let trackingsCollection = await db.Tracking.find({ completed: false });
+		let trackingsCheckResult = await Promise.all(
+			trackingsCollection.map((t) => tracking.checkTracking(t)),
+		);
+		let succededChecks = trackingsCheckResult.filter((check) => check.result.events?.length);
+		let totalUserResults = [];
+		for (let checkResult of succededChecks) {
+			let userResult = { token: checkResult.token };
+			let resultIndex = totalUserResults.findIndex((r) => r.token === checkResult.token);
+			if (resultIndex == -1) {
+				userResult.results = [checkResult];
+				totalUserResults.push(userResult);
+			} else {
+				totalUserResults[resultIndex].results.push(checkResult);
+			}
+		}
+		let operationsCollection = [];
+		for (let userResult of totalUserResults) {
+			let title = 'Actualización de envío';
+			let body = userResult.results[0].title;
+			if (userResult.results.length > 1) {
+				title = 'Actualizaciones de envíos';
+				body = userResult.results.map((r) => r.title).join(' - ');
+			}
+			operationsCollection.push(
+				sendNotification(title, body, userResult.token, JSON.stringify(userResult.results)),
+			);
+		}
+		for (let check of succededChecks) {
+			operationsCollection.push(
+				tracking.updateDatabase(
+					check,
+					trackingsCollection[
+						trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB)
+					],
+					tracking.checkCompletedStatus(check.result.lastEvent),
+				),
+			);
+		}
+		let failedChecks = trackingsCheckResult.filter((check) => check.result.error);
+		if (failedChecks.length) {
+			operationsCollection.push(
+				db.storeLog(
+					'check cycle',
+					failedChecks,
+					'failed checks',
+					luxon.getDate(),
+					luxon.getTime(),
+				),
+			);
+		}
+		await Promise.all(operationsCollection);
+		res.status(200).json({
+			message: 'Trackings Check Completed',
+			trackings: {
+				checked: trackingsCheckResult.length,
+				updated: succededChecks.length,
+				failed: failedChecks.length,
+			},
+		});
+		if (failedChecks.length) await apiErrorHandler(failedChecks);
+	} catch (error) {
+		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
+		await db.storeLog(
+			'trackings check',
+			error,
+			'failed tracking checks',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+	}
+};
+
+const awakeAPIs = async (req, res) => {
+	try {
+		await Promise.all([
+			got(`${vars.PLAYWRIGHT_API_URL}/awake`),
+			db.Tracking.find({ completed: false }),
+		]);
+		res.sendStatus(204);
+	} catch (error) {
+		console.log(error);
+		res.status(500).json({ error: error.toString() });
+	}
+};
+
+const apiCheck = async (req, res) => {
+	try {
+		let totalFailedChecks = await db.Log.find({
+			actionName: 'check cycle',
+			errorMessage: 'failed checks',
+		});
+		let response = {
+			message: 'API Check Completed',
+			failedServices: {
+				count: 0,
+				services: [],
+			},
+		};
+		if (totalFailedChecks.length < 96) return res.status(200).json(response);
+		let failedCheckHistory = totalFailedChecks.splice(-97);
+		let splittedFirstDate = failedCheckHistory[0].date.split('/');
+		let firstLogDate = new Date(
+			splittedFirstDate[2],
+			splittedFirstDate[1] - 1,
+			splittedFirstDate[0],
+		);
+		let splittedLastDate = failedCheckHistory[96].date.split('/');
+		let lastLogDate = new Date(splittedLastDate[2], splittedLastDate[1] - 1, splittedLastDate[0]);
+		let daysDifference = Math.floor(
+			(lastLogDate.getTime() - firstLogDate.getTime()) / (1000 * 3600 * 24),
+		);
+		if (daysDifference < 2) {
+			return res.status(200).json(response);
+		}
+		let failedChecksCollection = failedCheckHistory.map((check) => check.actionDetail).flat();
+		let filterFailedChecks = [];
+		for (let failedCheck of failedChecksCollection) {
+			const { statusCode, statusMessage, body } = failedCheck.result.error;
+			let serviceResult = {
+				count: 0,
+				service: failedCheck.service,
+				code: failedCheck.result.code,
+				type: `${statusCode} ${statusMessage}`,
+				body,
+			};
+			let resultIndex = filterFailedChecks.findIndex((c) => c.service === failedCheck.service);
+			if (resultIndex === -1) {
+				serviceResult.count = 1;
+				filterFailedChecks.push(serviceResult);
+			} else {
+				filterFailedChecks[resultIndex].count = filterFailedChecks[resultIndex].count + 1;
+				filterFailedChecks[resultIndex].code = serviceResult.code;
+				filterFailedChecks[resultIndex].type = serviceResult.type;
+				filterFailedChecks[resultIndex].body = serviceResult.body;
+			}
+		}
+		let failedServices = filterFailedChecks.filter((result) => result.count > 48);
+		response.failedServices.count = failedServices.length;
+		response.failedServices.services = failedServices.map((api) => {
+			let renamedService =
+				api.service === 'MDCargas'
+					? 'MD Cargas'
+					: api.service === 'ViaCargo'
+					? 'Via Cargo'
+					: api.service;
+			return renamedService;
+		});
+		let servicesList = response.failedServices.services;
+		let serviceMessage = '';
+		if (servicesList.length === 1) {
+			serviceMessage = `el sitio de ${response.failedServices.services[0]}`;
+		}
+		if (servicesList.length > 1) {
+			let lastService = ` y ${servicesList.splice(-1)[0]}`;
+			let servicesMessageList = servicesList.join(', ') + lastService;
+			serviceMessage = `los sitios de ${servicesMessageList}`;
+		}
+		let message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación podría estar limitada. Disculpe las molestias.`;
+		if (failedServices.length) {
+			await Promise.all([
+				notifyAdmin(failedServices),
+				db.StatusMessage.findOneAndUpdate(
+					{ _id: '653d5e9b1f65bb18ab367986' },
+					{
+						$set: {
+							message: message,
+						},
+					},
+				),
+			]);
+		} else {
+			await db.StatusMessage.findOneAndUpdate(
+				{ _id: '653d5e9b1f65bb18ab367986' },
+				{
+					$set: {
+						message: '',
+					},
+				},
+			);
+		}
+		res.status(200).json(response);
+	} catch (error) {
+		console.log(error);
+		await db.storeLog('API Check', error, 'api check failed', luxon.getDate(), luxon.getTime());
+		res.status(500).json({ error: 'API Check Failed', message: error.toString() });
+	}
+};
+
+const checkCompleted = async (req, res) => {
+	try {
+		let trackingsCollection = await db.Tracking.find({ completed: false });
+		let completedCheckIds = [];
+		for (let trk of trackingsCollection) {
+			let eventDate = trk.result.lastEvent.split(' - ')[0].split('/');
+			let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
+			let daysDifference = Math.floor(
+				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
+			);
+			if (daysDifference > 7) completedCheckIds.push(trk.id);
+		}
+		if (completedCheckIds.length)
+			await db.Tracking.updateMany(
+				{ _id: { $in: completedCheckIds } },
+				{ $set: { completed: true } },
+			);
+		res.status(200).json({
+			message: 'Check Completed Successful',
+			result: { updated: completedCheckIds.length },
+		});
+	} catch (error) {
+		await db.storeLog(
+			'Check Completed Successful',
+			error,
+			'failed completed check',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+		res.status(500).json({ error: 'Check Completed Failed', message: error.toString() });
+	}
+};
+
+const cleanUp = async (req, res) => {
+	let dateToday = new Date(Date.now()).getTime();
+	const calculateDays = (timeStamp) =>
+		Math.floor((dateToday - timeStamp.getTime()) / (1000 * 3600 * 24));
+
+	try {
+		let dbQueries = await Promise.all([
+			db.User.find(),
+			db.Tracking.find({ completed: true }),
+			db.Log.find(),
+		]);
+		let userIds = [];
+		for (let user of dbQueries[0]) {
+			let daysElapsed = calculateDays(user.lastActivity);
+			if (daysElapsed > 60) userIds.push(user._id);
+		}
+		let trackingIds = [];
+		for (let tracking of dbQueries[1]) {
+			let daysElapsed = calculateDays(tracking.lastCheck);
+			if (daysElapsed > 14) trackingIds.push(tracking._id);
+		}
+		let logIds = [];
+		for (let log of dbQueries[2]) {
+			let date = log.date.split('/');
+			let logDate = new Date(date[2], date[1] - 1, date[0]);
+			let daysElapsed = calculateDays(logDate);
+			if (daysElapsed > 7) logIds.push(log._id);
+		}
+		let removeOperations = [];
+		if (userIds.length) removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
+		if (trackingIds.length)
+			removeOperations.push(db.Tracking.deleteMany({ _id: { $in: trackingIds } }));
+		if (logIds.length) removeOperations.push(db.Log.deleteMany({ _id: { $in: logIds } }));
+		if (removeOperations.length) await Promise.all(removeOperations);
+		res.status(200).json({
+			message: 'Clean Up Cycle Completed',
+			result: {
+				users: userIds.length,
+				trackings: trackingIds.length,
+				logs: logIds.length,
+			},
+		});
+	} catch (error) {
+		await db.storeLog(
+			'Clean Up Cycle',
+			error,
+			'failed clean up',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+		res.status(500).json({ error: 'Clean Up Cycle Failed', message: error.toString() });
+	}
+};
+
+export default { checkTrackings, awakeAPIs, apiCheck, checkCompleted, cleanUp };

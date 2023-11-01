@@ -1,6 +1,6 @@
 import express from 'express';
 export const router = express.Router();
-import meLi from '../controllers/mercadolibre_controllers.js';
+import meLi from '../controllers/mercadoLibre_controllers.js';
 
 router.post('/initialize', meLi.initialize);
 router.post('/consult', meLi.consult);

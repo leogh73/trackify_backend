@@ -33,7 +33,7 @@ const initialize = async (req, res) => {
 		await user.save();
 		res.status(200).json(meLiResponse);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'MercadoLibre initialize',
 			{ userId, code },
@@ -61,7 +61,7 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'MercadoLibre consult',
 			{ userId, consultType },
@@ -80,7 +80,7 @@ const loadMore = async (req, res) => {
 		let results = await checkShippings(JSON.parse(shippingIds), JSON.parse(httpHeaders));
 		res.status(200).json(results);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'MercadoLibre load more',
 			{ shippingIds, httpHeaders },
@@ -94,7 +94,7 @@ const loadMore = async (req, res) => {
 
 const checkUser = async (userId) => {
 	let user = await db.User.findById(userId);
-	let userData = {
+	return {
 		model: user,
 		id: user.mercadoLibre.userId,
 		refresh_token: user.mercadoLibre.refresh_token,
@@ -103,7 +103,6 @@ const checkUser = async (userId) => {
 			'x-format-new': true,
 		},
 	};
-	return userData;
 };
 
 async function checkShippingOrders(userId, consultType) {
@@ -132,11 +131,10 @@ async function checkShippingOrders(userId, consultType) {
 
 	let shippingOrders = response.results
 		.map((i) => {
-			let item = {
-				id: i.shipping.id,
+			return {
+				shippingId: i.shipping.id,
 				items: i.order_items.map((i) => i.item.title),
 			};
-			return item;
 		})
 		.filter((order) => !!order);
 
@@ -149,20 +147,18 @@ async function checkShippingOrders(userId, consultType) {
 		consultPart = shippingOrders;
 	}
 
-	let result = {
+	return {
 		shippingIds: {
 			consult: consultPart,
 			total: shippingOrders,
 		},
 		httpHeaders: userData.httpHeaders,
 	};
-
-	return result;
 }
 
 async function checkShippings(shippingOrders, httpHeaders) {
 	let meLiResults = await Promise.allSettled(
-		shippingOrders.map((o) => checkShipping(o, httpHeaders)),
+		shippingOrders.map((order) => checkShipping(order, httpHeaders)),
 	);
 	let results = meLiResults
 		.filter((result) => result.status == 'fulfilled')
@@ -171,12 +167,14 @@ async function checkShippings(shippingOrders, httpHeaders) {
 }
 
 async function checkShipping(shippingOrder, httpHeaders) {
-	let consult = await got(`https://api.mercadolibre.com/shipments/${shippingOrder.id}`, {
+	let consult = await got(`https://api.mercadolibre.com/shipments/${shippingOrder.shippingId}`, {
 		headers: httpHeaders,
 	});
+
 	let response = JSON.parse(consult.body);
 
-	let shipping = {
+	return {
+		shippingId: shippingOrder.shippingId.toString(),
 		title: shippingOrder.items[0],
 		code: response.tracking_number,
 		items: shippingOrder.items,
@@ -188,7 +186,34 @@ async function checkShipping(shippingOrder, httpHeaders) {
 			name: `${response.destination.receiver_name}`,
 		},
 	};
-	return shipping;
+}
+
+async function fetchTrackingData(shippingId, token) {
+	let user = await db.User.findOne({ tokenFB: token });
+	let userData = await checkUser(user.id);
+	try {
+		return await Promise.all([
+			got(`https://api.mercadolibre.com/shipments/${shippingId}/history`, {
+				headers: userData.httpHeaders,
+			}),
+			got(`https://api.mercadolibre.com/shipments/${shippingId}`, {
+				headers: userData.httpHeaders,
+			}),
+		]);
+	} catch (error) {
+		if (error.response.statusCode === 401) {
+			await renewTokenML(userData.model);
+			return await fetchTrackingData(shippingId, token);
+		} else {
+			return await db.storeLog(
+				'ML Fetch Tracking Data',
+				{ userId: user.id, shippingId },
+				error,
+				luxon.getDate(),
+				luxon.getTime(),
+			);
+		}
+	}
 }
 
 async function renewTokenML(user) {
@@ -225,4 +250,4 @@ function convertDate(date) {
 	return `${day} - ${hour}`;
 }
 
-export default { initialize, consult, loadMore };
+export default { initialize, consult, loadMore, fetchTrackingData };

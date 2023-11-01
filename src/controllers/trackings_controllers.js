@@ -2,17 +2,19 @@ import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import services from '../services/_services.js';
 
-async function add(userId, title, service, code, fromDrive, driveData) {
-	let result = fromDrive
-		? services.list[service].convertFromDrive(driveData)
-		: await services.checkHandler(service, code, null);
+async function add(user, title, service, code, driveData) {
+	let result = driveData
+		? {
+				events: driveData.events,
+				moreData: driveData.moreData,
+				lastEvent: Object.values(driveData.events[0]).join(' - '),
+		  }
+		: await services.checkHandler(service, code, null, user.tokenFB);
 
-	if (result.lastEvent === 'No hay datos' || result.error) return result;
+	if (result.error) return result;
 
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();
-
-	let user = await db.User.findById(userId);
 
 	const { id } = await new db.Tracking({
 		title,
@@ -33,8 +35,6 @@ async function add(userId, title, service, code, fromDrive, driveData) {
 		user.save(),
 		db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } }),
 	]);
-
-	if (service === 'ViaCargo') result.destiny = result.destination;
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
@@ -86,21 +86,23 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 async function check(trackingId) {
 	let tracking = await db.Tracking.findById(trackingId);
 	let response = await checkTracking(tracking);
-	if (response.result.events?.length)
+	if (response.result.events?.length) {
 		await updateDatabase(response, tracking, checkCompletedStatus(response.result.lastEvent));
+	}
 	return response;
 }
 
 async function checkTracking(tracking) {
 	const { id, token, title, service, code, result } = tracking;
 
-	let checkResult = await services.checkHandler(service, code, result.lastEvent, id);
+	let checkResult = await services.checkHandler(service, code, result.lastEvent, token);
 
 	return {
 		idMDB: id,
 		token,
 		title,
 		service,
+		code,
 		checkDate: luxon.getDate(),
 		checkTime: luxon.getTime(),
 		lastCheck: new Date(Date.now()),
@@ -117,12 +119,26 @@ function checkCompletedStatus(lastEvent) {
 		'devuelto',
 		'entrega en',
 		'devolución',
+		'devuelto',
 		'rehusado',
+		'decomisado',
+		'descomisado',
+		'retenido',
+		'incautado',
 		'no pudo ser retirado',
 		'entrega en sucursal',
 	];
+	let notIncludedWords = ['no entregada', 'no entregado', 'no fue entregado', 'no fue entregada'];
+	let lCLastEvent = lastEvent.toLowerCase();
 	for (let word of includedWords) {
-		if (!status && lastEvent.toLowerCase().includes(word)) status = true;
+		if (lCLastEvent.includes(word)) {
+			status = true;
+		}
+	}
+	for (let word of notIncludedWords) {
+		if (status && lCLastEvent.includes(word)) {
+			status = false;
+		}
 	}
 	return status;
 }
@@ -146,7 +162,22 @@ async function updateDatabase(response, tracking, completedStatus) {
 			},
 		),
 	);
-	if (tracking.service === 'DHL') {
+	if (response.result.moreData) {
+		for (let element of response.result.moreData) {
+			databaseUpdates.push(
+				db.Tracking.findOneAndUpdate(
+					{ _id: tracking._id },
+					{
+						$set: {
+							'result.moreData.$[e].data': element.data,
+						},
+					},
+					{ arrayFilters: [{ 'e.title': element.title }] },
+				),
+			);
+		}
+	}
+	if (tracking.service === 'DHL' && tracking.result.shipping) {
 		let status = response.result.shipping.status;
 		databaseUpdates.push(
 			db.Tracking.findOneAndUpdate(

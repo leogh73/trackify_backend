@@ -70,6 +70,6 @@ codigos.txt
 git rm --cached codigos.txt
 .vercel
 
-# test files
-test_routes.js
-test_controllers.js
+# dev files
+dev_routes.js
+dev_controllers.js

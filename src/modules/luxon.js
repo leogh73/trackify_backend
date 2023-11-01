@@ -14,9 +14,9 @@ const getTime = () => {
 		.padStart(2, 0)}`;
 };
 
-const errorMessage = () => {
+const errorMessage = (error) => {
 	return {
-		error: 'Ha ocurrido un error. Reintente más tarde',
+		error: error.toString(),
 		date: getDate(),
 		time: getTime(),
 	};

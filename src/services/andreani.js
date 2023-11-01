@@ -1,16 +1,22 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
-	const events = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`, {
-		timeout: { response: 10000 },
-	});
-	const visits = await got(`${vars.ANDREANI_API_URL2.replace('code', code)}`, {
-		timeout: { response: 10000 },
-	});
+	let consults = [];
+	try {
+		consults = await Promise.all([
+			got(`${vars.ANDREANI_API_URL1.replace('code', code)}`),
+			got(`${vars.ANDREANI_API_URL2}${code}`),
+			got(`${vars.ANDREANI_API_URL3.replace('code', code)}`),
+		]);
+	} catch (error) {
+		let response = services.errorResponseHandler(error.response);
+		if (JSON.parse(response.body).message === 'Envío no encontrado') return { error: 'No data' };
+	}
 
-	const resultEvents = JSON.parse(events.body);
-	const resultVisits = JSON.parse(visits.body);
+	let resultEvents = JSON.parse(consults[0].body);
+	let resultOtherData = JSON.parse(consults[1].body);
 
 	let eventsList = resultEvents.map((e) => {
 		let motive = 'Sin datos';
@@ -20,12 +26,58 @@ async function check(code, lastEvent) {
 		return {
 			date: e.fecha.dia.split('-').join('/'),
 			time: e.fecha.hora,
+			location: location,
 			condition: e.estado,
 			motive: motive,
-			location: location,
 		};
 	});
 
+	if (lastEvent) {
+		let response = services.updateResponseHandler(eventsList, lastEvent);
+		if (response.lastEvent) response.visits = oldData.newVisitList;
+		return response;
+	}
+
+	let otherData = (() => {
+		const {
+			fechaDeAlta,
+			remitente,
+			servicio,
+			sucursal_custodia,
+			direccion_sucursal_custodia,
+			horario_sucursal_custodia,
+		} = resultOtherData;
+		return {
+			'Fecha de alta': `${fechaDeAlta.split(' ')[0].split('-').reverse().join('/')} - ${
+				fechaDeAlta.split(' ')[1]
+			}`,
+			Remitente: remitente,
+			Servicio: servicio,
+			'Sucursal de custodia': sucursal_custodia ?? 'Sin datos',
+			'Dirección de sucursal': direccion_sucursal_custodia ?? 'Sin datos',
+			'Horario de atención': horario_sucursal_custodia ?? 'Sin datos',
+		};
+	})();
+
+	let response = {
+		events: eventsList,
+		moreData: [
+			{
+				title: 'OTROS DATOS',
+				data: otherData,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
+	};
+
+	response = { ...response, ...oldOtherData(JSON.parse(consults[2].body)) };
+
+	return response;
+}
+
+export default { check };
+
+function oldOtherData(resultVisits) {
 	let visitsList = resultVisits.visitas.map((v) => {
 		return {
 			date: v.fecha,
@@ -50,57 +102,5 @@ async function check(code, lastEvent) {
 		pendingVisits,
 	};
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList, newVisitList);
-	} else {
-		response = updateResponse(eventsList, newVisitList, lastEvent);
-	}
-
-	return response;
+	return { newVisitList };
 }
-
-function startResponse(eventsList, newVisitList) {
-	let response = {
-		events: eventsList,
-		visits: newVisitList,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].condition} - ${eventsList[0].motive} - ${eventsList[0].location}`,
-	};
-
-	return response;
-}
-
-function updateResponse(eventsList, newVisitList, lastEvent) {
-	let eventsText = eventsList.map(
-		(e) => `${e.date} - ${e.time} - ${e.condition} - ${e.motive} - ${e.location}`,
-	);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsResponse = [];
-	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
-
-	let response = { events: eventsResponse };
-	if (eventsResponse.length) {
-		response.visits = newVisitList;
-		response.lastEvent = eventsText[0];
-	}
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		visits: {
-			visits: [{ date: otherData[0][0], time: otherData[0][1], motive: otherData[0][2] }],
-			pendingVisits: otherData[1][0],
-		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].condition} - ${events[0].motive} - ${events[0].location}`,
-	};
-}
-
-export default {
-	check,
-	convertFromDrive,
-};

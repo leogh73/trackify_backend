@@ -1,90 +1,88 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let data = JSON.parse(
-		(
-			await got.post(`${vars.PLAYWRIGHT_API_CLICOH_URL}`, {
-				json: { code },
-			})
-		).body,
-	);
-
-	let events = data.packagestatehistory_set.map((e) => {
-		return {
-			date: convertDate(e.since.split('T')[0]),
-			time: e.since.split('T')[1].split('.')[0].split('-')[0],
-			description: e.state.description,
-		};
+	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
+		json: { service: 'ClicOh', code },
 	});
-	events.reverse();
+	let result = JSON.parse(consult.body);
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(events, data);
-	} else {
-		response = updateResponse(events, lastEvent);
-	}
+	if (
+		!result.packagestatehistory_set &&
+		result?.package_code[0] === 'No se puede encontrar un paquete con el código solicitado'
+	)
+		return { error: 'No data' };
 
-	return response;
-}
+	let eventsList = result.packagestatehistory_set
+		.map((e) => {
+			return {
+				date: convertDate(e.since.split('T')[0]),
+				time: e.since.split('T')[1].split('.')[0].split('-')[0],
+				description: e.state.description,
+			};
+		})
+		.reverse();
 
-function startResponse(events, data) {
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+
 	let origin = (() => {
-		const { address, country } = data.origin;
+		const { address, country } = result.origin;
 		return {
-			address,
-			country,
+			Dirección: address,
+			País: country,
 		};
 	})();
 
 	let destination = (() => {
-		const { address, locality, country, administrative_area_level_1, postal_code } = data.to;
+		const { address, locality, country, administrative_area_level_1, postal_code } = result.to;
 		return {
-			address,
-			locality,
-			country,
-			administrative_area_level_1,
-			postal_code,
+			Dirección: address,
+			Localidad: locality,
+			País: country,
+			Provincia: administrative_area_level_1,
+			'Código postal': postal_code,
 		};
 	})();
 
-	const { dni, first_name, last_name, email, phone, address } = data.receiver;
+	const { dni, first_name, last_name, email, phone, address } = result.receiver;
 	let receiver = {
-		dni,
-		first_name,
-		last_name,
-		email: verifyData(email),
-		phone: verifyData(phone),
-		address: verifyData(address),
+		DNI: dni,
+		Nombre: first_name,
+		Apellido: last_name,
+		'Correo electrónico': verifyData(email),
+		Teléfono: verifyData(phone),
+		Dirección: verifyData(address),
 	};
 
-	let otherData = {
-		clientName: data.client,
+	let client = {
+		Nombre: result.client,
 	};
 
 	let response = {
-		events,
-		origin,
-		destination,
-		receiver,
-		otherData,
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
+		events: eventsList,
+		moreData: [
+			{
+				title: 'ORIGEN',
+				data: origin,
+			},
+			{
+				title: 'DESTINO',
+				data: destination,
+			},
+			{
+				title: 'DESTINATARIO',
+				data: receiver,
+			},
+			{
+				title: 'CLIENTE',
+				data: client,
+			},
+		],
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	return response;
-}
-
-function updateResponse(events, lastEvent) {
-	let eventsText = events.map((e) => `${e.description}`);
-	let eventIndex = eventsText.indexOf(lastEvent.split(' - ')[2]);
-
-	let eventsResponse = [];
-	if (eventIndex) eventsResponse = events.slice(0, eventIndex);
-
-	let response = { events: eventsResponse };
-	if (eventsResponse.length)
-		response.lastEvent = `${events[0].date} - ${events[0].time} - ${events[0].description}`;
+	response = { ...response, ...oldOtherData(result) };
 
 	return response;
 }
@@ -110,45 +108,41 @@ function verifyData(data) {
 	return newData;
 }
 
-function convertFromDrive(driveData) {
-	const { events, otherData } = driveData;
-	return {
-		events,
-		origin: {
-			address: otherData[0][0],
-			locality: otherData[0][1],
-			country: otherData[0][2],
-			street_number: otherData[0][3],
-			administrative_area_level_1: otherData[0][4],
-			postal_code: otherData[0][5],
-		},
-		destination: {
-			address: otherData[1][0],
-			locality: otherData[1][1],
-			country: otherData[1][2],
-			street_number: otherData[1][3],
-			administrative_area_level_1: otherData[1][4],
-			postal_code: otherData[1][5],
-		},
-		receiver: {
-			dni: otherData[2][0],
-			first_name: otherData[2][1],
-			last_name: otherData[2][2],
-			email: otherData[2][3],
-			phone: otherData[2][4],
-			address: otherData[2][5],
-		},
-		otherData: {
-			pickupPoint: otherData[3][0],
-			clientName: otherData[3][1],
-			serviceType: otherData[3][2],
-			secretCodeConfirmed: otherData[3][3],
-		},
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].description}`,
-	};
-}
+export default { check };
 
-export default {
-	check,
-	convertFromDrive,
-};
+function oldOtherData(result) {
+	let origin = (() => {
+		const { address, country } = result.origin;
+		return {
+			address,
+			country,
+		};
+	})();
+
+	let destination = (() => {
+		const { address, locality, country, administrative_area_level_1, postal_code } = result.to;
+		return {
+			address,
+			locality,
+			country,
+			administrative_area_level_1,
+			postal_code,
+		};
+	})();
+
+	const { dni, first_name, last_name, email, phone, address } = result.receiver;
+	let receiver = {
+		dni,
+		first_name,
+		last_name,
+		email: verifyData(email),
+		phone: verifyData(phone),
+		Dirección: verifyData(address),
+	};
+
+	let otherData = {
+		clientName: result.client,
+	};
+
+	return { origin, destination, receiver, otherData };
+}

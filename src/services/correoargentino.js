@@ -1,10 +1,19 @@
-import vars from '../modules/crypto-js.js';
 import got from 'got';
+import vars from '../modules/crypto-js.js';
+import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let consult = await got(`${vars.CORREOARGENTINO_API_URL.replace('code', code)}`);
+	// let consult = await got(`${vars.CORREO_ARGENTINO_API_URL}${code}`);
+
+	let consult = await got.post(`http://localhost:5000/api`, {
+		json: { service: 'Correo Argentino', code },
+	});
+
 	const $ = load(consult.body);
+
+	if ($('body > div.container > div.alert.alert-danger.col-12.text-center').text().length)
+		return { error: 'No data' };
 
 	let rowsList = [];
 	$('#no-more-tables > table > tbody > tr > td').each(function () {
@@ -17,7 +26,7 @@ async function check(code, lastEvent) {
 		let chunk = rowsList.slice(i, i + chunkSize);
 		let date = chunk[0].split(' ')[0].split('-').join('/');
 		let time = chunk[0].split(' ')[1];
-		let condition = chunk[3];
+		let condition = services.capitalizeText(false, chunk[3]);
 		if (!condition.length) condition = 'Sin datos';
 		let event = {
 			date,
@@ -29,49 +38,12 @@ async function check(code, lastEvent) {
 		eventsList.push(event);
 	}
 
-	let response;
-	if (!lastEvent) {
-		response = startResponse(eventsList);
-	} else {
-		response = updateResponse(eventsList, lastEvent);
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	return response;
-}
-
-function startResponse(eventsList) {
-	let response = {
-		events: eventsList,
-		lastEvent: `${eventsList[0].date} - ${eventsList[0].time} - ${eventsList[0].location} - ${eventsList[0].description} - ${eventsList[0].condition}`,
-	};
-
-	return response;
-}
-
-function updateResponse(eventsList, lastEvent) {
-	let eventsText = eventsList.map(
-		(e) => `${e.date} - ${e.time} - ${e.location} - ${e.description} - ${e.condition}`,
-	);
-	let eventIndex = eventsText.indexOf(lastEvent);
-
-	let eventsResponse = [];
-	if (eventIndex) eventsResponse = eventsList.slice(0, eventIndex);
-
-	let response = { events: eventsResponse };
-	if (eventsResponse.length) response.lastEvent = eventsText[0];
-
-	return response;
-}
-
-function convertFromDrive(driveData) {
-	const { events } = driveData;
 	return {
-		events,
-		lastEvent: `${events[0].date} - ${events[0].time} - ${events[0].location} - ${events[0].description} - ${events[0].condition}`,
+		events: eventsList,
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
 
-export default {
-	check,
-	convertFromDrive,
-};
+export default { check };

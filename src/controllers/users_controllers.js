@@ -1,22 +1,21 @@
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
-import google from './google_controllers.js';
+import google from './googleDrive_controllers.js';
 import emailCheck from 'node-email-check';
 
 const initialize = async (req, res) => {
 	if (req.body.token === 'BLACKLISTED') return;
-	const newUser = new db.User({
-		lastActivity: new Date(Date.now()),
-		tokenFB: req.body.token,
-		trackings: [],
-	});
 
 	try {
-		const result = await newUser.save();
-		res.status(200).json({ userId: result['id'] });
+		const newUser = await new db.User({
+			lastActivity: new Date(Date.now()),
+			tokenFB: req.body.token,
+			trackings: [],
+		}).save();
+		res.status(200).json({ userId: newUser.id });
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'Initialize user',
 			{ lastActivity: newUser.lastActivity, tokenFB: newUser.tokenFB },
@@ -32,21 +31,21 @@ const trackingAction = async (req, res) => {
 	const { userId, action } = req.params;
 
 	try {
+		let user = await db.User.findById(userId);
+		if (!user) res.status(400).json({ error: 'Not authorized' });
 		let response;
 		if (action == 'add') {
 			const { title, service, code } = req.body;
-			response = await tracking.add(userId, title, service, code, false, null);
+			response = await tracking.add(user, title, service, code, false);
 		} else {
 			const { trackingIds } = req.body;
 			await tracking.remove(userId, JSON.parse(trackingIds));
 			response = { trackingIds };
 		}
-		let statusCode = 200;
-		if (response.lastEvent === 'No hay datos') statusCode = 404;
-		if (response.error) statusCode = 400;
+		let statusCode = response.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		if (req.body.service !== 'Correo Argentino')
 			await db.storeLog(
 				'Tracking action',
@@ -63,12 +62,12 @@ const syncronize = async (req, res) => {
 	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
 
 	try {
-		let user = await db.User.findById(userId);
-		if (!user || !version) {
+		let dbQueries = await Promise.all([db.User.findById(userId), db.StatusMessage.find()]);
+		let user = dbQueries[0];
+		if (!user) {
 			await remove(token);
-			return res
-				.status(200)
-				.json({ error: !user ? 'User not found' : 'Lastest version not found' });
+			let errorMessage = 'User not found';
+			return res.status(200).json({ syncError: errorMessage });
 		}
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
@@ -78,12 +77,13 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
+		response.statusMessage = dbQueries[1][0].message;
 		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'syncronize',
-			{ userId, token, lastEvents, currentDate, driveLoggedIn },
+			{ userId, token, lastEvents, currentDate, driveLoggedIn, version },
 			error,
 			message.date,
 			message.time,
@@ -94,11 +94,13 @@ const syncronize = async (req, res) => {
 
 const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
+
 	try {
-		let response = await tracking.check(req.body.trackingId ?? JSON.parse(trackingData).idMDB);
-		res.status(200).json(response);
+		let response = await tracking.check(JSON.parse(trackingData).idMDB);
+		let statusCode = response.result.error ? 500 : 200;
+		res.status(statusCode).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
@@ -107,14 +109,13 @@ const check = async (req, res) => {
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
 	try {
-		if (message.includes('text ') || email.includes('text '))
-			return res.status(404).json({ error: 'content not valid' });
+		if (message.includes('text ') || email.includes('text ')) return;
 		let emailIsValid = await emailCheck.isValid(email);
 		if (!emailIsValid) return res.status(400).json({ error: 'email not valid' });
 		const { id } = await new db.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 	} catch (error) {
-		let message = luxon.errorMessage();
+		let message = luxon.errorMessage(error);
 		await db.storeLog(
 			'Service request',
 			{ userId, service, code, email },
