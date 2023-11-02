@@ -162,7 +162,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 			},
 		),
 	);
-	if (tracking.result.moreData) {
+	if (tracking.result.moreData && response.result.moreData) {
 		for (let element of response.result.moreData) {
 			databaseUpdates.push(
 				db.Tracking.findOneAndUpdate(
