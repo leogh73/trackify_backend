@@ -195,7 +195,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 			),
 		);
 	}
-	if (tracking.service === 'ViaCargo') {
+	if (tracking.service === 'ViaCargo' && tracking.result.destination) {
 		databaseUpdates.push(
 			db.Tracking.findOneAndUpdate(
 				{ _id: tracking._id },
