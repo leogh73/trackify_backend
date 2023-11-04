@@ -165,7 +165,9 @@ const apiCheck = async (req, res) => {
 			let servicesMessageList = servicesList.join(', ') + lastService;
 			serviceMessage = `los sitios de ${servicesMessageList}`;
 		}
-		let message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación podría estar limitada. Disculpe las molestias.`;
+		let message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación con ${
+			servicesList.length > 1 ? 'éstos servicios' : 'éste servicio'
+		}, podría estar limitada.`;
 		if (failedServices.length) {
 			await Promise.all([
 				notifyAdmin(failedServices),
