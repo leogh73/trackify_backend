@@ -106,20 +106,28 @@ const apiCheck = async (req, res) => {
 				services: [],
 			},
 		};
-		if (totalFailedChecks.length < 96) return res.status(200).json(response);
-		let failedCheckHistory = totalFailedChecks.splice(-97);
+		if (totalFailedChecks.length < 97) return res.status(200).json(response);
+		let failedCheckHistory = totalFailedChecks.splice(-98);
 		let splittedFirstDate = failedCheckHistory[0].date.split('/');
 		let firstLogDate = new Date(
 			splittedFirstDate[2],
 			splittedFirstDate[1] - 1,
 			splittedFirstDate[0],
 		);
-		let splittedLastDate = failedCheckHistory[96].date.split('/');
+		let splittedLastDate = failedCheckHistory[97].date.split('/');
 		let lastLogDate = new Date(splittedLastDate[2], splittedLastDate[1] - 1, splittedLastDate[0]);
 		let daysDifference = Math.floor(
 			(lastLogDate.getTime() - firstLogDate.getTime()) / (1000 * 3600 * 24),
 		);
-		if (daysDifference < 2) {
+		if (daysDifference > 3) {
+			await db.StatusMessage.findOneAndUpdate(
+				{ _id: '653d5e9b1f65bb18ab367986' },
+				{
+					$set: {
+						message: '',
+					},
+				},
+			);
 			return res.status(200).json(response);
 		}
 		let failedChecksCollection = failedCheckHistory.map((check) => check.actionDetail).flat();
@@ -180,15 +188,6 @@ const apiCheck = async (req, res) => {
 					},
 				),
 			]);
-		} else {
-			await db.StatusMessage.findOneAndUpdate(
-				{ _id: '653d5e9b1f65bb18ab367986' },
-				{
-					$set: {
-						message: '',
-					},
-				},
-			);
 		}
 		res.status(200).json(response);
 	} catch (error) {
