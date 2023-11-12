@@ -74,6 +74,8 @@ async function check(code, lastEvent) {
 
 	response = { ...response, ...oldData };
 
+	console.log(response);
+
 	return response;
 }
 
@@ -104,5 +106,5 @@ function oldOtherData(resultVisits) {
 		pendingVisits,
 	};
 
-	return { newVisitList };
+	return { visits: newVisitList };
 }
