@@ -1,23 +1,26 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import luxon from '../modules/luxon.js';
+import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let dividedCode = code.split('-');
-	let consult = await got(
-		`${vars.MDCARGAS_API_URL.replace('type', dividedCode[0])
-			.replace('branch', dividedCode[1])
-			.replace('number', dividedCode[2])}`,
-	);
-	console.log(consult.body);
-	let result = JSON.parse(consult.body);
+	let consult = await got.post(`${vars.MD_CARGAS_API_URL}`, {
+		form: {
+			letra: dividedCode[0],
+			pv: dividedCode[1],
+			nro: dividedCode[2],
+		},
+	});
+	const $ = load(consult.body);
+	let rowList = [];
+	$('table > tbody > tr > td').each(function () {
+		rowList.push($(this).text());
+	});
 
-	if (result.estado === 'Numero de Guia Incorrecto') return { error: 'No data' };
+	if (rowList[1].length === 1) return { error: 'No data' };
 
-	let statusDetail = result.estado.toString().split(dividedCode[2])[1].trim();
-	let status = statusDetail.charAt(0).toUpperCase() + statusDetail.toString().slice(1);
-
-	let event = { date: luxon.getDate(), time: luxon.getTime(), status };
+	let event = { date: luxon.getDate(), time: luxon.getTime(), status: rowList[1].trim() };
 
 	if (lastEvent) {
 		return { events: event.status === lastEvent.split(' - ')[2] ? [] : [event] };
