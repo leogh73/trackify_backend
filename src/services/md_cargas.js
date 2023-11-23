@@ -1,6 +1,5 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
-import services from './_services.js';
 import luxon from '../modules/luxon.js';
 import { load } from 'cheerio';
 
@@ -23,14 +22,8 @@ async function check(code, lastEvent) {
 
 	let event = { date: luxon.getDate(), time: luxon.getTime(), status: rowList[1].trim() };
 
-	if (lastEvent)
-		return services.updateResponseHandler(
-			event.status === lastEvent.split(' - ')[2] ? [] : [event],
-			Object.values(event).join(' - '),
-		);
-
 	return {
-		events: [event],
+		events: lastEvent ? (event.status === lastEvent.split(' - ')[2] ? [] : [event]) : [event],
 		lastEvent: Object.values(event).join(' - '),
 	};
 }
