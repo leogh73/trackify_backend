@@ -21,6 +21,7 @@ import expresoMalargue from './expreso_malargue.js';
 import fastTrack from './fast_track.js';
 import fonoPack from './fono_pack.js';
 import integralPack from './integral_pack.js';
+import mercadoLibre from './mercado_libre.js';
 import mdCargas from './md_cargas.js';
 import ocasa from './ocasa.js';
 import oca from './oca.js';
@@ -35,7 +36,8 @@ import sisorgPxpRest from './sisorg_pxp_rest.js';
 import southPost from './south_post.js';
 import urbano from './urbano.js';
 import viaCargo from './via_cargo.js';
-import mercadoLibre from './mercado_libre.js';
+
+// import hachaDePiedra from './hachaDePiedra.js';
 
 const list = {
 	'Andesmar Cargas': andesmarCargas,
@@ -65,6 +67,7 @@ const list = {
 	'Expreso Malargüe': expresoMalargue,
 	FastTrack: fastTrack,
 	'Fono Pack': fonoPack,
+	// 'Hacha de Piedra': hachaDePiedra,
 	'Integral Pack': integralPack,
 	Jetmar: plusmar,
 	'Mercado Libre': mercadoLibre,
@@ -84,9 +87,6 @@ const list = {
 	'Trans Dan Express': cristalWeb,
 	Urbano: urbano,
 	'Via Cargo': viaCargo,
-
-	MDCargas: mdCargas,
-	ViaCargo: viaCargo,
 };
 
 const checkHandler = async (service, code, lastEvent, token) => {

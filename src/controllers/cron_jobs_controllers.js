@@ -93,6 +93,46 @@ const awakeAPIs = async (req, res) => {
 	}
 };
 
+const removeDuplicates = async (req, res) => {
+	try {
+		let trackingCollection = await db.Tracking.find({ completed: false });
+		let userTrackings = [];
+		for (let tracking of trackingCollection) {
+			let trk = { code: tracking.code, token: tracking.token, ids: [tracking.id] };
+			let index = userTrackings.findIndex(
+				(t) => t.code === tracking.code && t.token === tracking.token,
+			);
+			if (index == -1) {
+				userTrackings.push(trk);
+			} else {
+				userTrackings[index].ids.push(tracking.id);
+			}
+		}
+		let duplicatedIds = [];
+		for (let userDuplicates of userTrackings) {
+			userDuplicates.ids.pop();
+			if (userDuplicates.ids.length) for (let id of userDuplicates.ids) duplicatedIds.push(id);
+		}
+		await db.Tracking.deleteMany({ _id: { $in: duplicatedIds } });
+		res.status(200).json({
+			message: 'Duplicates Removed Successfully',
+			result: {
+				removed: duplicatedIds.length,
+			},
+		});
+	} catch (error) {
+		await db.storeLog(
+			'Duplicated Remove Failed',
+			error,
+			'failed duplicated remove',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+		console.error(error);
+		res.status(500).send({ 'Server Error': `${error}` });
+	}
+};
+
 const apiCheck = async (req, res) => {
 	try {
 		let totalFailedChecks = await db.Log.find({
@@ -220,7 +260,7 @@ const checkCompleted = async (req, res) => {
 		});
 	} catch (error) {
 		await db.storeLog(
-			'Check Completed Successful',
+			'Check Completed Failed',
 			error,
 			'failed completed check',
 			luxon.getDate(),
@@ -284,4 +324,4 @@ const cleanUp = async (req, res) => {
 	}
 };
 
-export default { checkTrackings, awakeAPIs, apiCheck, checkCompleted, cleanUp };
+export default { checkTrackings, awakeAPIs, removeDuplicates, apiCheck, checkCompleted, cleanUp };
