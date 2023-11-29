@@ -194,15 +194,7 @@ const apiCheck = async (req, res) => {
 		}
 		let failedServices = filterFailedChecks.filter((result) => result.count > 48);
 		response.failedServices.count = failedServices.length;
-		response.failedServices.services = failedServices.map((api) => {
-			let renamedService =
-				api.service === 'MDCargas'
-					? 'MD Cargas'
-					: api.service === 'ViaCargo'
-					? 'Via Cargo'
-					: api.service;
-			return renamedService;
-		});
+		response.failedServices.services = failedServices.map((api) => api.service);
 		let servicesList = response.failedServices.services;
 		let serviceMessage = '';
 		if (servicesList.length === 1) {
