@@ -195,18 +195,18 @@ const apiCheck = async (req, res) => {
 		let failedServices = filterFailedChecks.filter((result) => result.count > 48);
 		response.failedServices.count = failedServices.length;
 		response.failedServices.services = failedServices.map((api) => api.service);
-		let servicesList = response.failedServices.services;
 		let serviceMessage = '';
-		if (servicesList.length === 1) {
+		if (response.failedServices.services.length === 1) {
 			serviceMessage = `el sitio de ${response.failedServices.services[0]}`;
 		}
-		if (servicesList.length > 1) {
+		if (response.failedServices.services.length > 1) {
+			let servicesList = [...response.failedServices.services];
 			let lastService = ` y ${servicesList.splice(-1)[0]}`;
 			let servicesMessageList = servicesList.join(', ') + lastService;
 			serviceMessage = `los sitios de ${servicesMessageList}`;
 		}
 		let message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación con ${
-			servicesList.length > 1 ? 'éstos servicios' : 'éste servicio'
+			serviceMessage.startsWith('los') ? 'éstos servicios' : 'éste servicio'
 		}, podría estar limitada.`;
 		if (failedServices.length) {
 			await Promise.all([
