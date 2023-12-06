@@ -70,7 +70,7 @@ async function check(code, lastEvent) {
 		Firma: `${result.nifQuienRecibe ? result.nifQuienRecibe : '-'}`,
 	};
 
-	let response = {
+	return {
 		events: eventsList,
 		moreData: [
 			{
@@ -88,45 +88,6 @@ async function check(code, lastEvent) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-
-	response = { ...response, ...oldApiData(result) };
-
-	return response;
 }
 
 export default { check };
-
-function oldApiData(result) {
-	let destination = {
-		receiverName: services.capitalizeText(false, result.nombreDestinatario),
-		receiverDni: result.nitDestinatario,
-		address: services.capitalizeText(false, result.direccionDestinatario),
-		zipCode: result.codigoPostalDestinatario,
-		state: result.poblacionDestinatario,
-		phone: result.telefonoDestinatario,
-		dateDelivered: `${
-			result.fechaHoraEntrega?.split(' ')[0] ? result.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
-		}`,
-		timeDelivered: `${
-			result.fechaHoraEntrega?.split(' ')[1] ? result.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
-		}`,
-	};
-	let origin = {
-		senderName: services.capitalizeText(false, result.nombreRemitente),
-		senderDni: result.nitRemitente,
-		address: services.capitalizeText(false, result.direccionRemitente),
-		zipCode: result.codigoPostalRemitente,
-		state: result.poblacionRemitente,
-		date: result.fechaHoraAdmision.split(' ')[0],
-		time: result.fechaHoraAdmision.split(' ')[1],
-	};
-
-	let aditional = {
-		weightDeclared: `${result.kilos + ' kg.'}`,
-		numberOfPieces: result.numeroTotalPiezas,
-		service: services.capitalizeText(false, result.descripcionServicio),
-		sign: `${result.nifQuienRecibe ? result.nifQuienRecibe : '-'}`,
-	};
-
-	return { destination, origin, aditional };
-}

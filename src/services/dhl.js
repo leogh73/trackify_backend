@@ -95,7 +95,7 @@ async function check(code, lastEvent) {
 		}
 	}
 
-	let response = {
+	return {
 		events: eventsList,
 		moreData: [
 			{
@@ -113,10 +113,6 @@ async function check(code, lastEvent) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-
-	response = { ...response, ...oldApiData(result) };
-
-	return response;
 }
 
 export default { check };
@@ -194,57 +190,4 @@ function convertDate(date) {
 		'/' +
 		dateToday.getFullYear();
 	return newDate;
-}
-
-function oldApiData(result) {
-	const { id, service, origin, destination, status, details } = result;
-
-	let shippingDetail = {
-		id: id,
-		service: service,
-		origin: origin.address.addressLocality,
-		destination: destination.address.addressLocality,
-	};
-
-	let shippingStatus = {
-		date: convertDate(status.timestamp.split('T')[0]),
-		time: status.timestamp.split('T')[1],
-		location: status.location.address.addressLocality,
-		moreDetails: 'Sin datos',
-		nextStep: 'Sin datos',
-		statusCode: translateText(status.statusCode),
-		status: translateText(status.status),
-		description: translateText(status.description),
-	};
-
-	if (status.remark) {
-		shipping.status.moreDetails = translateText(status.remark);
-		shipping.status.nextStep = translateText(status.nextSteps);
-	}
-
-	let detailsData = {
-		totalPieces: details.totalNumberOfPieces,
-		pieceIds: details.pieceIds,
-		signatureUrl: 'Sin datos',
-		documentUrl: 'Sin datos',
-		date: 'Sin datos',
-		time: 'Sin datos',
-		signedType: 'Sin datos',
-		signedName: 'Sin datos',
-	};
-
-	if (details.proofOfDelivery) {
-		detailsData.signatureUrl = details.proofOfDelivery.signatureUrl;
-		detailsData.documentUrl = details.proofOfDelivery.documentUrl;
-		if (details.proofOfDelivery.timestamp) {
-			detailsData.date = convertDate(details.proofOfDelivery.timestamp.split('T')[0]);
-			detailsData.time = details.proofOfDelivery.timestamp.split('T')[1];
-		}
-		if (details.proofOfDelivery.signed) {
-			detailsData.signedType = result.details.proofOfDelivery.signed.type;
-			detailsData.signedName = result.details.proofOfDelivery.signed.name;
-		}
-	}
-
-	return { shippingDetail, shippingStatus, detailsData };
 }

@@ -2,14 +2,14 @@ import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import services from '../services/_services.js';
 
-async function add(user, title, service, code, driveData) {
+async function add(token, title, service, code, driveData) {
 	let result = driveData
 		? {
 				events: driveData.events,
 				moreData: driveData.moreData,
 				lastEvent: Object.values(driveData.events[0]).join(' - '),
 		  }
-		: await services.checkHandler(service, code, null, user.tokenFB);
+		: await services.checkHandler(service, code, null, token);
 
 	if (result.error) return result;
 
@@ -23,18 +23,12 @@ async function add(user, title, service, code, driveData) {
 		checkDate,
 		checkTime,
 		lastCheck: new Date(Date.now()),
-		token: user.tokenFB,
+		token,
 		result,
 		completed: checkCompletedStatus(result.lastEvent),
 	}).save();
 
-	user.trackings.push(id);
 	result.trackingId = id;
-
-	await Promise.all([
-		user.save(),
-		db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } }),
-	]);
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;

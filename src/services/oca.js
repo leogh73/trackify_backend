@@ -43,7 +43,7 @@ async function check(code, lastEvent) {
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	let response = {
+	return {
 		events: eventsList,
 		moreData: [
 			{
@@ -57,22 +57,6 @@ async function check(code, lastEvent) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-
-	response = {
-		...response,
-		otherData: {
-			name: originData.Nombre,
-			address: originData.Dirección,
-			zipCode: originData['Código postal'],
-			locality: originData.Localidad,
-			state: originData.Provincia,
-			email: originData['Correo electrónico'],
-			phone: originData.Teléfono,
-		},
-		productNumber,
-	};
-
-	return response;
 }
 
 export default { check };

@@ -32,13 +32,7 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	let oldData = oldOtherData(JSON.parse(consults[2].body));
-
-	if (lastEvent) {
-		let response = services.updateResponseHandler(eventsList, lastEvent);
-		if (response.lastEvent) response.visits = oldData.newVisitList;
-		return response;
-	}
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
 	let otherData = (() => {
 		const {
@@ -72,39 +66,7 @@ async function check(code, lastEvent) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 
-	response = { ...response, ...oldData };
-
-	console.log(response);
-
 	return response;
 }
 
 export default { check };
-
-function oldOtherData(resultVisits) {
-	let visitsList = resultVisits.visitas.map((v) => {
-		return {
-			date: v.fecha,
-			time: v.hora,
-			motive: v.motivo,
-		};
-	});
-	if (!visitsList.length)
-		visitsList.push({
-			date: 'Sin datos',
-			time: 'Sin datos',
-			motive: 'Sin datos',
-		});
-
-	let pendingVisits =
-		typeof resultVisits.visitasPendientes === 'number'
-			? resultVisits.visitasPendientes
-			: 'Sin datos';
-
-	let newVisitList = {
-		visits: visitsList,
-		pendingVisits,
-	};
-
-	return { visits: newVisitList };
-}
