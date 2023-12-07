@@ -45,11 +45,20 @@ async function remove(userId, trackingIds) {
 	await user.save();
 }
 
+async function removeDuplicates(tracking) {
+	await db.Tracking.deleteMany({
+		_id: { $ne: tracking.id },
+		code: tracking.code,
+		token: tracking.token,
+	});
+}
+
 async function syncronize(user, lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: user.trackings } });
 	let responseTrackings = trackingsDB
 		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
 		.filter((result) => !!result);
+	await Promise.all(trackingsDB.map((tracking) => removeDuplicates(tracking)));
 	return responseTrackings;
 }
 
@@ -83,6 +92,7 @@ async function check(trackingId) {
 	if (response.result.events?.length) {
 		await updateDatabase(response, tracking, checkCompletedStatus(response.result.lastEvent));
 	}
+	await removeDuplicates(tracking);
 	return response;
 }
 
@@ -156,7 +166,7 @@ async function updateDatabase(response, tracking, completedStatus) {
 			},
 		),
 	);
-	if (tracking.result.moreData && response.result.moreData) {
+	if (response.result.moreData) {
 		for (let element of response.result.moreData) {
 			databaseUpdates.push(
 				db.Tracking.findOneAndUpdate(
@@ -170,37 +180,6 @@ async function updateDatabase(response, tracking, completedStatus) {
 				),
 			);
 		}
-	}
-	if (tracking.service === 'DHL' && tracking.result.shipping) {
-		let status = response.result.shipping.status;
-		databaseUpdates.push(
-			db.Tracking.findOneAndUpdate(
-				{ _id: tracking._id },
-				{
-					$set: {
-						'result.shipping.status.date': status.date,
-						'result.shipping.status.time': status.time,
-						'result.shipping.status.location': status.location,
-						'result.shipping.status.statusCode': status.statusCode,
-						'result.shipping.status.status': status.status,
-						'result.shipping.status.description': status.description,
-					},
-				},
-			),
-		);
-	}
-	if (tracking.service === 'ViaCargo' && tracking.result.destination) {
-		databaseUpdates.push(
-			db.Tracking.findOneAndUpdate(
-				{ _id: tracking._id },
-				{
-					$set: {
-						'result.destination.dateDelivered': response.result.destination.dateDelivered,
-						'result.destination.timeDelivered': response.result.destination.timeDelivered,
-					},
-				},
-			),
-		);
 	}
 	await Promise.all(databaseUpdates);
 }

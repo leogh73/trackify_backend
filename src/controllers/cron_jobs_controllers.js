@@ -130,57 +130,64 @@ const apiCheck = async (req, res) => {
 			);
 			return res.status(200).json(response);
 		}
-		let failedChecksCollection = failedCheckHistory.map((check) => check.actionDetail).flat();
-		let filterFailedChecks = [];
-		for (let failedCheck of failedChecksCollection) {
-			const { statusCode, statusMessage, body } = failedCheck.result.error;
-			let serviceResult = {
-				count: 0,
-				service: failedCheck.service,
-				code: failedCheck.result.code,
-				type: `${statusCode} ${statusMessage}`,
-				body,
-			};
-			let resultIndex = filterFailedChecks.findIndex((c) => c.service === failedCheck.service);
-			if (resultIndex === -1) {
-				serviceResult.count = 1;
-				filterFailedChecks.push(serviceResult);
-			} else {
-				filterFailedChecks[resultIndex].count = filterFailedChecks[resultIndex].count + 1;
-				filterFailedChecks[resultIndex].code = serviceResult.code;
-				filterFailedChecks[resultIndex].type = serviceResult.type;
-				filterFailedChecks[resultIndex].body = serviceResult.body;
+		let filterResults = [];
+		for (let failedCheck of failedCheckHistory) {
+			let logResults = [];
+			for (let check of failedCheck.actionDetail) {
+				let index = logResults.findIndex((log) => log.service === check.service);
+				if (index === -1) {
+					const { statusCode, statusMessage, body } = check.result.error;
+					let serviceResult = {
+						service: check.service,
+						code: check.result.code,
+						type: `${statusCode} ${statusMessage}`,
+						body,
+					};
+					logResults.push(serviceResult);
+				}
 			}
+			filterResults.push(logResults);
 		}
-		let failedServices = filterFailedChecks.filter((result) => result.count > 48);
-		response.failedServices.count = failedServices.length;
+		let filteredChecks = [];
+		filterResults.flat().forEach((check) => {
+			let index = filteredChecks.findIndex((ch) => ch.service === check.service);
+			if (index === -1) {
+				check.count = 0;
+				filteredChecks.push(check);
+			} else {
+				filteredChecks[index].count = filteredChecks[index].count + 1;
+			}
+		});
+		let failedServices = filteredChecks.filter((service) => service.count > 98);
 		response.failedServices.services = failedServices.map((api) => api.service);
-		let serviceMessage = '';
-		if (response.failedServices.services.length === 1) {
-			serviceMessage = `el sitio de ${response.failedServices.services[0]}`;
+		let message = '';
+		if (response.failedServices.services.length) {
+			let serviceMessage = '';
+			if (response.failedServices.services.length === 1) {
+				serviceMessage = `el sitio de ${response.failedServices.services[0]}`;
+			}
+			if (response.failedServices.services.length > 1) {
+				let servicesList = [...response.failedServices.services];
+				let lastService = ` y ${servicesList.splice(-1)[0]}`;
+				let servicesMessageList = servicesList.join(', ') + lastService;
+				serviceMessage = `los sitios de ${servicesMessageList}`;
+			}
+			message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación con ${
+				serviceMessage.startsWith('los') ? 'éstos servicios' : 'éste servicio'
+			}, podría estar limitada.`;
 		}
-		if (response.failedServices.services.length > 1) {
-			let servicesList = [...response.failedServices.services];
-			let lastService = ` y ${servicesList.splice(-1)[0]}`;
-			let servicesMessageList = servicesList.join(', ') + lastService;
-			serviceMessage = `los sitios de ${servicesMessageList}`;
-		}
-		let message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación con ${
-			serviceMessage.startsWith('los') ? 'éstos servicios' : 'éste servicio'
-		}, podría estar limitada.`;
-		if (failedServices.length) {
-			await Promise.all([
-				notifyAdmin(failedServices),
-				db.StatusMessage.findOneAndUpdate(
-					{ _id: '653d5e9b1f65bb18ab367986' },
-					{
-						$set: {
-							message: message,
-						},
+
+		await Promise.all([
+			failedServices.length ? notifyAdmin(failedServices) : null,
+			db.StatusMessage.findOneAndUpdate(
+				{ _id: '653d5e9b1f65bb18ab367986' },
+				{
+					$set: {
+						message: message,
 					},
-				),
-			]);
-		}
+				},
+			),
+		]);
 		res.status(200).json(response);
 	} catch (error) {
 		console.log(error);
