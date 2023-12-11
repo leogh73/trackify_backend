@@ -176,9 +176,8 @@ const apiCheck = async (req, res) => {
 				serviceMessage.startsWith('los') ? 'éstos servicios' : 'éste servicio'
 			}, podría estar limitada.`;
 		}
-
 		await Promise.all([
-			failedServices.length ? notifyAdmin(failedServices) : null,
+			failedServices.length ? notifyAdmin(failedServices, false) : null,
 			db.StatusMessage.findOneAndUpdate(
 				{ _id: '653d5e9b1f65bb18ab367986' },
 				{

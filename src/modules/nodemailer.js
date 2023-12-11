@@ -14,15 +14,22 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-const generateHtmlTable = (data) => {
+const generateHtmlTable = (data, contact) => {
 	let rowsArray = [];
+	console.log(contact);
 	for (let e of data) {
-		rowsArray.push(`<tr>
+		contact
+			? rowsArray.push(`<tr>
+	<td>${e.userId}</td>
+	<td>${e.email}</td>
+	<td>${e.message}</td>
+	</tr>`)
+			: rowsArray.push(`<tr>
 		<td>${e.service}</td>
 		<td>${e.code}</td>
 		<td>${e.type}</td>
 		<td>${e.body}</td>
-		</tr>`);
+	</tr>`);
 	}
 	let rowsList = rowsArray.join('');
 
@@ -48,14 +55,15 @@ const generateHtmlTable = (data) => {
 	</head>
 	<body>
 
-	<h2>Errors</h2>
+	<h2>${contact ? 'User Contact' : 'Errors'}</h2>
 	
 	<table>
 		<tr>
-			<th>Service</th>
-			<th>Code</th>
-			<th>Type</th>
-			<th>Body</th>
+			${
+				contact
+					? '<th>UserId</th><th>Email</th><th>Message</th>'
+					: '<th>Service</th><th>Code</th><th>Type</th><th>Body</th>'
+			}
 		</tr>
 	${rowsList}
 	</table>
@@ -64,19 +72,19 @@ const generateHtmlTable = (data) => {
 	</html>`;
 };
 
-const sendMail = async (html) => {
+const sendMail = async (html, contact) => {
 	const mailDetails = {
 		from: `TrackeAR: Seguimientos Argentina<${vars.EMAIL_USER}>`,
 		to: `${vars.EMAIL_ADMIN}`,
-		subject: 'API Access Failed',
+		subject: contact ? 'User Contact' : 'API Access Failed',
 		html,
 	};
 	await transporter.sendMail(mailDetails);
 };
 
-const notifyAdmin = async (data) => {
+const notifyAdmin = async (data, contact) => {
 	try {
-		await sendMail(generateHtmlTable(data));
+		await sendMail(generateHtmlTable(data, contact), contact);
 	} catch (error) {
 		console.log(error);
 		await db.storeLog('Send emails', data, error, luxon.getDate(), luxon.getTime());
