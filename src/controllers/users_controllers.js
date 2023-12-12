@@ -32,7 +32,7 @@ const trackingAction = async (req, res) => {
 	const { userId, action } = req.params;
 
 	try {
-		let { user } = await db.User.findById(userId);
+		let user = await db.User.findById(userId);
 		if (!user) res.status(400).json({ error: 'Not authorized' });
 		let response;
 		if (action == 'add') {

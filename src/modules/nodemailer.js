@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 
 const generateHtmlTable = (data, contact) => {
 	let rowsArray = [];
-	console.log(contact);
+
 	for (let e of data) {
 		contact
 			? rowsArray.push(`<tr>
