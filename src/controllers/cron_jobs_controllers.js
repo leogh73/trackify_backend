@@ -152,12 +152,13 @@ const apiCheck = async (req, res) => {
 		filterResults.flat().forEach((check) => {
 			let index = filteredChecks.findIndex((ch) => ch.service === check.service);
 			if (index === -1) {
-				check.count = 0;
+				check.count = 1;
 				filteredChecks.push(check);
 			} else {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
+		console.log(filteredChecks);
 		let failedServices = filteredChecks.filter((service) => service.count > 98);
 		response.failedServices.services = failedServices.map((api) => api.service);
 		let message = '';
