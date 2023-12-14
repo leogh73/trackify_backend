@@ -37,14 +37,7 @@ const trackingAction = async (req, res) => {
 		let response;
 		if (action == 'add') {
 			const { title, service, code } = req.body;
-			response = await tracking.add(user.tokenFB, title, service, code, false);
-			if (response.trackingId) {
-				await db.User.findOneAndUpdate(
-					{ _id: userId },
-					{ $push: { trackings: response.trackingId } },
-				);
-				await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
-			}
+			response = await tracking.add(user, title, service, code, false);
 		} else {
 			const { trackingIds } = req.body;
 			await tracking.remove(userId, JSON.parse(trackingIds));
