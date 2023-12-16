@@ -16,7 +16,7 @@ async function add(user, title, service, code, driveData) {
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();
 
-	const { id } = await new db.Tracking({
+	const newTracking = await new db.Tracking({
 		title,
 		service,
 		code,
@@ -28,12 +28,13 @@ async function add(user, title, service, code, driveData) {
 		completed: checkCompletedStatus(result.lastEvent),
 	}).save();
 
-	result.trackingId = id;
+	result.trackingId = newTracking.id;
+
+	await db.User.findOneAndUpdate({ _id: user.id }, { $push: { trackings: newTracking.id } });
+	await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
+
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
-
-	await db.User.findOneAndUpdate({ _id: user.id }, { $push: { trackings: id } });
-	await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
 
 	return result;
 }
