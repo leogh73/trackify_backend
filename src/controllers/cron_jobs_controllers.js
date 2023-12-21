@@ -4,6 +4,7 @@ import vars from '../modules/crypto-js.js';
 import sendNotification from '../modules/firebase_notification.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import tracking from './trackings_controllers.js';
+import services from '../services/_services.js';
 import got from 'got';
 
 const checkTrackings = async (req, res) => {
@@ -93,6 +94,63 @@ const awakeAPIs = async (req, res) => {
 	}
 };
 
+const addMissingTrackings = async (req, res) => {
+	try {
+		let missingTrackings = [];
+
+		async function logCheck(data) {
+			let { idMDB, title, code, service } = JSON.parse(data.trackingData);
+			let index = missingTrackings.findIndex((check) => check.idMDB === idMDB);
+			let existingTracking = index === -1 ? await db.Tracking.findById(idMDB) : true;
+			if (!existingTracking) {
+				let { id, tokenFB } = await db.User.findById(data.userId);
+				let item = { idMDB, user: { id, tokenFB }, title, code, service };
+				missingTrackings.push(item);
+			}
+		}
+
+		let checkErrors = await db.Log.find({ actionName: 'Check' });
+		for (let check of checkErrors) {
+			await logCheck(check.actionDetail);
+		}
+
+		async function trackingModel(t) {
+			let { user, title, service, code } = t;
+			let result = await services.checkHandler(service, code, null, user.tokenFB);
+			return new db.Tracking({
+				_id: t.idMDB,
+				title,
+				service,
+				code,
+				checkDate: luxon.getDate(),
+				checkTime: luxon.getTime(),
+				lastCheck: new Date(Date.now()),
+				token: user.tokenFB,
+				result,
+				completed: tracking.checkCompletedStatus(result.lastEvent),
+			});
+		}
+
+		let modelList = await Promise.all(missingTrackings.map((tracking) => trackingModel(tracking)));
+
+		let data = await db.Tracking.bulkSave(modelList);
+
+		await db.Log.deleteMany({ actionName: 'Check' });
+
+		res.status(200).json({ addedTrackings: data.insertedCount });
+	} catch (error) {
+		console.log(error);
+		await db.storeLog(
+			'Add Missing Trackings',
+			error,
+			'add missing trackings',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+		res.status(500).json({ error: 'Add Missing Trackings', message: error.toString() });
+	}
+};
+
 const apiCheck = async (req, res) => {
 	try {
 		let totalFailedChecks = await db.Log.find({
@@ -158,7 +216,6 @@ const apiCheck = async (req, res) => {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
-		console.log(filteredChecks);
 		let failedServices = filteredChecks.filter((service) => service.count > 98);
 		response.failedServices.services = failedServices.map((api) => api.service);
 		let message = '';
@@ -283,4 +340,11 @@ const cleanUp = async (req, res) => {
 	}
 };
 
-export default { checkTrackings, awakeAPIs, apiCheck, checkCompleted, cleanUp };
+export default {
+	checkTrackings,
+	awakeAPIs,
+	addMissingTrackings,
+	apiCheck,
+	checkCompleted,
+	cleanUp,
+};
