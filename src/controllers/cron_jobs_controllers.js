@@ -10,6 +10,7 @@ import got from 'got';
 const checkTrackings = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
+		// let trackingsCollection = await db.Tracking.find({ code: 'G00000966128630' });
 		let trackingsCheckResult = await Promise.all(
 			trackingsCollection.map((t) => tracking.checkTracking(t)),
 		);
@@ -37,17 +38,17 @@ const checkTrackings = async (req, res) => {
 				sendNotification(title, body, userResult.token, JSON.stringify(userResult.results)),
 			);
 		}
-		for (let check of succededChecks) {
-			operationsCollection.push(
-				tracking.updateDatabase(
-					check,
+		let databaseUpdates = succededChecks.map((check) => {
+			return {
+				response: check,
+				tracking:
 					trackingsCollection[
 						trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB)
 					],
-					tracking.checkCompletedStatus(check.result.lastEvent),
-				),
-			);
-		}
+				completedStatus: tracking.checkCompletedStatus(check.result.lastEvent),
+			};
+		});
+		operationsCollection.push(tracking.updateDatabase(databaseUpdates));
 		let failedChecks = trackingsCheckResult.filter((check) => check.result.error);
 		if (failedChecks.length) {
 			operationsCollection.push(
@@ -70,6 +71,7 @@ const checkTrackings = async (req, res) => {
 			},
 		});
 	} catch (error) {
+		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
 		await db.storeLog(
 			'trackings check',
@@ -127,7 +129,7 @@ const addMissingTrackings = async (req, res) => {
 				lastCheck: new Date(Date.now()),
 				token: user.tokenFB,
 				result,
-				completed: tracking.checkCompletedStatus(result.lastEvent),
+				completed: tracking.checkCompletedStatus(resçult.lastEvent),
 			});
 		}
 

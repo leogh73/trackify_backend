@@ -48,20 +48,20 @@ async function remove(userId, trackingIds) {
 	await user.save();
 }
 
-async function removeDuplicates(tracking) {
-	await db.Tracking.deleteMany({
-		_id: { $ne: tracking.id },
-		code: tracking.code,
-		token: tracking.token,
-	});
-}
-
 async function syncronize(user, lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: user.trackings } });
 	let responseTrackings = trackingsDB
 		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
 		.filter((result) => !!result);
-	await Promise.all(trackingsDB.map((tracking) => removeDuplicates(tracking)));
+	await db.Tracking.bulkWrite(
+		trackingsDB.map((tracking) => {
+			return {
+				deleteMany: {
+					filter: { _id: { $ne: tracking.id }, code: tracking.code, token: tracking.token },
+				},
+			};
+		}),
+	);
 	return responseTrackings;
 }
 
@@ -93,9 +93,15 @@ async function check(trackingId) {
 	let tracking = await db.Tracking.findById(trackingId);
 	let response = await checkTracking(tracking);
 	if (response.result.events?.length) {
-		await updateDatabase(response, tracking, checkCompletedStatus(response.result.lastEvent));
+		await updateDatabase([
+			{ response, tracking, completedStatus: checkCompletedStatus(response.result.lastEvent) },
+		]);
 	}
-	await removeDuplicates(tracking);
+	await db.Tracking.deleteMany({
+		_id: { $ne: tracking.id },
+		code: tracking.code,
+		token: tracking.token,
+	});
 	return response;
 }
 
@@ -150,41 +156,44 @@ function checkCompletedStatus(lastEvent) {
 	return status;
 }
 
-async function updateDatabase(response, tracking, completedStatus) {
+async function updateDatabase(trackingsData) {
 	let databaseUpdates = [];
-	databaseUpdates.push(
-		db.Tracking.findOneAndUpdate(
-			{ _id: tracking._id },
-			{
-				$push: {
-					'result.events': { $each: response.result.events, $position: 0 },
-				},
-				$set: {
-					'result.lastEvent': response.result.lastEvent,
-					checkDate: response.checkDate,
-					checkTime: response.checkTime,
-					lastCheck: response.lastCheck,
-					completed: completedStatus,
+	for (let data of trackingsData) {
+		let { response, tracking, completedStatus } = data;
+		databaseUpdates.push({
+			updateOne: {
+				filter: { _id: tracking._id },
+				update: {
+					$push: {
+						'result.events': { $each: response.result.events, $position: 0 },
+					},
+					$set: {
+						'result.lastEvent': response.result.lastEvent,
+						checkDate: response.checkDate,
+						checkTime: response.checkTime,
+						lastCheck: response.lastCheck,
+						completed: completedStatus,
+					},
 				},
 			},
-		),
-	);
-	if (response.result.moreData) {
-		for (let element of response.result.moreData) {
-			databaseUpdates.push(
-				db.Tracking.findOneAndUpdate(
-					{ _id: tracking._id },
-					{
-						$set: {
-							'result.moreData.$[e].data': element.data,
+		});
+		if (response.result.moreData) {
+			for (let element of response.result.moreData) {
+				databaseUpdates.push({
+					updateOne: {
+						filter: { _id: tracking._id },
+						update: {
+							$set: {
+								'result.moreData.$[e].data': element.data,
+							},
 						},
+						arrayFilters: [{ 'e.title': element.title }],
 					},
-					{ arrayFilters: [{ 'e.title': element.title }] },
-				),
-			);
+				});
+			}
 		}
 	}
-	await Promise.all(databaseUpdates);
+	await db.Tracking.bulkWrite(databaseUpdates);
 }
 
 export default {
