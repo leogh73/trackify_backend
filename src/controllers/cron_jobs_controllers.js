@@ -129,7 +129,7 @@ const addMissingTrackings = async (req, res) => {
 				lastCheck: new Date(Date.now()),
 				token: user.tokenFB,
 				result,
-				completed: tracking.checkCompletedStatus(resçult.lastEvent),
+				completed: tracking.checkCompletedStatus(result.lastEvent),
 			});
 		}
 
