@@ -10,7 +10,6 @@ import got from 'got';
 const checkTrackings = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
-		// let trackingsCollection = await db.Tracking.find({ code: 'G00000966128630' });
 		let trackingsCheckResult = await Promise.all(
 			trackingsCollection.map((t) => tracking.checkTracking(t)),
 		);
@@ -135,11 +134,12 @@ const addMissingTrackings = async (req, res) => {
 
 		let modelList = await Promise.all(missingTrackings.map((tracking) => trackingModel(tracking)));
 
-		let data = await db.Tracking.bulkSave(modelList);
+		let savedData = await db.Tracking.bulkSave(modelList);
+		let removedData = await db.Log.deleteMany({ actionName: 'Check' });
 
-		await db.Log.deleteMany({ actionName: 'Check' });
-
-		res.status(200).json({ addedTrackings: data.insertedCount });
+		res
+			.status(200)
+			.json({ addedTrackings: savedData.insertedCount, removedLogs: removedData.deletedCount });
 	} catch (error) {
 		console.log(error);
 		await db.storeLog(
@@ -307,14 +307,14 @@ const cleanUp = async (req, res) => {
 		let trackingIds = [];
 		for (let tracking of dbQueries[1]) {
 			let daysElapsed = calculateDays(tracking.lastCheck);
-			if (daysElapsed > 14) trackingIds.push(tracking._id);
+			if (daysElapsed > 7) trackingIds.push(tracking._id);
 		}
 		let logIds = [];
 		for (let log of dbQueries[2]) {
 			let date = log.date.split('/');
 			let logDate = new Date(date[2], date[1] - 1, date[0]);
 			let daysElapsed = calculateDays(logDate);
-			if (daysElapsed > 7) logIds.push(log._id);
+			if (daysElapsed > 3) logIds.push(log._id);
 		}
 		let removeOperations = [];
 		if (userIds.length) removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
