@@ -97,10 +97,11 @@ const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 
 	try {
-		let response = await tracking.check(JSON.parse(trackingData).idMDB);
+		let response = await tracking.check(userId, JSON.parse(trackingData));
 		let statusCode = response.result.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage(error);
 		await db.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);

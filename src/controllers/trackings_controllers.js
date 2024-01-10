@@ -89,8 +89,9 @@ function findUpdatedTrackings(tracking, lastEventsUser) {
 	} else return null;
 }
 
-async function check(trackingId) {
-	let tracking = await db.Tracking.findById(trackingId);
+async function check(userId, trackingData) {
+	let tracking = await db.Tracking.findById(trackingData.idMDB);
+	if (!tracking) return await addMissingTracking(userId, trackingData);
 	let response = await checkTracking(tracking);
 	if (response.result.events?.length) {
 		await updateDatabase([
@@ -103,6 +104,41 @@ async function check(trackingId) {
 		token: tracking.token,
 	});
 	return response;
+}
+
+async function addMissingTracking(userId, trackingData) {
+	let user = await db.User.findById(userId);
+	let { idMDB, title, service, code, lastEvent } = trackingData;
+	let apiChecks = await Promise.all([
+		services.checkHandler(service, code, null, user.tokenFB),
+		services.checkHandler(service, code, lastEvent, user.tokenFB),
+	]);
+	let checkDate = luxon.getDate();
+	let checkTime = luxon.getTime();
+	let lastCheck = new Date(Date.now());
+	await new db.Tracking({
+		_id: idMDB,
+		title,
+		service,
+		code,
+		checkDate,
+		checkTime,
+		lastCheck,
+		token: user.tokenFB,
+		result: apiChecks[0],
+		completed: checkCompletedStatus(apiChecks[0].lastEvent),
+	}).save();
+	return {
+		idMDB,
+		token: user.tokenFB,
+		title,
+		service,
+		code,
+		checkDate,
+		checkTime,
+		lastCheck,
+		result: apiChecks[1],
+	};
 }
 
 async function checkTracking(tracking) {
