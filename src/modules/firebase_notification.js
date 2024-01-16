@@ -26,7 +26,7 @@ const sendNotification = async (title, body, token, data) => {
 		// return response;
 	} catch (error) {
 		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
-			await user.remove(data.token);
+			await user.remove(token);
 		}
 		console.log(error);
 		// return { error };

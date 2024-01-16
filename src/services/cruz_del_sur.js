@@ -46,14 +46,15 @@ async function check(code, lastEvent) {
 		Destino: baseInputsTexts[4],
 	};
 
-	let eventsData1 = [];
 	let chunkSize = 2;
-	for (let i = 6; i < baseTexts.length; i += chunkSize) {
-		eventsData1.push(baseTexts.slice(i, i + chunkSize));
-	}
 	let eventsData2 = [];
 	for (let i = 3; i < eventsInputTexts.length; i += chunkSize) {
 		eventsData2.push(eventsInputTexts.slice(i, i + chunkSize));
+	}
+	let eventsData1 = [];
+	for (let i = 6; i < baseTexts.length; i += chunkSize) {
+		if (eventsData1.length < eventsData2.length)
+			eventsData1.push(baseTexts.slice(i, i + chunkSize));
 	}
 
 	let eventsList = eventsData1
