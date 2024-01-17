@@ -57,13 +57,25 @@ async function check(code, lastEvent) {
 			eventsData1.push(baseTexts.slice(i, i + chunkSize));
 	}
 
+	console.log(eventsData2);
+
 	let eventsList = eventsData1
 		.map((event, index) => {
+			// let branch;
+			// let branchData = event[1];
+			// if (!branchData) branch = 'Sin datos';
+			// if (branchData[1].includes(':')) branch = event[1].split(':')[1];
+			// if (branchData.includes('*')) branch = branch.split(' *')[0];
+			// if (branchData[1].includes('- ')) branch = branch.split('- ')[1];
+			// let detail;
+			// let detailData = event[0];
+			// if (detailData.includes('- ')) detail = event[0].split('- ')[1];
+			// if (detailData.includes(':')) detail = event[0].split(':')[1];
 			return {
 				date: eventsData2[index][0].split('-').join('/'),
 				time: eventsData2[index][1].split(' hs')[0],
-				branch: event[1].split(':')[1].split(' *')[0],
-				detail: event[0].split('- ')[1],
+				branch: event[1].includes(' *') ? event[1].split(' *')[0].split(':')[1] : event[0],
+				detail: event[0].includes(':') ? event[0].split(':')[1] : event[0],
 			};
 		})
 		.reverse();
