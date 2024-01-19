@@ -46,36 +46,32 @@ async function check(code, lastEvent) {
 		Destino: baseInputsTexts[4],
 	};
 
-	let chunkSize = 2;
 	let eventsData2 = [];
-	for (let i = 3; i < eventsInputTexts.length; i += chunkSize) {
-		eventsData2.push(eventsInputTexts.slice(i, i + chunkSize));
-	}
-	let eventsData1 = [];
-	for (let i = 6; i < baseTexts.length; i += chunkSize) {
-		if (eventsData1.length < eventsData2.length)
-			eventsData1.push(baseTexts.slice(i, i + chunkSize));
+	for (let i = 3; i < eventsInputTexts.length; i += 2) {
+		eventsData2.push(eventsInputTexts.slice(i, i + 2));
 	}
 
-	console.log(eventsData2);
+	baseTexts.splice(0, 6);
+	let indexesList = [];
+	baseTexts.forEach((event, index) => {
+		if (event.includes('-')) indexesList.push(index);
+	});
+	let eventsData1 = [];
+	indexesList.forEach((i, index) => {
+		eventsData1.push(baseTexts.slice(i, indexesList[index + 1]));
+	});
 
 	let eventsList = eventsData1
 		.map((event, index) => {
-			// let branch;
-			// let branchData = event[1];
-			// if (!branchData) branch = 'Sin datos';
-			// if (branchData[1].includes(':')) branch = event[1].split(':')[1];
-			// if (branchData.includes('*')) branch = branch.split(' *')[0];
-			// if (branchData[1].includes('- ')) branch = branch.split('- ')[1];
-			// let detail;
-			// let detailData = event[0];
-			// if (detailData.includes('- ')) detail = event[0].split('- ')[1];
-			// if (detailData.includes(':')) detail = event[0].split(':')[1];
+			let extraDetail;
+			if (event[2]) extraDetail = event[2].split(':')[1];
 			return {
 				date: eventsData2[index][0].split('-').join('/'),
 				time: eventsData2[index][1].split(' hs')[0],
-				branch: event[1].includes(' *') ? event[1].split(' *')[0].split(':')[1] : event[0],
-				detail: event[0].includes(':') ? event[0].split(':')[1] : event[0],
+				branch: event[1].split(':')[1].split(' *')[0],
+				detail: extraDetail
+					? event[0].split('- ')[1] + ' - ' + extraDetail
+					: event[0].split('- ')[1],
 			};
 		})
 		.reverse();
