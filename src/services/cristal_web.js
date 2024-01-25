@@ -7,7 +7,7 @@ async function check(code, lastEvent, service) {
 	if (service === 'Expreso Fueguino') serviceCode = 49;
 	if (service === 'Rabbione') serviceCode = 17;
 	if (service === 'Rodríguez Hermanos Transportes') serviceCode = 21;
-	if (service === 'Transdan Express') serviceCode = 65;
+	if (service === 'Trans Dan Express') serviceCode = 65;
 
 	let splittedCode = code.split('-');
 	let consult = await got.post(`${vars.CRISTAL_WEB_API_URL}${serviceCode}`, {
@@ -27,6 +27,8 @@ async function check(code, lastEvent, service) {
 		.reverse();
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+
+	console.log(eventsList);
 
 	return {
 		events: eventsList,
