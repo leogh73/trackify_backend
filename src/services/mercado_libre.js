@@ -59,6 +59,8 @@ export default { check };
 
 function eventTranslate(text) {
 	switch (text) {
+		case 'claimed_me':
+			return 'Envío demorado, reclamado por el comprador.';
 		case 'handling':
 			return 'Preparando';
 		case 'ready_to_ship':
@@ -69,14 +71,24 @@ function eventTranslate(text) {
 			return 'Etiqueta impresa';
 		case 'dropped_off':
 			return 'El vendedor despachó tu paquete.';
+		case 'handling':
+			return 'Preparando';
 		case 'in_hub':
 			return 'Ingresó al centro de distribución.';
 		case 'picked up':
 			return 'Recolectado';
 		case 'in_packing_list':
 			return 'En lista de recolección';
+		case 'not_delivered':
+			return 'No pudimos entregar tu paquete.';
+		case 'pending':
+			return 'Pendiente';
+		case 'returning_to_hub':
+			return 'Devuelto al centro de distribución.';
 		case 'shipped':
 			return 'Salió del centro de distribución y sigue en viaje.';
+		case 'shipment_paid':
+			return 'Envío pagado.';
 		case 'delivered':
 			return 'Entregamos tu paquete.';
 		case 'first_visit':

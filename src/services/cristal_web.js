@@ -28,8 +28,6 @@ async function check(code, lastEvent, service) {
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	console.log(eventsList);
-
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
