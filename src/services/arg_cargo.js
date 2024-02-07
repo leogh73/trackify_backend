@@ -22,7 +22,10 @@ async function check(code, lastEvent) {
 	};
 
 	if (lastEvent) {
-		return { events: event.status === lastEvent.split(' - ')[3] ? [] : [event] };
+		return {
+			events: event.status === lastEvent.split(' - ')[3] ? [] : [event],
+			lastEvent: Object.values(event).join(' - '),
+		};
 	}
 
 	return {
