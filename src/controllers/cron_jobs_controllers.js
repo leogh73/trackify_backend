@@ -108,7 +108,7 @@ const apiCheck = async (req, res) => {
 				services: [],
 			},
 		};
-		if (totalFailedChecks.length < 97) return res.status(200).json(response);
+		if (totalFailedChecks.length < 98) return res.status(200).json(response);
 		let failedCheckHistory = totalFailedChecks.splice(-98);
 		let splittedFirstDate = failedCheckHistory[0].date.split('/');
 		let firstLogDate = new Date(
