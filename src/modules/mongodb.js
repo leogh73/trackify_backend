@@ -12,10 +12,7 @@ mongoose
 		},
 	)
 	.then(() => console.log('Connected to MongoDB...'))
-	.catch((error) => {
-		console.error('Could not connect to MongoDB', error);
-		// throw new Error(error);
-	});
+	.catch((error) => console.error('Could not connect to MongoDB', error));
 
 const trackingSchema = new Schema({
 	title: { type: String, required: true },
@@ -80,11 +77,11 @@ const Log = mongoose.model('Log', logSchema);
 const TestCode = mongoose.model('TestCode', testCodeSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
-const storeLog = async (actionName, actionDetail, errorMessage, date, time) => {
+const saveLog = async (actionName, actionDetail, errorMessage, date, time) => {
 	try {
 		await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
 	} catch (error) {
-		console.log(`Couldn't save log: ${error}`);
+		console.log('Could not save log', error);
 	}
 };
 
@@ -96,5 +93,5 @@ export default {
 	Log,
 	TestCode,
 	StatusMessage,
-	storeLog,
+	saveLog,
 };
