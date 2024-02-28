@@ -36,7 +36,7 @@ const initialize = async (req, res) => {
 		res.status(200).json(tokens);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'Google initialize',
 			{ userId, authCode, email },
 			error,
@@ -58,7 +58,7 @@ const consult = async (req, res) => {
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog('Google consult', { userId }, error, message.date, message.time);
+		await db.saveLog('Google consult', { userId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -86,7 +86,7 @@ const createUpdate = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'Google create/update',
 			{ userId, userData },
 			error,
@@ -120,7 +120,7 @@ const restore = async (req, res) => {
 		res.status(200).json(userData);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog('Google restore', { userId, backupId }, error, message.date, message.time);
+		await db.saveLog('Google restore', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -139,7 +139,7 @@ const remove = async (req, res) => {
 		res.status(200).json({ message: 'OK' });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog('Google remove', { userId, backupId }, error, message.date, message.time);
+		await db.saveLog('Google remove', { userId, backupId }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -204,7 +204,6 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 		data.mercadoLibre = user.mercadoLibre;
 		userData = data;
 	}
-
 
 	let result;
 	if (backupFiles.length && backupFiles[0]?.currentDevice) {

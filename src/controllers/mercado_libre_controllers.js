@@ -34,7 +34,7 @@ const initialize = async (req, res) => {
 		res.status(200).json(meLiResponse);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'MercadoLibre initialize',
 			{ userId, code },
 			error,
@@ -62,7 +62,7 @@ const consult = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'MercadoLibre consult',
 			{ userId, consultType },
 			error,
@@ -81,7 +81,7 @@ const loadMore = async (req, res) => {
 		res.status(200).json(results);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'MercadoLibre load more',
 			{ shippingIds, httpHeaders },
 			error,
@@ -119,7 +119,7 @@ async function checkShippingOrders(userId, consultType) {
 			await renewTokenML(userData.model);
 			return await checkShippingOrders(userId, consultType);
 		} else {
-			return await db.storeLog(
+			return await db.saveLog(
 				'MercadoLibre check shipping orders',
 				{ userId, consultType },
 				error,
@@ -205,7 +205,7 @@ async function fetchTrackingData(shippingId, token) {
 			await renewTokenML(userData.model);
 			return await fetchTrackingData(shippingId, token);
 		} else {
-			return await db.storeLog(
+			return await db.saveLog(
 				'ML Fetch Tracking Data',
 				{ userId: user.id, shippingId },
 				error,

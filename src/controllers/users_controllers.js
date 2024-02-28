@@ -17,7 +17,7 @@ const initialize = async (req, res) => {
 		res.status(200).json({ userId: newUser.id });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'Initialize user',
 			{ lastActivity: newUser.lastActivity, tokenFB: newUser.tokenFB },
 			error,
@@ -48,7 +48,7 @@ const trackingAction = async (req, res) => {
 	} catch (error) {
 		let message = luxon.errorMessage(error);
 		if (req.body.service !== 'Correo Argentino')
-			await db.storeLog(
+			await db.saveLog(
 				'Tracking action',
 				{ userId, action, body: req.body },
 				error,
@@ -82,7 +82,7 @@ const syncronize = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'syncronize',
 			{ userId, token, lastEvents, currentDate, driveLoggedIn, version },
 			error,
@@ -103,7 +103,7 @@ const check = async (req, res) => {
 	} catch (error) {
 		console.log(error);
 		let message = luxon.errorMessage(error);
-		await db.storeLog('Check', { userId, trackingData }, error, message.date, message.time);
+		await db.saveLog('Check', { userId, trackingData }, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -119,7 +119,7 @@ const contactForm = async (req, res) => {
 		res.status(200).json({ requestId: id });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
-		await db.storeLog(
+		await db.saveLog(
 			'Service request',
 			{ userId, service, code, email },
 			error,

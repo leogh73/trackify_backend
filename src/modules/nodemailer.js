@@ -87,7 +87,7 @@ const notifyAdmin = async (data, contact) => {
 		await sendMail(generateHtmlTable(data, contact), contact);
 	} catch (error) {
 		console.log(error);
-		await db.storeLog('Send emails', data, error, luxon.getDate(), luxon.getTime());
+		await db.saveLog('Send emails', data, error, luxon.getDate(), luxon.getTime());
 	}
 };
 

@@ -80,8 +80,13 @@ const Log = mongoose.model('Log', logSchema);
 const TestCode = mongoose.model('TestCode', testCodeSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
-const storeLog = async (actionName, actionDetail, errorMessage, date, time) =>
-	await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
+const storeLog = async (actionName, actionDetail, errorMessage, date, time) => {
+	try {
+		await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
+	} catch (error) {
+		console.log(`Couldn't save log: ${error}`);
+	}
+};
 
 export default {
 	User,
