@@ -12,7 +12,8 @@ async function check(code, lastEvent) {
 			nroguia: splittedCode[2],
 		},
 	});
-	const $ = load(consult);
+
+	const $ = load(consult.body);
 
 	let rowList = [];
 	$('table > tbody > tr > td').each(function () {

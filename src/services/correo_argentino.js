@@ -4,11 +4,7 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	// let consult = await got(`${vars.CORREO_ARGENTINO_API_URL}${code}`);
-
-	let consult = await got.post(`http://localhost:5000/api`, {
-		json: { service: 'Correo Argentino', code },
-	});
+	let consult = await got(`${vars.CORREO_ARGENTINO_API_URL}${code}`);
 
 	const $ = load(consult.body);
 
