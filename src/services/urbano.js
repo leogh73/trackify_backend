@@ -47,9 +47,9 @@ async function check(code, lastEvent) {
 	});
 
 	let service = {
-		Linea: serviceData[0],
-		Producto: serviceData[1],
-		Servicio: serviceData[2],
+		Linea: serviceData[1],
+		Producto: serviceData[2],
+		Servicio: serviceData[3].length ? serviceData[3] : 'Sin datos',
 	};
 
 	if (!JSON.parse(param1).producto) return { error: 'No data' };
@@ -60,7 +60,7 @@ async function check(code, lastEvent) {
 	const $2 = load(response2.body);
 
 	let data2 = $2('table > tbody > tr').text();
-	client['locality'] = $2('div > div.panel-body > div:nth-child(12)').text().split('\n')[0];
+	client['Localidad'] = $2('div > div.panel-body > div:nth-child(12)').text().split('\n')[0];
 
 	let events = data2
 		.split('999')
@@ -84,7 +84,7 @@ async function check(code, lastEvent) {
 		return {
 			date: e[2].split('-').join('/'),
 			time: e[3],
-			location: finalLocation,
+			location: finalLocation.trim(),
 			status: e[1].split('- ')[1],
 		};
 	});
@@ -92,7 +92,7 @@ async function check(code, lastEvent) {
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	let response = {
+	return {
 		events: eventsList,
 		moreData: [
 			{
@@ -106,18 +106,6 @@ async function check(code, lastEvent) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-
-	response = {
-		...response,
-		client: { code: client.Código, name: client.Nombre },
-		service: {
-			line: client.Linea,
-			product: client.Producto,
-			service: client.Servicio,
-		},
-	};
-
-	return response;
 }
 
 export default { check };

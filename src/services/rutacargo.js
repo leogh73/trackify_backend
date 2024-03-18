@@ -14,26 +14,31 @@ async function check(code, lastEvent) {
 	});
 	const $ = load(consult.body.trim());
 
-	let rowList = [];
-	$('body > table > tbody > tr > td').each(function () {
-		rowList.push($(this).text());
+	let rowDateTime = [];
+	$(
+		'body > div > div > div.col-xs-10.col-xs-offset-1.col-sm-8.col-sm-offset-2 > ul > li > div.timeline-info > span',
+	).each(function () {
+		rowDateTime.push($(this).text());
 	});
 
-	if (!rowList.length) return { error: 'No data' };
+	let rowDetail = [];
+	$(
+		'body > div > div > div.col-xs-10.col-xs-offset-1.col-sm-8.col-sm-offset-2 > ul > li > div.timeline-content > p',
+	).each(function () {
+		rowDetail.push($(this).text().split('\n')[1].trim());
+	});
 
-	let eventsData = [];
-	let chunkSize = 3;
-	for (let i = 0; i < rowList.length; i += chunkSize) {
-		eventsData.push(rowList.slice(i, i + chunkSize));
-	}
+	if (
+		$('body > div > div > div.col-xs-10.col-xs-offset-1.col-sm-8.col-sm-offset-2 > h3').text() ===
+		'No se registran movimientos para el comprobante enviado'
+	)
+		return { error: 'No data' };
 
-	let eventsList = eventsData
-		.map((e) => {
-			return {
-				date: e[0],
-				time: e[1],
-				detail: e[2],
-			};
+	let eventsList = rowDateTime
+		.map((e, i) => {
+			let date = e.split(' , ')[0];
+			let time = e.split(' , ')[1];
+			return { date, time, detail: rowDetail[i] };
 		})
 		.reverse();
 

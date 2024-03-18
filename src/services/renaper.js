@@ -36,23 +36,36 @@ async function check(code, lastEvent) {
 		Provincia: services.capitalizeText(false, oficina_remitente.provincia),
 	};
 
+	let eventsPresent = result.data.tramitesUI[0].historico ? true : false;
+
 	let event = {
 		date: fecha_ultimo_estado.split('-').reverse().join('/'),
 		time: luxon.getTime(),
 		status: services.capitalizeText(false, descripcion_ultimo_estado),
 	};
 
-	if (lastEvent) {
-		return { events: event.status === lastEvent.split(' - ')[2] ? [] : [event] };
-	}
+	let eventsList = eventsPresent
+		? result.data.tramitesUI[0].historico.map((event) => {
+				return {
+					date: event.FechaCambio.split(' ')[0].split('-').join('/'),
+					time: event.FechaCambio.split(' ')[1],
+					status: services.capitalizeText(true, event.EstadoMotivo),
+				};
+		  })
+		: [event];
+
+	if (lastEvent)
+		return eventsPresent
+			? services.updateResponseHandler(eventsList, lastEvent)
+			: { events: event.status === lastEvent.split(' - ')[2] ? [] : [event] };
 
 	return {
-		events: [event],
+		events: eventsList,
 		moreData: [
 			{ title: 'TRÁMITE', data: paperKind },
 			{ title: 'OFICINA REMITENTE', data: senderOffice },
 		],
-		lastEvent: Object.values(event).join(' - '),
+		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
 

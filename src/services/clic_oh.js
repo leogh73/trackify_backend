@@ -3,16 +3,12 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
-		json: { service: 'ClicOh', code },
+	let consult = await got.post(`${vars.CLICOH_API_URL}`, {
+		json: { codeService: code },
 	});
 	let result = JSON.parse(consult.body);
 
-	if (
-		!result.packagestatehistory_set &&
-		result?.package_code[0] === 'No se puede encontrar un paquete con el código solicitado'
-	)
-		return { error: 'No data' };
+	if (result.message === 'Servicio no encontrado por codigo') return { error: 'No data' };
 
 	let eventsList = result.packagestatehistory_set
 		.map((e) => {
@@ -59,7 +55,7 @@ async function check(code, lastEvent) {
 		Nombre: result.client,
 	};
 
-	let response = {
+	return {
 		events: eventsList,
 		moreData: [
 			{
@@ -81,10 +77,6 @@ async function check(code, lastEvent) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-
-	response = { ...response, ...oldOtherData(result) };
-
-	return response;
 }
 
 function convertDate(date) {
@@ -109,40 +101,3 @@ function verifyData(data) {
 }
 
 export default { check };
-
-function oldOtherData(result) {
-	let origin = (() => {
-		const { address, country } = result.origin;
-		return {
-			address,
-			country,
-		};
-	})();
-
-	let destination = (() => {
-		const { address, locality, country, administrative_area_level_1, postal_code } = result.to;
-		return {
-			address,
-			locality,
-			country,
-			administrative_area_level_1,
-			postal_code,
-		};
-	})();
-
-	const { dni, first_name, last_name, email, phone, address } = result.receiver;
-	let receiver = {
-		dni,
-		first_name,
-		last_name,
-		email: verifyData(email),
-		phone: verifyData(phone),
-		Dirección: verifyData(address),
-	};
-
-	let otherData = {
-		clientName: result.client,
-	};
-
-	return { origin, destination, receiver, otherData };
-}
