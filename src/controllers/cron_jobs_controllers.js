@@ -102,20 +102,20 @@ const apiCheck = async (req, res) => {
 				services: [],
 			},
 		};
-		if (totalFailedChecks.length < 98) return res.status(200).json(response);
-		let failedCheckHistory = totalFailedChecks.splice(-98);
+		if (totalFailedChecks.length < 48) return res.status(200).json(response);
+		let failedCheckHistory = totalFailedChecks.splice(-49);
 		let splittedFirstDate = failedCheckHistory[0].date.split('/');
 		let firstLogDate = new Date(
 			splittedFirstDate[2],
 			splittedFirstDate[1] - 1,
 			splittedFirstDate[0],
 		);
-		let splittedLastDate = failedCheckHistory[97].date.split('/');
+		let splittedLastDate = failedCheckHistory[48].date.split('/');
 		let lastLogDate = new Date(splittedLastDate[2], splittedLastDate[1] - 1, splittedLastDate[0]);
 		let daysDifference = Math.floor(
 			(lastLogDate.getTime() - firstLogDate.getTime()) / (1000 * 3600 * 24),
 		);
-		if (daysDifference > 3) {
+		if (daysDifference > 1) {
 			await db.StatusMessage.findOneAndUpdate(
 				{ _id: '653d5e9b1f65bb18ab367986' },
 				{
@@ -154,7 +154,7 @@ const apiCheck = async (req, res) => {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
-		let failedServices = filteredChecks.filter((service) => service.count > 98);
+		let failedServices = filteredChecks.filter((service) => service.count > 36);
 		response.failedServices.services = failedServices.map((api) => api.service);
 		let message = '';
 		if (response.failedServices.services.length) {
