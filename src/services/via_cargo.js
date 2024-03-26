@@ -5,7 +5,7 @@ import services from './_services.js';
 async function check(code, lastEvent) {
 	let consult;
 	try {
-		consult = await got.post(`${vars.VIACARGO_API_URL}${code}`);
+		consult = await got(`${vars.VIACARGO_API_URL}${code}`);
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
 		if (response.body === 'No encontrado') return { error: 'No data' };
