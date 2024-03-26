@@ -6,20 +6,17 @@ async function check(code, lastEvent) {
 	let consult;
 
 	const fetchData = async () => {
-		try {
-			consult = await got(`${vars.VIACARGO_API_URL}${code}`);
-		} catch (error) {
-			if (response.body === 'No encontrado') return { error: 'No data' };
-		}
+		consult = await got(`${vars.VIACARGO_API_URL}${code}`);
 		if (consult.body.length === 0) await fetchData();
 	};
 
 	await fetchData();
-	if (consult == { error: 'No data' }) return consult;
+	let result = JSON.parse(consult.body);
+	if (!result.ok.length) return { error: 'No data' };
 
-	let result = JSON.parse(consult.body).ok[0].objeto;
+	let data = result.ok[0].objeto;
 
-	let eventsList = result.listaEventos.map((e) => {
+	let eventsList = data.listaEventos.map((e) => {
 		return {
 			date: e.fechaEvento.split(' ')[0],
 			time: e.fechaEvento.split(' ')[1],
@@ -29,17 +26,17 @@ async function check(code, lastEvent) {
 	});
 
 	let destination = {
-		'Nombre del destinatario': services.capitalizeText(false, result.nombreDestinatario),
-		'DNI del destinatario': result.nitDestinatario,
-		Dirección: services.capitalizeText(false, result.direccionDestinatario),
-		'Código postal': result.codigoPostalDestinatario,
-		Provincia: result.poblacionDestinatario,
-		Teléfono: result.telefonoDestinatario,
+		'Nombre del destinatario': services.capitalizeText(false, data.nombreDestinatario),
+		'DNI del destinatario': data.nitDestinatario,
+		Dirección: services.capitalizeText(false, data.direccionDestinatario),
+		'Código postal': data.codigoPostalDestinatario,
+		Provincia: data.poblacionDestinatario,
+		Teléfono: data.telefonoDestinatario,
 		'Fecha de entrega': `${
-			result.fechaHoraEntrega?.split(' ')[0] ? result.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
+			data.fechaHoraEntrega?.split(' ')[0] ? data.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
 		}`,
 		'Hora de entrega': `${
-			result.fechaHoraEntrega?.split(' ')[1] ? result.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
+			data.fechaHoraEntrega?.split(' ')[1] ? data.fechaHoraEntrega.split(' ')[1] : 'Sin datos'
 		}`,
 	};
 
@@ -61,20 +58,20 @@ async function check(code, lastEvent) {
 	}
 
 	let origin = {
-		Nombre: services.capitalizeText(false, result.nombreRemitente),
-		DNI: result.nitRemitente,
-		Dirección: services.capitalizeText(false, result.direccionRemitente),
-		'Código postal': result.codigoPostalRemitente,
-		Provincia: result.poblacionRemitente,
-		Fecha: result.fechaHoraAdmision.split(' ')[0],
-		Hora: result.fechaHoraAdmision.split(' ')[1],
+		Nombre: services.capitalizeText(false, data.nombreRemitente),
+		DNI: data.nitRemitente,
+		Dirección: services.capitalizeText(false, data.direccionRemitente),
+		'Código postal': data.codigoPostalRemitente,
+		Provincia: data.poblacionRemitente,
+		Fecha: data.fechaHoraAdmision.split(' ')[0],
+		Hora: data.fechaHoraAdmision.split(' ')[1],
 	};
 
 	let otherData = {
-		'Peso declarado': `${result.kilos + ' kg.'}`,
-		'Número de piezas': result.numeroTotalPiezas,
-		Servicio: services.capitalizeText(false, result.descripcionServicio),
-		Firma: `${result.nifQuienRecibe ? result.nifQuienRecibe : '-'}`,
+		'Peso declarado': `${data.kilos + ' kg.'}`,
+		'Número de piezas': data.numeroTotalPiezas,
+		Servicio: services.capitalizeText(false, data.descripcionServicio),
+		Firma: `${data.nifQuienRecibe ? data.nifQuienRecibe : '-'}`,
 	};
 
 	return {

@@ -4,7 +4,6 @@ import vars from '../modules/crypto-js.js';
 import sendNotification from '../modules/firebase_notification.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import tracking from './trackings_controllers.js';
-import services from '../services/_services.js';
 import got from 'got';
 
 const checkTrackings = async (req, res) => {
