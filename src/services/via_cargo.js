@@ -4,12 +4,19 @@ import services from './_services.js';
 
 async function check(code, lastEvent) {
 	let consult;
-	try {
-		consult = await got(`${vars.VIACARGO_API_URL}${code}`);
-	} catch (error) {
-		let response = services.errorResponseHandler(error.response);
-		if (response.body === 'No encontrado') return { error: 'No data' };
-	}
+
+	const fetchData = async () => {
+		try {
+			consult = await got(`${vars.VIACARGO_API_URL}${code}`);
+		} catch (error) {
+			if (response.body === 'No encontrado') return { error: 'No data' };
+		}
+		if (consult.body.length === 0) await fetchData();
+	};
+
+	await fetchData();
+	if (consult == { error: 'No data' }) return consult;
+
 	let result = JSON.parse(consult.body).ok[0].objeto;
 
 	let eventsList = result.listaEventos.map((e) => {
