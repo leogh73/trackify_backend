@@ -103,6 +103,7 @@ const apiCheck = async (req, res) => {
 		};
 		if (totalFailedChecks.length < 48) return res.status(200).json(response);
 		let failedCheckHistory = totalFailedChecks.splice(-49);
+		let failedChecksIds = failedCheckHistory.map((log) => log.id);
 		let splittedFirstDate = failedCheckHistory[0].date.split('/');
 		let firstLogDate = new Date(
 			splittedFirstDate[2],
@@ -123,6 +124,7 @@ const apiCheck = async (req, res) => {
 					},
 				},
 			);
+			await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 			return res.status(200).json(response);
 		}
 		let filterResults = [];
@@ -183,6 +185,7 @@ const apiCheck = async (req, res) => {
 			),
 		]);
 		res.status(200).json(response);
+		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
 		console.log(error);
 		await db.saveLog('API Check', error, 'api check failed', luxon.getDate(), luxon.getTime());
