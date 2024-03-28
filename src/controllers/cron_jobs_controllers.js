@@ -96,39 +96,10 @@ const apiCheck = async (req, res) => {
 		});
 		let response = {
 			message: 'API Check Completed',
-			failedServices: {
-				count: 0,
-				services: [],
-			},
+			failedServices: null,
 		};
-		if (totalFailedChecks.length < 48) return res.status(200).json(response);
-		let failedCheckHistory = totalFailedChecks.splice(-49);
-		let failedChecksIds = failedCheckHistory.map((log) => log.id);
-		let splittedFirstDate = failedCheckHistory[0].date.split('/');
-		let firstLogDate = new Date(
-			splittedFirstDate[2],
-			splittedFirstDate[1] - 1,
-			splittedFirstDate[0],
-		);
-		let splittedLastDate = failedCheckHistory[48].date.split('/');
-		let lastLogDate = new Date(splittedLastDate[2], splittedLastDate[1] - 1, splittedLastDate[0]);
-		let daysDifference = Math.floor(
-			(lastLogDate.getTime() - firstLogDate.getTime()) / (1000 * 3600 * 24),
-		);
-		if (daysDifference > 1) {
-			await db.StatusMessage.findOneAndUpdate(
-				{ _id: '653d5e9b1f65bb18ab367986' },
-				{
-					$set: {
-						message: '',
-					},
-				},
-			);
-			await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
-			return res.status(200).json(response);
-		}
 		let filterResults = [];
-		for (let failedCheck of failedCheckHistory) {
+		for (let failedCheck of totalFailedChecks) {
 			let logResults = [];
 			for (let check of failedCheck.actionDetail) {
 				let index = logResults.findIndex((log) => log.service === check.service);
@@ -155,17 +126,17 @@ const apiCheck = async (req, res) => {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
-		let failedServices = filteredChecks.filter((service) => service.count > 36);
-		response.failedServices.services = failedServices.map((api) => api.service);
+		let failedServices = filteredChecks.filter((service) => service.count > 30);
+		response.failedServices = failedServices.map((api) => api.service);
 		let message = '';
-		if (response.failedServices.services.length) {
+		if (response.failedServices.length) {
 			let serviceMessage = '';
-			if (response.failedServices.services.length === 1) {
-				serviceMessage = `el sitio de ${response.failedServices.services[0]}`;
+			if (response.failedServices.length === 1) {
+				serviceMessage = `el sitio de ${response.failedServices[0]}`;
 			}
-			if (response.failedServices.services.length > 1) {
-				let servicesList = [...response.failedServices.services];
-				let lastService = ` y ${servicesList.splice(-1)[0]}`;
+			if (response.failedServices.length > 1) {
+				let servicesList = [...response.failedServices];
+				let lastService = ` y ${servicesList.slice(-1)[0]}`;
 				let servicesMessageList = servicesList.join(', ') + lastService;
 				serviceMessage = `los sitios de ${servicesMessageList}`;
 			}
@@ -185,6 +156,7 @@ const apiCheck = async (req, res) => {
 			),
 		]);
 		res.status(200).json(response);
+		let failedChecksIds = totalFailedChecks.map((log) => log.id);
 		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
 		console.log(error);
