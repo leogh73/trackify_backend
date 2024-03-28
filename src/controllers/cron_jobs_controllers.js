@@ -96,7 +96,7 @@ const apiCheck = async (req, res) => {
 		});
 		let response = {
 			message: 'API Check Completed',
-			failedServices: null,
+			erroredServices: [],
 		};
 		let filterResults = [];
 		for (let failedCheck of totalFailedChecks) {
@@ -127,9 +127,9 @@ const apiCheck = async (req, res) => {
 			}
 		});
 		let failedServices = filteredChecks.filter((service) => service.count > 30);
-		response.failedServices = failedServices.map((api) => api.service);
 		let message = '';
-		if (response.failedServices.length) {
+		if (failedServices.length) {
+			response.failedServices = failedServices.map((api) => api.service);
 			let serviceMessage = '';
 			if (response.failedServices.length === 1) {
 				serviceMessage = `el sitio de ${response.failedServices[0]}`;
