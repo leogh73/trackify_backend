@@ -3,14 +3,19 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
-		json: { service: 'Via Cargo', code },
-	});
+	let consult;
 
+	const fetchData = async () => {
+		consult = await got(`${vars.VIACARGO_API_URL}${code}`);
+		if (consult.body.length === 0) await fetchData();
+	};
+
+	await fetchData();
 	let result = JSON.parse(consult.body);
 	if (!result.ok.length) return { error: 'No data' };
 
 	let data = result.ok[0].objeto;
+
 	let eventsList = data.listaEventos.map((e) => {
 		return {
 			date: e.fechaEvento.split(' ')[0],
