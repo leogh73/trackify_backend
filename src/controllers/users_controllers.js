@@ -3,7 +3,7 @@ import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
-import notifyAdmin from '../modules/nodemailer.js';
+// import notifyAdmin from '../modules/nodemailer.js';
 
 const initialize = async (req, res) => {
 	if (req.body.token === 'BLACKLISTED') return;
@@ -115,7 +115,7 @@ const contactForm = async (req, res) => {
 		let emailIsValid = await emailCheck.isValid(email);
 		if (!emailIsValid) return res.status(400).json({ error: 'email not valid' });
 		const { id } = await new db.Contact({ userId, message, email }).save();
-		await notifyAdmin([{ userId, email, message }], true);
+		// await notifyAdmin([{ userId, email, message }], true);
 		res.status(200).json({ requestId: id });
 	} catch (error) {
 		let message = luxon.errorMessage(error);

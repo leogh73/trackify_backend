@@ -11,6 +11,9 @@ async function check(code, lastEvent) {
 			nrosuc: splittedCode[1],
 			nroguia: splittedCode[2],
 		},
+		https: {
+			rejectUnauthorized: false,
+		},
 	});
 
 	const $ = load(consult.body);
