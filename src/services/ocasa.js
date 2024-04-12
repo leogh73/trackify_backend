@@ -36,8 +36,8 @@ async function check(code, lastEvent) {
 	});
 
 	let otherData = {
-		Origen: services.capitalizeText(false, otherData1[1]),
-		Destino: services.capitalizeText(false, otherData1[3]),
+		Remitente: otherData1[1],
+		Destinatario: services.capitalizeText(false, otherData1[3]),
 		Direccion: services.capitalizeText(false, otherData2[0]),
 	};
 
