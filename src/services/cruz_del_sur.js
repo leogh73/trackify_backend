@@ -39,10 +39,24 @@ async function check(code, lastEvent) {
 		Destino: baseInputsTexts[4],
 	};
 
-	let eventsData2 = [];
+	let eData2 = [];
 	for (let i = 3; i < eventsInputTexts.length; i += 2) {
-		eventsData2.push(eventsInputTexts.slice(i, i + 2));
+		eData2.push(eventsInputTexts.slice(i, i + 2));
 	}
+
+	let eventsData2 = [];
+	eData2.forEach((item) => {
+		if (item[1]) {
+			if (item[1].includes('hs')) {
+				eventsData2.push(item);
+			} else {
+				eventsData2.push([item[0]]);
+				eventsData2.push([item[1]]);
+			}
+		} else {
+			eventsData2.push(item);
+		}
+	});
 
 	baseTexts.splice(0, 6);
 	let indexesList = [];
@@ -53,6 +67,8 @@ async function check(code, lastEvent) {
 	indexesList.forEach((i, index) => {
 		eventsData1.push(baseTexts.slice(i, indexesList[index + 1]));
 	});
+
+	console.log(eventsData2);
 
 	let eventsList = eventsData1
 		.map((event, i) => {
