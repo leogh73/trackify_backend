@@ -5,7 +5,7 @@ import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let dividedCode = code.split('-');
-	let consult = await got(
+	let consult = await got.post(
 		`${vars.ECAPACK_API_URL.replace('dividedCode0', dividedCode[0])
 			.replace('dividedCode1', dividedCode[1])
 			.replace('dividedCode2', dividedCode[2])}`,
