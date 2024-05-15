@@ -8,7 +8,6 @@ async function check(code, lastEvent) {
 		consults = await Promise.all([
 			got(`${vars.ANDREANI_API_URL1.replace('code', code)}`),
 			got(`${vars.ANDREANI_API_URL2}${code}`),
-			got(`${vars.ANDREANI_API_URL3.replace('code', code)}`),
 		]);
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
@@ -42,6 +41,7 @@ async function check(code, lastEvent) {
 			sucursal_custodia,
 			direccion_sucursal_custodia,
 			horario_sucursal_custodia,
+			nombreSucursalDistribucion,
 		} = resultOtherData;
 		return {
 			'Fecha de alta': `${fechaDeAlta.split(' ')[0].split('-').reverse().join('/')} - ${
@@ -49,7 +49,7 @@ async function check(code, lastEvent) {
 			}`,
 			Remitente: remitente,
 			Servicio: servicio,
-			'Sucursal de custodia': sucursal_custodia ?? 'Sin datos',
+			'Sucursal de custodia': sucursal_custodia ?? nombreSucursalDistribucion,
 			'Dirección de sucursal': direccion_sucursal_custodia ?? 'Sin datos',
 			'Horario de atención': horario_sucursal_custodia ?? 'Sin datos',
 		};
