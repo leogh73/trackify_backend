@@ -22,10 +22,18 @@ async function check(code, lastEvent) {
 		data1.push($(this).text());
 	});
 
-	let rowList = [];
+	let rList = [];
 	$('div > table > tbody > tr> td').each(function () {
-		rowList.push($(this).text());
+		rList.push($(this).text());
 	});
+
+	let indexSlice = 0;
+	rList.forEach((value, index) => {
+		if (rList[0] === value) indexSlice = index;
+	});
+
+	let rowList = rList;
+	if (indexSlice) rowList = rList.slice(0, indexSlice);
 
 	let eventsData = [];
 	let chunkSize = 2;
