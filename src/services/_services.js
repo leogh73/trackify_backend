@@ -98,7 +98,7 @@ const checkHandler = async (service, code, lastEvent, token) => {
 					statusMessage: 'Gateway Timeout',
 					body: 'Service timeout',
 				});
-			}, 9000);
+			}, 8500);
 		});
 
 	try {

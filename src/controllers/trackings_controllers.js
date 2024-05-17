@@ -30,9 +30,6 @@ async function add(user, title, service, code, driveData) {
 
 	result.trackingId = newTracking.id;
 
-	await db.User.findOneAndUpdate({ _id: user.id }, { $push: { trackings: newTracking.id } });
-	await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
-
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
 

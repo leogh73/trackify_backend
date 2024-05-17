@@ -68,8 +68,6 @@ async function check(code, lastEvent) {
 		eventsData1.push(baseTexts.slice(i, indexesList[index + 1]));
 	});
 
-	console.log(eventsData2);
-
 	let eventsList = eventsData1
 		.map((event, i) => {
 			let extraDetail;
