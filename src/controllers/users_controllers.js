@@ -45,13 +45,6 @@ const trackingAction = async (req, res) => {
 		}
 		let statusCode = response.error ? 500 : 200;
 		res.status(statusCode).json(response);
-		if (statusCode === 200) {
-			await db.User.findOneAndUpdate(
-				{ _id: user.id },
-				{ $push: { trackings: result.trackingId } },
-			);
-			await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
-		}
 	} catch (error) {
 		let message = luxon.errorMessage(error);
 		if (req.body.service !== 'Correo Argentino')
