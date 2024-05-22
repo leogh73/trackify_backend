@@ -92,6 +92,16 @@ const loadMore = async (req, res) => {
 	}
 };
 
+const notification = async (req, res) => {
+	await db.saveLog(
+		'Mercado Libre Notification',
+		{ body: req.body, req },
+		'error',
+		luxon.getDate(),
+		luxon.getTime(),
+	);
+};
+
 const checkUser = async (userId) => {
 	let user = await db.User.findById(userId);
 	return {
@@ -250,4 +260,4 @@ function convertDate(date) {
 	return `${day} - ${hour}`;
 }
 
-export default { initialize, consult, loadMore, fetchTrackingData };
+export default { initialize, consult, loadMore, notification, fetchTrackingData };
