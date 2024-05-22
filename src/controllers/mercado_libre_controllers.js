@@ -103,13 +103,9 @@ const notification = async (req, res) => {
 		);
 		res.status(200).json({ message: 'Notification received' });
 	} catch (error) {
-		try {
-			await db.saveLog('ML Notification', { req }, error, luxon.getDate(), luxon.getTime());
-		} catch (error) {
-			console.log(error);
-		}
+		await db.saveLog('ML Notification', { req }, error, luxon.getDate(), luxon.getTime());
+		res.status(500).json({ error: error.toString() });
 	}
-	res.status(500).json({ error: error.toString() });
 };
 
 const checkUser = async (userId) => {
