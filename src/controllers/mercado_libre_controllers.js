@@ -93,13 +93,23 @@ const loadMore = async (req, res) => {
 };
 
 const notification = async (req, res) => {
-	await db.saveLog(
-		'Mercado Libre Notification',
-		{ body: req.body, req },
-		'error',
-		luxon.getDate(),
-		luxon.getTime(),
-	);
+	try {
+		await db.saveLog(
+			'ML Notification',
+			{ body: req.body, req },
+			'-',
+			luxon.getDate(),
+			luxon.getTime(),
+		);
+		res.status(200).json({ message: 'Notification received' });
+	} catch (error) {
+		try {
+			await db.saveLog('ML Notification', { req }, error, luxon.getDate(), luxon.getTime());
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	res.status(500).json({ error: error.toString() });
 };
 
 const checkUser = async (userId) => {
