@@ -72,19 +72,24 @@ const generateHtmlTable = (data, contact) => {
 	</html>`;
 };
 
-const sendMail = async (html, contact) => {
+const sendMail = async (html, subject) => {
 	const mailDetails = {
 		from: `TrackeAR: Seguimientos Argentina<${vars.EMAIL_USER}>`,
 		to: `${vars.EMAIL_ADMIN}`,
-		subject: contact ? 'User Contact' : 'API Access Failed',
+		subject,
 		html,
 	};
 	await transporter.sendMail(mailDetails);
 };
 
-const notifyAdmin = async (data, contact) => {
+const notifyAdmin = async (data, subject) => {
 	try {
-		await sendMail(generateHtmlTable(data, contact), contact);
+		let html = data;
+		if (subject === 'User Contact' || subject === 'API Access Failed') {
+			let contact = subject === 'User Contact';
+			html = generateHtmlTable(data, contact);
+		}
+		await sendMail(html, subject);
 	} catch (error) {
 		console.log(error);
 		await db.saveLog('Send emails', data, error, luxon.getDate(), luxon.getTime());

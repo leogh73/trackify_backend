@@ -145,7 +145,7 @@ const apiCheck = async (req, res) => {
 			}, podría estar limitada.`;
 		}
 		await Promise.all([
-			failedServices.length ? notifyAdmin(failedServices, false) : null,
+			failedServices.length ? notifyAdmin(failedServices, 'API Access Failed') : null,
 			db.StatusMessage.findOneAndUpdate(
 				{ _id: '653d5e9b1f65bb18ab367986' },
 				{

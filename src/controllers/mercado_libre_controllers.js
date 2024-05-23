@@ -2,6 +2,7 @@ import got from 'got';
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
 import vars from '../modules/crypto-js.js';
+import notifyAdmin from '../modules/nodemailer.js';
 
 const initialize = async (req, res) => {
 	const { userId, code } = req.body;
@@ -94,15 +95,18 @@ const loadMore = async (req, res) => {
 
 const notification = async (req, res) => {
 	try {
+		let body = JSON.stringify(req.body);
 		await db.saveLog(
 			'ML Notification',
-			{ body: req.body, req },
-			'-',
+			{ body, req: req.toString() },
+			'meli notification',
 			luxon.getDate(),
 			luxon.getTime(),
 		);
+		await notifyAdmin(body, 'MercadoLibre Notification');
 		res.status(200).json({ message: 'Notification received' });
 	} catch (error) {
+		console.log(error);
 		await db.saveLog('ML Notification', { req }, error, luxon.getDate(), luxon.getTime());
 		res.status(500).json({ error: error.toString() });
 	}
