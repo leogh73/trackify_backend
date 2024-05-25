@@ -94,21 +94,22 @@ const loadMore = async (req, res) => {
 };
 
 const notification = async (req, res) => {
-	try {
-		let body = JSON.stringify(req.body);
+	const saveNotification = async (error) =>
 		await db.saveLog(
 			'ML Notification',
-			{ body, req: req.toString() },
-			'meli notification',
+			{ body: JSON.stringify(req.body) },
+			error,
 			luxon.getDate(),
 			luxon.getTime(),
 		);
-		await notifyAdmin(body, 'MercadoLibre Notification');
+
+	try {
+		await saveNotification('meli notification');
 		res.status(200).json({ message: 'Notification received' });
 	} catch (error) {
 		console.log(error);
-		await db.saveLog('ML Notification', { req }, error, luxon.getDate(), luxon.getTime());
 		res.status(500).json({ error: error.toString() });
+		await saveNotification(error);
 	}
 };
 
