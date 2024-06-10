@@ -156,8 +156,8 @@ const apiCheck = async (req, res) => {
 			),
 		]);
 		res.status(200).json(response);
-		let failedChecksIds = totalFailedChecks.map((log) => log.id);
-		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
+		// let failedChecksIds = totalFailedChecks.map((log) => log.id);
+		// await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
 		console.log(error);
 		await db.saveLog('API Check', error, 'api check failed', luxon.getDate(), luxon.getTime());
