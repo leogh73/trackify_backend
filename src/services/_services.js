@@ -20,6 +20,7 @@ import expresoLancioni from './expreso_lancioni.js';
 import expresoMalargue from './expreso_malargue.js';
 import fastTrack from './fast_track.js';
 import fonoPack from './fono_pack.js';
+import hop from './hop.js';
 import integralPack from './integral_pack.js';
 import mercadoLibre from './mercado_libre.js';
 import mdCargas from './md_cargas.js';
@@ -36,8 +37,6 @@ import sisorgPxpRest from './sisorg_pxp_rest.js';
 import southPost from './south_post.js';
 import urbano from './urbano.js';
 import viaCargo from './via_cargo.js';
-
-// import hachaDePiedra from './hachaDePiedra.js';
 
 const list = {
 	'Andesmar Cargas': andesmarCargas,
@@ -62,12 +61,11 @@ const list = {
 	'Encotrans Express': encotransExpress,
 	Enviopack: enviopack,
 	Epsa: epsa,
-	// 'Expreso Fueguino': cristalWeb,
 	'Expreso Lancioni': expresoLancioni,
 	'Expreso Malargüe': expresoMalargue,
 	FastTrack: fastTrack,
 	'Fono Pack': fonoPack,
-	// 'Hacha de Piedra': hachaDePiedra,
+	Hop: hop,
 	'Integral Pack': integralPack,
 	Jetmar: plusmar,
 	'Mercado Libre': mercadoLibre,
@@ -162,24 +160,5 @@ export default {
 	errorResponseHandler,
 	updateResponseHandler,
 	capitalizeText,
+	list,
 };
-
-// import transoftWeb from './transoftWeb.js';
-// import hdp from './hdp.js';
-
-// 'Distribución y Logística': transoftWeb,
-// 'Expreso Bibiloni': transoftWeb,
-// 'Expreso Bisonte': transoftWeb,
-// 'Expreso Interprovincial': transoftWeb,
-// 'Expreso Lo Bruno': transoftWeb,
-// 'Expreso Maipú': transoftWeb,
-// 'Expreso Nuevo Valle': transoftWeb,
-// 'Expreso Oro Negro': transoftWeb,
-// 'Expreso Rocinante': transoftWeb,
-// 'Ferrocargas del Sur': transoftWeb,
-// 'Logística Salta': transoftWeb,
-// SerPaq: transoftWeb,
-// 'Transporte Pico': transoftWeb,
-// 'Transportes Ñandubay': transoftWeb,
-// 'Transportes Tomassini': transoftWeb,
-// 'Trenque Lauquen Expreso': transoftWeb,

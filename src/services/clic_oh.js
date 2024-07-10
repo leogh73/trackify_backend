@@ -3,57 +3,78 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.CLICOH_API_URL}`, {
+	let consult1 = await got.post(`${vars.CLICOH_API_URL1}`, {
 		json: { codeService: code },
 	});
-	let result = JSON.parse(consult.body);
+	let result1 = JSON.parse(consult1.body);
 
-	if (result.message === 'Servicio no encontrado por codigo') return { error: 'No data' };
+	if (result1.message === 'Servicio no encontrado por codigo') return { error: 'No data' };
 
-	let eventsList = result.packagestatehistory_set
+	let { destinatarioNombre, destino, entrgTraces } = result1.delivery;
+
+	let eventsList = entrgTraces
 		.map((e) => {
+			let date = e.createdAt.split(' ')[0].split('-').reverse().join('/');
+			let time = e.createdAt.split(' ')[1];
 			return {
-				date: convertDate(e.since.split('T')[0]),
-				time: e.since.split('T')[1].split('.')[0].split('-')[0],
-				description: e.state.description,
+				date,
+				time: time.split('.000000')[0],
+				status: e.estado.homologacion,
+				description: e.estado.descripcion,
 			};
 		})
 		.reverse();
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	let origin = (() => {
-		const { address, country } = result.origin;
-		return {
-			Dirección: address,
-			País: country,
-		};
-	})();
-
 	let destination = (() => {
-		const { address, locality, country, administrative_area_level_1, postal_code } = result.to;
+		const { direccionNmz, instrucciones } = destino;
 		return {
-			Dirección: address,
-			Localidad: locality,
-			País: country,
-			Provincia: administrative_area_level_1,
-			'Código postal': postal_code,
+			Dirección: direccionNmz,
+			Servicio: instrucciones ?? 'Sin datos',
+			Destinatario: destinatarioNombre,
 		};
 	})();
 
-	const { dni, first_name, last_name, email, phone, address } = result.receiver;
-	let receiver = {
-		DNI: dni,
-		Nombre: first_name,
-		Apellido: last_name,
-		'Correo electrónico': verifyData(email),
-		Teléfono: verifyData(phone),
-		Dirección: verifyData(address),
+	let consult2 = await got.post(`${vars.CLICOH_API_URL2}`, {
+		json: { codeService: code },
+	});
+	let result2 = JSON.parse(consult2.body);
+
+	let { origen, bodega, usuario, centro, tamanioPaquete, rastreo } = result2.delivery[0];
+
+	let origin = (() => {
+		const { codigoPostal, direccionNmz, instrucciones } = origen;
+		return {
+			Dirección: direccionNmz,
+			'Código Postal': codigoPostal,
+			Teléfono: centro.telefono,
+			Servicio: instrucciones ?? 'Sin datos',
+		};
+	})();
+
+	let storage = {
+		Tienda: bodega.shop,
+		Telefono: bodega.telefono,
+		'Tipo de Recolección': bodega.tipoRecoleccion,
 	};
 
-	let client = {
-		Nombre: result.client,
-	};
+	let sender = (() => {
+		const { correo, nombre, celular, notificarEmails } = usuario;
+		return {
+			Nombre: nombre,
+			Celular: celular,
+			'Correo electrónico': correo,
+			'Correo personal': notificarEmails,
+		};
+	})();
+
+	let packageData = (() => {
+		let { alto, ancho, largo, nombre } = tamanioPaquete;
+		return { ancho, largo, alto, tipo: nombre };
+	})();
+
+	let transport = { 'Número de seguimiento': rastreo.guia, Nombre: rastreo.transportista };
 
 	return {
 		events: eventsList,
@@ -67,37 +88,24 @@ async function check(code, lastEvent) {
 				data: destination,
 			},
 			{
-				title: 'DESTINATARIO',
-				data: receiver,
+				title: 'REMITENTE',
+				data: sender,
 			},
 			{
-				title: 'CLIENTE',
-				data: client,
+				title: 'ALMACENAMIENTO',
+				data: storage,
+			},
+			{
+				title: 'PAQUETE',
+				data: packageData,
+			},
+			{
+				title: 'TRASPORTISTA',
+				data: transport,
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
-}
-
-function convertDate(date) {
-	let dateToday = new Date(date);
-	let newDate =
-		dateToday.getDate() + '/' + (dateToday.getMonth() + 1) + '/' + dateToday.getFullYear();
-	return newDate;
-}
-
-function verifyData(data) {
-	let newData;
-	if (data == null) {
-		newData = 'Sin datos';
-	} else if (data == false) {
-		newData = 'No';
-	} else if (data == true) {
-		newData = 'Si';
-	} else {
-		return data;
-	}
-	return newData;
 }
 
 export default { check };

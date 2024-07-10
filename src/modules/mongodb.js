@@ -74,7 +74,7 @@ const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
-const TestCode = mongoose.model('TestCode', testCodeSchema);
+const TestCode = mongoose.model('Test Code', testCodeSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
 const saveLog = async (actionName, actionDetail, errorMessage, date, time) => {

@@ -3,14 +3,15 @@ import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
-// import notifyAdmin from '../modules/nodemailer.js';
+import _services from '../services/_services.js';
 
 const initialize = async (req, res) => {
 	if (req.body.token === 'BLACKLISTED') return;
+	let lastActivity = new Date(Date.now());
 
 	try {
 		const newUser = await new db.User({
-			lastActivity: new Date(Date.now()),
+			lastActivity,
 			tokenFB: req.body.token,
 			trackings: [],
 		}).save();
@@ -19,7 +20,7 @@ const initialize = async (req, res) => {
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
 			'Initialize user',
-			{ lastActivity: newUser.lastActivity, tokenFB: newUser.tokenFB },
+			{ lastActivity, tokenFB: req.body.token },
 			error,
 			message.date,
 			message.time,
@@ -110,18 +111,45 @@ const check = async (req, res) => {
 
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
+
+	function checkClaimMessage() {
+		let isValid = true;
+		let includedWords = [
+			'saber',
+			'llego',
+			'nombre',
+			'seguimiento',
+			'consultar',
+			'envio',
+			'envío',
+			'estado',
+			'pendiente',
+			'esperando',
+			'cuando',
+			'tiempo',
+			'tarda',
+		];
+		let lCLastEvent = message.toLowerCase();
+		for (let word of includedWords) {
+			if (lCLastEvent.includes(word)) {
+				isValid = false;
+			}
+		}
+		return isValid;
+	}
+
 	try {
 		if (message.includes('text ') || email.includes('text ')) return;
 		let emailIsValid = await emailCheck.isValid(email);
-		if (!emailIsValid) return res.status(400).json({ error: 'email not valid' });
+		if (!emailIsValid) return res.status(403).json({ error: 'email not valid' });
+		if (!checkClaimMessage()) return res.status(400).json({ error: 'message not valid' });
 		const { id } = await new db.Contact({ userId, message, email }).save();
-		// await notifyAdmin([{ userId, email, message }], 'User Contact');
 		res.status(200).json({ requestId: id });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
-			'Service request',
-			{ userId, service, code, email },
+			'User contact',
+			{ userId, message, email },
 			error,
 			message.date,
 			message.time,

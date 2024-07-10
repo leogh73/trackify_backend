@@ -30,7 +30,8 @@ async function check(code, lastEvent) {
 		'DNI del destinatario': data.nitDestinatario,
 		Dirección: services.capitalizeText(false, data.direccionDestinatario),
 		'Código postal': data.codigoPostalDestinatario,
-		Provincia: data.poblacionDestinatario,
+		Localidad: data.poblacionDestinatario,
+		Provincia: data.nombreProvinciaDestinatario,
 		Teléfono: data.telefonoDestinatario,
 		'Fecha de entrega': `${
 			data.fechaHoraEntrega?.split(' ')[0] ? data.fechaHoraEntrega.split(' ')[0] : 'Sin datos'
@@ -62,7 +63,7 @@ async function check(code, lastEvent) {
 		DNI: data.nitRemitente,
 		Dirección: services.capitalizeText(false, data.direccionRemitente),
 		'Código postal': data.codigoPostalRemitente,
-		Provincia: data.poblacionRemitente,
+		Localidad: data.poblacionRemitente,
 		Fecha: data.fechaHoraAdmision.split(' ')[0],
 		Hora: data.fechaHoraAdmision.split(' ')[1],
 	};

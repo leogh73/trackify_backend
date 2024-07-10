@@ -3,13 +3,20 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
-		json: { service: 'Enviopack', code },
-	});
-	let result = JSON.parse(consult.body);
+	let consult;
+	try {
+		consult = await got(`${vars.ENVIOPACK_API_URL}${code}`, {
+			headers: {
+				Accept: '*/*',
+				'Accept-Encoding': 'gzip, deflate, br, zstd',
+				'Accept-Language': 'es-419,es;q=0.9',
+			},
+		});
+	} catch (error) {
+		if (error.response.statusCode === 404) return { error: 'No data' };
+	}
 
-	if (result.message === 'No existe un envío con el nº de tracking informado')
-		return { error: 'No data' };
+	let result = JSON.parse(consult.body);
 
 	const { tracking, correo, localidad, provincia } = result[0];
 

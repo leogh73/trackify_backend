@@ -3,10 +3,18 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
-		json: { service: 'pickit', code },
-	});
-	let result = JSON.parse(consult.body);
+	let result;
+
+	const fetchData = async () => {
+		try {
+			let consult = await got(`${vars.PICKIT_API_URL}${code}`);
+			result = JSON.parse(consult.body);
+		} catch (error) {
+			await fetchData();
+		}
+	};
+
+	await fetchData();
 
 	if (
 		result.context === 'Código de seguimiento no encontrado' ||

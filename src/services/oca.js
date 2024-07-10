@@ -3,7 +3,7 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consultEvents = await got.post(`${vars.OCA_TRACKING_API_URL}`, {
+	let consultEvents = await got.post(`${vars.OCA_API_URL1}`, {
 		json: { numberOfSend: code },
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
@@ -21,11 +21,13 @@ async function check(code, lastEvent) {
 	});
 	eventsList.reverse();
 
+	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+
 	let productNumber = resultEvents[0].NroProducto;
 
 	let originData;
 	if (!lastEvent) {
-		let consultOrigin = await got.post(`${vars.OCA_ORIGIN_API_URL}`, {
+		let consultOrigin = await got.post(`${vars.OCA_API_URL2}`, {
 			json: { idOrdenRetiro: resultEvents[0].IdOrdenRetiro },
 		});
 		let resultOrigin = JSON.parse(consultOrigin.body).d;
@@ -40,8 +42,6 @@ async function check(code, lastEvent) {
 			Teléfono: resultOrigin.Conctact,
 		};
 	}
-
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
 	return {
 		events: eventsList,

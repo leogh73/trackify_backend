@@ -4,10 +4,18 @@ import luxon from '../modules/luxon.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.PLAYWRIGHT_API_URL}/api`, {
-		json: { service: 'Renaper', code },
-	});
-	let result = JSON.parse(consult.body);
+	let result;
+
+	const fetchData = async () => {
+		let consult = await got.post(`${vars.RENAPER_API_URL}`, {
+			form: { tramite: code },
+			https: { rejectUnauthorized: false },
+		});
+		result = JSON.parse(consult.body);
+		if (result.errors.title.startsWith('Error reCAPTCHA')) await fetchData();
+	};
+
+	await fetchData();
 
 	if (result.errors?.title === 'Número de trámite incorrecto, no se encontró información.')
 		return { error: 'No data' };

@@ -1,10 +1,8 @@
 import db from '../modules/mongodb.js';
 import luxon from '../modules/luxon.js';
-import vars from '../modules/crypto-js.js';
 import sendNotification from '../modules/firebase_notification.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import tracking from './trackings_controllers.js';
-import got from 'got';
 
 const checkTrackings = async (req, res) => {
 	try {
@@ -77,10 +75,7 @@ const checkTrackings = async (req, res) => {
 
 const awakeAPIs = async (req, res) => {
 	try {
-		await Promise.all([
-			got(`${vars.PLAYWRIGHT_API_URL}/awake`),
-			db.Tracking.find({ completed: false }),
-		]);
+		await db.Tracking.find({ completed: false });
 		res.status(200).json({ success: 'APIs awaken successfully' });
 	} catch (error) {
 		console.log(error);
@@ -138,7 +133,7 @@ const apiCheck = async (req, res) => {
 			}
 			if (response.failedServices.length > 1) {
 				let servicesList = [...response.failedServices];
-				let lastService = ` y ${servicesList.slice(-1)[0]}`;
+				let lastService = ` y ${servicesList.splice(-1)[0]}`;
 				let servicesMessageList = servicesList.join(', ') + lastService;
 				serviceMessage = `los sitios de ${servicesMessageList}`;
 			}
