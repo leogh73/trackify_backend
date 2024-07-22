@@ -34,17 +34,7 @@ const checkTrackings = async (req, res) => {
 				sendNotification(title, body, userResult.token, JSON.stringify(userResult.results)),
 			);
 		}
-		let databaseUpdates = succededChecks.map((check) => {
-			return {
-				response: check,
-				tracking:
-					trackingsCollection[
-						trackingsCollection.findIndex((tracking) => tracking.id === check.idMDB)
-					],
-				completedStatus: tracking.checkCompletedStatus(check.result.lastEvent),
-			};
-		});
-		operationsCollection.push(tracking.updateDatabase(databaseUpdates));
+		operationsCollection.push(tracking.updateDatabase(succededChecks));
 		let failedChecks = trackingsCheckResult.filter((check) => check.result.error);
 		if (failedChecks.length) {
 			operationsCollection.push(
@@ -166,13 +156,13 @@ const checkCompleted = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
 		let completedCheckIds = [];
-		for (let trk of trackingsCollection) {
-			let eventDate = trk.result.lastEvent.split(' - ')[0].split('/');
+		for (let tracking of trackingsCollection) {
+			let eventDate = tracking.checkDate.split('/');
 			let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
 			let daysDifference = Math.floor(
 				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
 			);
-			if (daysDifference > 7) completedCheckIds.push(trk.id);
+			if (daysDifference > 7) completedCheckIds.push(tracking.id);
 		}
 		if (completedCheckIds.length)
 			await db.Tracking.updateMany(

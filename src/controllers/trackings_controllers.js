@@ -50,9 +50,6 @@ async function remove(userId, trackingIds) {
 
 async function syncronize(user, lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: user.trackings } });
-	let responseTrackings = trackingsDB
-		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
-		.filter((result) => !!result);
 	await db.Tracking.bulkWrite(
 		trackingsDB.map((tracking) => {
 			return {
@@ -62,7 +59,9 @@ async function syncronize(user, lastEventsUser) {
 			};
 		}),
 	);
-	return responseTrackings;
+	return trackingsDB
+		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
+		.filter((result) => !!result);
 }
 
 function findUpdatedTrackings(tracking, lastEventsUser) {
@@ -93,11 +92,7 @@ async function check(userId, trackingData) {
 	let tracking = await db.Tracking.findById(trackingData.idMDB);
 	if (!tracking) return await addMissingTracking(userId, trackingData);
 	let response = await checkTracking(tracking);
-	if (response.result.events?.length) {
-		await updateDatabase([
-			{ response, tracking, completedStatus: checkCompletedStatus(response.result.lastEvent) },
-		]);
-	}
+	if (response.result.events?.length) await updateDatabase([response]);
 	await db.Tracking.deleteMany({
 		_id: { $ne: tracking.id },
 		code: tracking.code,
@@ -194,30 +189,30 @@ function checkCompletedStatus(lastEvent) {
 
 async function updateDatabase(trackingsData) {
 	let databaseUpdates = [];
-	for (let data of trackingsData) {
-		let { response, tracking, completedStatus } = data;
+	for (let tracking of trackingsData) {
+		let { idMDB, checkDate, checkTime, lastCheck, result } = tracking;
 		databaseUpdates.push({
 			updateOne: {
-				filter: { _id: tracking._id },
+				filter: { _id: idMDB },
 				update: {
 					$push: {
-						'result.events': { $each: response.result.events, $position: 0 },
+						'result.events': { $each: result.events, $position: 0 },
 					},
 					$set: {
-						'result.lastEvent': response.result.lastEvent,
-						checkDate: response.checkDate,
-						checkTime: response.checkTime,
-						lastCheck: response.lastCheck,
-						completed: completedStatus,
+						'result.lastEvent': result.lastEvent,
+						checkDate,
+						checkTime,
+						lastCheck,
+						completed: checkCompletedStatus(result.lastEvent),
 					},
 				},
 			},
 		});
-		if (response.result.moreData) {
-			for (let element of response.result.moreData) {
+		if (result.moreData) {
+			for (let element of result.moreData) {
 				databaseUpdates.push({
 					updateOne: {
-						filter: { _id: tracking._id },
+						filter: { _id: idMDB },
 						update: {
 							$set: {
 								'result.moreData.$[e].data': element.data,

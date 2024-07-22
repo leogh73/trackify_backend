@@ -60,6 +60,14 @@ const logSchema = new Schema({
 	time: { type: String, required: true },
 });
 
+const serviceSchema = new Schema({
+	name: { type: String, required: true },
+	exampleCode: { type: String, required: true },
+	logoUrl: { type: String, required: true },
+	event: { type: Array, required: true },
+	contact: { type: Object, required: true },
+});
+
 const testCodeSchema = new Schema({
 	service: { type: String, required: true },
 	code: { type: String, required: true },
@@ -74,6 +82,7 @@ const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
+const Service = mongoose.model('Service', serviceSchema);
 const TestCode = mongoose.model('Test Code', testCodeSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
@@ -91,6 +100,7 @@ export default {
 	GoogleDrive,
 	Contact,
 	Log,
+	Service,
 	TestCode,
 	StatusMessage,
 	saveLog,

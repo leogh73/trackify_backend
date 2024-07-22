@@ -4,18 +4,17 @@ import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
 import _services from '../services/_services.js';
+import notifyAdmin from '../modules/nodemailer.js';
 
 const initialize = async (req, res) => {
-	if (req.body.token === 'BLACKLISTED') return;
-	let lastActivity = new Date(Date.now());
-
 	try {
 		const newUser = await new db.User({
-			lastActivity,
+			lastActivity: new Date(Date.now()),
 			tokenFB: req.body.token,
 			trackings: [],
 		}).save();
-		res.status(200).json({ userId: newUser.id });
+		const servicesData = await fetchServices();
+		res.status(200).json({ userId: newUser.id, servicesData });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
@@ -25,6 +24,18 @@ const initialize = async (req, res) => {
 			message.date,
 			message.time,
 		);
+		res.status(500).json(message);
+	}
+};
+
+const servicesData = async (req, res) => {
+	try {
+		let servicesData = await fetchServices();
+		res.status(200).json({ servicesData });
+	} catch (error) {
+		console.log(error);
+		let message = luxon.errorMessage(error);
+		await db.saveLog('fetch services', {}, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -60,16 +71,64 @@ const trackingAction = async (req, res) => {
 	}
 };
 
-const syncronize = async (req, res) => {
-	const { userId, token, lastEvents, currentDate, driveLoggedIn, version } = req.body;
+const removeDuplicates = async (req, res) => {
+	const { token, code, trackingId } = req.body;
 
 	try {
-		let dbQueries = await Promise.all([db.User.findById(userId), db.StatusMessage.find()]);
+		await db.Tracking.deleteMany({ _id: { $ne: trackingId }, code, token });
+	} catch (error) {
+		let message = luxon.errorMessage(error);
+		await db.saveLog(
+			'remove duplicates',
+			{ token, code, trackingId, userId: req.params.userId },
+			error,
+			message.date,
+			message.time,
+		);
+		console.log(error);
+	}
+};
+
+const syncronize = async (req, res) => {
+	const {
+		userId,
+		token,
+		lastEvents,
+		currentDate,
+		servicesCount,
+		servicesVersions,
+		driveLoggedIn,
+		version,
+	} = req.body;
+
+	const errorData = {
+		'user not initialized': {
+			message:
+				'Ocurrió un error de conexión, debido al cual, la aplicación se instaló incorrectamente y no la podrá utilizar. Verifique su conexión a internet. Reinicie para reintentar.',
+			buttonText: 'REINTENTAR',
+			function: 'restart',
+		},
+		'user not found': {
+			message: 'reinstall',
+		},
+		'lastest version not found': {
+			message:
+				'Para poder utlizar ésta aplicación, actualice a la última versión desde la Play Store.',
+			buttonText: 'REINTENTAR',
+			function: 'play store',
+		},
+	};
+
+	try {
+		let dbQueries = await Promise.all([
+			db.User.findById(userId),
+			db.StatusMessage.find(),
+			fetchServices(),
+		]);
 		let user = dbQueries[0];
 		if (!user) {
 			await remove(token);
-			let errorMessage = 'User not found';
-			return res.status(200).json({ syncError: errorMessage });
+			return res.status(200).json({ syncError: errorData['user not found'] });
 		}
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
@@ -80,8 +139,16 @@ const syncronize = async (req, res) => {
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
 		response.statusMessage = dbQueries[1][0].message;
+		if (!servicesCount && !servicesVersions) return res.status(200).json(response);
+		let dbCount = Object.keys(dbQueries[2]).length;
+		let dbVersions = Object.values(dbQueries[2])
+			.map((s) => s.__v)
+			.join('');
+		let updateNeeded = parseInt(servicesCount) === dbCount && servicesVersions === dbVersions;
+		response.updatedServices = updateNeeded ? {} : dbQueries[2];
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
 			'syncronize',
@@ -118,8 +185,11 @@ const contactForm = async (req, res) => {
 			'saber',
 			'llego',
 			'nombre',
+			'numero',
+			'turno',
 			'seguimiento',
 			'consultar',
+			'consulta',
 			'envio',
 			'envío',
 			'estado',
@@ -145,6 +215,7 @@ const contactForm = async (req, res) => {
 		if (!checkClaimMessage()) return res.status(400).json({ error: 'message not valid' });
 		const { id } = await new db.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
+		await notifyAdmin([{ userId, email, message }], 'User Contact');
 	} catch (error) {
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
@@ -177,9 +248,20 @@ const update = async (user, token) => {
 	await user.save();
 };
 
+const fetchServices = async () => {
+	let services = await db.Service.find();
+	let servicesData = {};
+	Object.keys(_services.list).forEach((service) => {
+		servicesData[service] = services.find((s) => s.name === service);
+	});
+	return servicesData;
+};
+
 export default {
 	initialize,
+	servicesData,
 	trackingAction,
+	removeDuplicates,
 	syncronize,
 	check,
 	contactForm,
