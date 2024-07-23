@@ -3,6 +3,7 @@ import luxon from '../modules/luxon.js';
 import sendNotification from '../modules/firebase_notification.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import tracking from './trackings_controllers.js';
+import cache from '../modules/node-cache.js';
 
 const checkTrackings = async (req, res) => {
 	try {
@@ -142,6 +143,7 @@ const apiCheck = async (req, res) => {
 				},
 			),
 		]);
+		cache.setStatusMessage(message);
 		res.status(200).json(response);
 		let failedChecksIds = totalFailedChecks.map((log) => log.id);
 		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });

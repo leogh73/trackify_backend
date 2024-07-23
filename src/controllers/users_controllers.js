@@ -3,7 +3,7 @@ import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
-import _services from '../services/_services.js';
+import cache from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
 
 const initialize = async (req, res) => {
@@ -13,7 +13,7 @@ const initialize = async (req, res) => {
 			tokenFB: req.body.token,
 			trackings: [],
 		}).save();
-		const servicesData = await fetchServices();
+		const servicesData = cache.getData('Service');
 		res.status(200).json({ userId: newUser.id, servicesData });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
@@ -24,18 +24,6 @@ const initialize = async (req, res) => {
 			message.date,
 			message.time,
 		);
-		res.status(500).json(message);
-	}
-};
-
-const servicesData = async (req, res) => {
-	try {
-		let servicesData = await fetchServices();
-		res.status(200).json({ servicesData });
-	} catch (error) {
-		console.log(error);
-		let message = luxon.errorMessage(error);
-		await db.saveLog('fetch services', {}, error, message.date, message.time);
 		res.status(500).json(message);
 	}
 };
@@ -120,12 +108,7 @@ const syncronize = async (req, res) => {
 	};
 
 	try {
-		let dbQueries = await Promise.all([
-			db.User.findById(userId),
-			db.StatusMessage.find(),
-			fetchServices(),
-		]);
-		let user = dbQueries[0];
+		let user = await db.User.findById(userId);
 		if (!user) {
 			await remove(token);
 			return res.status(200).json({ syncError: errorData['user not found'] });
@@ -138,14 +121,15 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, currentDate)
 				: 'Not logged in';
-		response.statusMessage = dbQueries[1][0].message;
+		response.statusMessage = cache.getData('StatusMessage');
 		if (!servicesCount && !servicesVersions) return res.status(200).json(response);
-		let dbCount = Object.keys(dbQueries[2]).length;
-		let dbVersions = Object.values(dbQueries[2])
+		let servicesData = cache.getData('Service');
+		let dbCount = Object.keys(servicesData).length;
+		let dbVersions = Object.values(servicesData)
 			.map((s) => s.__v)
 			.join('');
 		let updateNeeded = parseInt(servicesCount) === dbCount && servicesVersions === dbVersions;
-		response.updatedServices = updateNeeded ? {} : dbQueries[2];
+		response.updatedServices = updateNeeded ? {} : servicesData;
 		res.status(200).json(response);
 	} catch (error) {
 		console.log(error);
@@ -248,18 +232,8 @@ const update = async (user, token) => {
 	await user.save();
 };
 
-const fetchServices = async () => {
-	let services = await db.Service.find();
-	let servicesData = {};
-	Object.keys(_services.list).forEach((service) => {
-		servicesData[service] = services.find((s) => s.name === service);
-	});
-	return servicesData;
-};
-
 export default {
 	initialize,
-	servicesData,
 	trackingAction,
 	removeDuplicates,
 	syncronize,
