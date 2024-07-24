@@ -50,15 +50,6 @@ async function remove(userId, trackingIds) {
 
 async function syncronize(user, lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: user.trackings } });
-	await db.Tracking.bulkWrite(
-		trackingsDB.map((tracking) => {
-			return {
-				deleteMany: {
-					filter: { _id: { $ne: tracking.id }, code: tracking.code, token: tracking.token },
-				},
-			};
-		}),
-	);
 	return trackingsDB
 		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
 		.filter((result) => !!result);
@@ -93,11 +84,6 @@ async function check(userId, trackingData) {
 	if (!tracking) return await addMissingTracking(userId, trackingData);
 	let response = await checkTracking(tracking);
 	if (response.result.events?.length) await updateDatabase([response]);
-	await db.Tracking.deleteMany({
-		_id: { $ne: tracking.id },
-		code: tracking.code,
-		token: tracking.token,
-	});
 	return response;
 }
 
@@ -111,6 +97,13 @@ async function addMissingTracking(userId, trackingData) {
 	let checkDate = luxon.getDate();
 	let checkTime = luxon.getTime();
 	let lastCheck = new Date(Date.now());
+	await db.saveLog(
+		'add missing tracking',
+		{ userId, idMDB, title, service, code, lastEvent },
+		'missing tracking',
+		message.date,
+		message.time,
+	);
 	await new db.Tracking({
 		_id: idMDB,
 		title,

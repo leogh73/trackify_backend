@@ -59,24 +59,6 @@ const trackingAction = async (req, res) => {
 	}
 };
 
-const removeDuplicates = async (req, res) => {
-	const { token, code, trackingId } = req.body;
-
-	try {
-		await db.Tracking.deleteMany({ _id: { $ne: trackingId }, code, token });
-	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'remove duplicates',
-			{ token, code, trackingId, userId: req.params.userId },
-			error,
-			message.date,
-			message.time,
-		);
-		console.log(error);
-	}
-};
-
 const syncronize = async (req, res) => {
 	const {
 		userId,
@@ -89,29 +71,11 @@ const syncronize = async (req, res) => {
 		version,
 	} = req.body;
 
-	const errorData = {
-		'user not initialized': {
-			message:
-				'Ocurrió un error de conexión, debido al cual, la aplicación se instaló incorrectamente y no la podrá utilizar. Verifique su conexión a internet. Reinicie para reintentar.',
-			buttonText: 'REINTENTAR',
-			function: 'restart',
-		},
-		'user not found': {
-			message: 'reinstall',
-		},
-		'lastest version not found': {
-			message:
-				'Para poder utlizar ésta aplicación, actualice a la última versión desde la Play Store.',
-			buttonText: 'REINTENTAR',
-			function: 'play store',
-		},
-	};
-
 	try {
 		let user = await db.User.findById(userId);
 		if (!user) {
 			await remove(token);
-			return res.status(200).json({ syncError: errorData['user not found'] });
+			return res.status(200).json({ syncError: 'user not found' });
 		}
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
@@ -235,7 +199,6 @@ const update = async (user, token) => {
 export default {
 	initialize,
 	trackingAction,
-	removeDuplicates,
 	syncronize,
 	check,
 	contactForm,
