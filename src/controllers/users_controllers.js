@@ -3,8 +3,8 @@ import luxon from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
-import cache from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
+import { cache } from '../modules/node-cache.js';
 
 const initialize = async (req, res) => {
 	try {
@@ -13,7 +13,7 @@ const initialize = async (req, res) => {
 			tokenFB: req.body.token,
 			trackings: [],
 		}).save();
-		const servicesData = cache.getData('Service');
+		const servicesData = cache.get('Service');
 		res.status(200).json({ userId: newUser.id, servicesData });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
@@ -60,22 +60,14 @@ const trackingAction = async (req, res) => {
 };
 
 const syncronize = async (req, res) => {
-	const {
-		userId,
-		token,
-		lastEvents,
-		currentDate,
-		servicesCount,
-		servicesVersions,
-		driveLoggedIn,
-		version,
-	} = req.body;
+	const { userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version } =
+		req.body;
 
 	try {
 		let user = await db.User.findById(userId);
 		if (!user) {
 			await remove(token);
-			return res.status(200).json({ syncError: 'user not found' });
+			return res.status(200).json({ error: 'user not found' });
 		}
 		let eventsList = JSON.parse(lastEvents);
 		let response = {};
@@ -83,24 +75,24 @@ const syncronize = async (req, res) => {
 		response.data = await tracking.syncronize(user, eventsList);
 		response.driveStatus =
 			driveLoggedIn == 'true'
-				? await google.syncronizeDrive(user.id, currentDate)
+				? await google.syncronizeDrive(user.id, luxon.getDate())
 				: 'Not logged in';
-		response.statusMessage = cache.getData('StatusMessage');
+		response.statusMessage = cache.get('StatusMessage');
 		if (!servicesCount && !servicesVersions) return res.status(200).json(response);
-		let servicesData = cache.getData('Service');
-		let dbCount = Object.keys(servicesData).length;
-		let dbVersions = Object.values(servicesData)
+		let servicesData = cache.get('Service');
+		let dbServicesCount = Object.keys(servicesData).length;
+		let dbServicesVersions = Object.values(servicesData)
 			.map((s) => s.__v)
 			.join('');
-		let updateNeeded = parseInt(servicesCount) === dbCount && servicesVersions === dbVersions;
-		response.updatedServices = updateNeeded ? {} : servicesData;
+		let updatedServices =
+			parseInt(servicesCount) === dbServicesCount && servicesVersions === dbServicesVersions;
+		response.updatedServices = updatedServices ? {} : servicesData;
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		let message = luxon.errorMessage(error);
 		await db.saveLog(
 			'syncronize',
-			{ userId, token, lastEvents, currentDate, driveLoggedIn, version },
+			{ userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version },
 			error,
 			message.date,
 			message.time,
