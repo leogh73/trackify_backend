@@ -66,7 +66,6 @@ const checkTrackings = async (req, res) => {
 
 const awakeAPIs = async (req, res) => {
 	try {
-		await db.Tracking.find({ completed: false });
 		res.status(200).json({ success: 'APIs awaken successfully' });
 	} catch (error) {
 		console.log(error);
