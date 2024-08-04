@@ -66,7 +66,7 @@ const checkTrackings = async (req, res) => {
 
 const checkAwake = async (req, res) => {
 	try {
-		res.status(200).json({ success: 'APIs awaken successfully' });
+		res.status(200).json({ success: 'API awaken successfully' });
 	} catch (error) {
 		console.log(error);
 		res.status(500).json({ error: error.toString() });

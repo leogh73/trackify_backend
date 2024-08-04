@@ -77,9 +77,10 @@ const syncronize = async (req, res) => {
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(user.id, luxon.getDate())
 				: 'Not logged in';
-		response.statusMessage = cache.get('StatusMessage');
+		response.statusMessage =
+			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
 		if (!servicesCount && !servicesVersions) return res.status(200).json(response);
-		let servicesData = cache.get('Service');
+		let servicesData = cache.get('Service') ?? (await db.Service.find());
 		let dbServicesCount = Object.keys(servicesData).length;
 		let dbServicesVersions = Object.values(servicesData)
 			.map((s) => s.__v)
