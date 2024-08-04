@@ -64,7 +64,7 @@ const checkTrackings = async (req, res) => {
 	}
 };
 
-const awakeAPIs = async (req, res) => {
+const checkAwake = async (req, res) => {
 	try {
 		res.status(200).json({ success: 'APIs awaken successfully' });
 	} catch (error) {
@@ -73,7 +73,7 @@ const awakeAPIs = async (req, res) => {
 	}
 };
 
-const apiCheck = async (req, res) => {
+const checkServices = async (req, res) => {
 	try {
 		let totalFailedChecks = await db.Log.find({
 			actionName: 'check cycle',
@@ -153,7 +153,7 @@ const apiCheck = async (req, res) => {
 	}
 };
 
-const checkCompleted = async (req, res) => {
+const checkCompletedTrackings = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
 		let completedCheckIds = [];
@@ -236,8 +236,8 @@ const cleanUp = async (req, res) => {
 
 export default {
 	checkTrackings,
-	awakeAPIs,
-	apiCheck,
-	checkCompleted,
+	checkAwake,
+	checkServices,
+	checkCompletedTrackings,
 	cleanUp,
 };
