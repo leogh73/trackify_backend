@@ -69,13 +69,12 @@ const syncronize = async (req, res) => {
 			await remove(token);
 			return res.status(200).json({ error: 'user not found' });
 		}
-		let eventsList = JSON.parse(lastEvents);
-		let response = {};
 		await update(user, token);
-		response.data = await tracking.syncronize(user, eventsList);
+		let response = {};
+		response.data = await tracking.syncronize(user.trackings, lastEvents);
 		response.driveStatus =
 			driveLoggedIn == 'true'
-				? await google.syncronizeDrive(user.id, luxon.getDate())
+				? await google.syncronizeDrive(userId, luxon.getDate())
 				: 'Not logged in';
 		response.statusMessage =
 			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
