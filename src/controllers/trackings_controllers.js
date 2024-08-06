@@ -50,6 +50,15 @@ async function remove(userId, trackingIds) {
 
 async function syncronize(user, lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: user.trackings } });
+	await db.Tracking.bulkWrite(
+		trackingsDB.map((tracking) => {
+			return {
+				deleteMany: {
+					filter: { _id: { $ne: tracking.id }, code: tracking.code, token: tracking.token },
+				},
+			};
+		}),
+	);
 	return trackingsDB
 		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
 		.filter((result) => !!result);

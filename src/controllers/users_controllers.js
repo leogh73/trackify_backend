@@ -123,20 +123,18 @@ const contactForm = async (req, res) => {
 	function checkClaimMessage() {
 		let isValid = true;
 		let includedWords = [
-			'saber',
 			'llego',
 			'nombre',
 			'numero',
 			'turno',
 			'seguimiento',
-			'consultar',
-			'consulta',
 			'envio',
 			'envío',
 			'estado',
 			'pendiente',
 			'esperando',
 			'cuando',
+			'cuánto',
 			'tiempo',
 			'tarda',
 		];
