@@ -71,7 +71,7 @@ const syncronize = async (req, res) => {
 		}
 		await update(user, token);
 		let response = {};
-		response.data = await tracking.syncronize(user.trackings, lastEvents);
+		response.data = await tracking.syncronize(JSON.parse(lastEvents));
 		response.driveStatus =
 			driveLoggedIn == 'true'
 				? await google.syncronizeDrive(userId, luxon.getDate())
