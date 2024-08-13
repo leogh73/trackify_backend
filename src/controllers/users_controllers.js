@@ -122,20 +122,24 @@ const contactForm = async (req, res) => {
 	function checkClaimMessage() {
 		let isValid = true;
 		let includedWords = [
-			'llego',
-			'nombre',
-			'numero',
-			'turno',
-			'seguimiento',
-			'envio',
-			'envío',
-			'estado',
-			'pendiente',
-			'esperando',
 			'cuando',
 			'cuánto',
-			'tiempo',
+			'encomienda',
+			'envío',
+			'esperando',
+			'estado',
+			'llego',
+			'mi',
+			'nombre',
+			'necesito',
+			'numero',
+			'número',
+			'paquete',
+			'pendiente',
+			'saber',
+			'seguimiento',
 			'tarda',
+			'tiempo',
 		];
 		let lCLastEvent = message.toLowerCase();
 		for (let word of includedWords) {
