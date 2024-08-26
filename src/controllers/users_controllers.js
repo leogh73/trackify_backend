@@ -119,17 +119,19 @@ const check = async (req, res) => {
 const contactForm = async (req, res) => {
 	const { userId, message, email } = req.body;
 
-	function checkClaimMessage() {
+	function checkMessage() {
 		let isValid = true;
 		let includedWords = [
-			'cuando',
+			'código',
+			'codigo',
 			'cuánto',
 			'encomienda',
 			'envío',
 			'esperando',
 			'estado',
 			'llego',
-			'mi',
+			'llega',
+			'llegaria',
 			'nombre',
 			'necesito',
 			'numero',
@@ -137,9 +139,9 @@ const contactForm = async (req, res) => {
 			'paquete',
 			'pendiente',
 			'saber',
-			'seguimiento',
 			'tarda',
 			'tiempo',
+			'-',
 		];
 		let lCLastEvent = message.toLowerCase();
 		for (let word of includedWords) {
@@ -154,7 +156,7 @@ const contactForm = async (req, res) => {
 		if (message.includes('text ') || email.includes('text ')) return;
 		let emailIsValid = await emailCheck.isValid(email);
 		if (!emailIsValid) return res.status(403).json({ error: 'email not valid' });
-		if (!checkClaimMessage()) return res.status(400).json({ error: 'message not valid' });
+		if (!checkMessage()) return res.status(400).json({ error: 'message not valid' });
 		const { id } = await new db.Contact({ userId, message, email }).save();
 		res.status(200).json({ requestId: id });
 		await notifyAdmin([{ userId, email, message }], 'User Contact');
