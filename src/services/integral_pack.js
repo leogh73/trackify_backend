@@ -6,13 +6,13 @@ async function check(code, lastEvent) {
 	let checkCode = code.split('-');
 	let consult;
 	try {
-		consult = await got.post(`${vars.INTEGRAL_PACK_API_URL}`, {
+		consult = await got.post(vars.INTEGRAL_PACK_API_URL, {
 			form: { agecod: checkCode[0], tipfor: checkCode[1], guinro: checkCode[2] },
 		});
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
 		return {
-			error: response.body.message.startsWith('No hemos encontrado resultados para la guia número')
+			error: JSON.parse(response.body).message.startsWith('No hemos encontrado resultados')
 				? 'No data'
 				: response,
 		};

@@ -5,7 +5,7 @@ import _services from './_services.js';
 
 async function check(code, lastEvent) {
 	let splittedCode = code.split('-');
-	let consult = await got.post(`${vars.EXPRESO_MALARGUE_API_URL}`, {
+	let consult = await got.post(vars.EXPRESO_MALARGUE_API_URL, {
 		json: { documento: parseInt(splittedCode[1]), origen: splittedCode[2] },
 	});
 

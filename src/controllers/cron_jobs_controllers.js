@@ -8,10 +8,49 @@ import { cache } from '../modules/node-cache.js';
 const checkTrackings = async (req, res) => {
 	try {
 		let trackingsCollection = await db.Tracking.find({ completed: false });
+		let uniqueTrackings = [];
+		for (let tracking of trackingsCollection) {
+			let trackingResult = { tracking, duplicated: [] };
+			let trackingIndex = uniqueTrackings.findIndex(
+				(t) => t.tracking.service === tracking.service && t.tracking.code === tracking.code,
+			);
+			if (trackingIndex == -1) {
+				uniqueTrackings.push(trackingResult);
+			} else {
+				uniqueTrackings[trackingIndex].duplicated.push(tracking);
+			}
+		}
 		let trackingsCheckResult = await Promise.all(
-			trackingsCollection.map((t) => tracking.checkTracking(t)),
+			uniqueTrackings.map(async (t) => {
+				let check = await tracking.checkTracking(t.tracking);
+				return {
+					response: check,
+					duplicated: t.duplicated.map((t) => {
+						const { id, token, title, service, code } = t;
+						return {
+							idMDB: id,
+							token,
+							title,
+							service,
+							code,
+							checkDate: luxon.getDate(),
+							checkTime: luxon.getTime(),
+							lastCheck: new Date(Date.now()),
+							result: check.result,
+						};
+					}),
+				};
+			}),
 		);
-		let succededChecks = trackingsCheckResult.filter((check) => check.result.events?.length);
+		let trackingsCheckFinal = [];
+		for (let tracking of trackingsCheckResult) {
+			let { response, duplicated } = tracking;
+			trackingsCheckFinal.push(response);
+			for (let dup of duplicated) {
+				trackingsCheckFinal.push(dup);
+			}
+		}
+		let succededChecks = trackingsCheckFinal.filter((check) => check.result.events?.length);
 		let totalUserResults = [];
 		for (let checkResult of succededChecks) {
 			let userResult = { token: checkResult.token };
@@ -36,11 +75,9 @@ const checkTrackings = async (req, res) => {
 			);
 		}
 		operationsCollection.push(tracking.updateDatabase(succededChecks));
-		let failedChecks = trackingsCheckResult.filter((check) => check.result.error);
+		let failedChecks = trackingsCheckFinal.filter((check) => check.result.error);
 		if (failedChecks.length) {
-			operationsCollection.push(
-				db.saveLog('check cycle', failedChecks, 'failed checks', luxon.getDate(), luxon.getTime()),
-			);
+			operationsCollection.push(db.saveLog('check cycle', failedChecks, 'failed checks'));
 		}
 		await Promise.all(operationsCollection);
 		res.status(200).json({
@@ -54,13 +91,7 @@ const checkTrackings = async (req, res) => {
 	} catch (error) {
 		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
-		await db.saveLog(
-			'trackings check',
-			error,
-			'failed tracking checks',
-			luxon.getDate(),
-			luxon.getTime(),
-		);
+		await db.saveLog('trackings check', error, 'failed tracking checks');
 	}
 };
 

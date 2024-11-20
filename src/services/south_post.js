@@ -5,7 +5,7 @@ import services from './_services.js';
 async function check(code, lastEvent) {
 	let consult;
 	try {
-		consult = await got.post(`${vars.SOUTH_POST_API_URL}`, {
+		consult = await got.post(vars.SOUTH_POST_API_URL, {
 			json: { nro_guia: code },
 		});
 	} catch (error) {

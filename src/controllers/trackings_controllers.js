@@ -31,7 +31,7 @@ async function add(user, title, service, code, driveData) {
 	result.trackingId = newTracking.id;
 
 	await db.User.findOneAndUpdate({ _id: user.id }, { $push: { trackings: newTracking.id } });
-	await db.TestCode.findOneAndUpdate({ service: service }, { $set: { code: code } });
+	await db.Service.findOneAndUpdate({ name: service }, { $set: { exampleCode: code } });
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
@@ -50,15 +50,6 @@ async function remove(userId, trackingIds) {
 
 async function syncronize(lastEventsUser) {
 	let trackingsDB = await db.Tracking.find({ _id: { $in: lastEventsUser.map((e) => e.idMDB) } });
-	await db.Tracking.bulkWrite(
-		trackingsDB.map((tracking) => {
-			return {
-				deleteMany: {
-					filter: { _id: { $ne: tracking.id }, code: tracking.code, token: tracking.token },
-				},
-			};
-		}),
-	);
 	return trackingsDB
 		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
 		.filter((result) => !!result);

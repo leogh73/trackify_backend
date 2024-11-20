@@ -3,13 +3,14 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent, service) {
-	let serviceCode;
-	if (service === 'Cata Cargo') serviceCode = 'mend';
-	if (service === 'ÑanduPack') serviceCode = 'nand';
-	if (service === 'El Práctico Pack') serviceCode = 'prac';
+	let serviceCode = {
+		'Cata Cargo': 'mend',
+		ÑanduPack: 'nand',
+		'El Práctico Pack': 'prac',
+	};
 
 	let consult = await got.post(
-		`${vars.SISORG_PXP_ONLINE_API_URL.replace('serviceCode', serviceCode)}`,
+		`${vars.SISORG_PXP_ONLINE_API_URL.replace('serviceCode', serviceCode[service])}`,
 		{
 			json: { method: 'SearchByNumero', numero: code },
 		},

@@ -3,7 +3,7 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consultEvents = await got.post(`${vars.OCA_API_URL1}`, {
+	let consultEvents = await got.post(vars.OCA_API_URL1, {
 		json: { numberOfSend: code },
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
@@ -27,7 +27,7 @@ async function check(code, lastEvent) {
 
 	let originData;
 	if (!lastEvent) {
-		let consultOrigin = await got.post(`${vars.OCA_API_URL2}`, {
+		let consultOrigin = await got.post(vars.OCA_API_URL2, {
 			json: { idOrdenRetiro: resultEvents[0].IdOrdenRetiro },
 		});
 		let resultOrigin = JSON.parse(consultOrigin.body).d;

@@ -5,7 +5,7 @@ import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let dividedCode = code.split('-');
-	let consult = await got.post(`${vars.CENTRAL_DE_CARGAS_TERRESTRES_API_URL}`, {
+	let consult = await got.post(vars.CENTRAL_DE_CARGAS_TERRESTRES_API_URL, {
 		form: {
 			tipo: dividedCode[0],
 			suc: dividedCode[1],

@@ -5,7 +5,7 @@ import services from './_services.js';
 async function check(code, lastEvent) {
 	let consult1;
 	try {
-		consult1 = await got.post(`${vars.ANDESMAR_CARGAS_API_URL1}`, {
+		consult1 = await got.post(vars.ANDESMAR_CARGAS_API_URL1, {
 			json: {
 				cb: '',
 				nroGuia: '',
@@ -69,12 +69,7 @@ async function check(code, lastEvent) {
 
 	return {
 		events: eventsList,
-		moreData: [
-			{
-				title: 'OTROS DATOS',
-				data: otherData,
-			},
-		],
+		moreData: [{ title: 'OTROS DATOS', data: otherData }],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }

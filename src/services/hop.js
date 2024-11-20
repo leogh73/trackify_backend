@@ -3,7 +3,7 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let html = await got(`${vars.HOP_API_URL1}`);
+	let html = await got(vars.HOP_API_URL1);
 	let buildId = html.body.split(`buildId":"`)[1].slice(0, 21);
 
 	let consult = await got(`${vars.HOP_API_URL2.replace('buildId', buildId)}${code}`);

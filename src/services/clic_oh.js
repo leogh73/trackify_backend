@@ -3,7 +3,7 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult1 = await got.post(`${vars.CLICOH_API_URL1}`, {
+	let consult1 = await got.post(vars.CLICOH_API_URL1, {
 		json: { codeService: code },
 	});
 	let result1 = JSON.parse(consult1.body);
@@ -36,7 +36,7 @@ async function check(code, lastEvent) {
 		};
 	})();
 
-	let consult2 = await got.post(`${vars.CLICOH_API_URL2}`, {
+	let consult2 = await got.post(vars.CLICOH_API_URL2, {
 		json: { codeService: code },
 	});
 	let result2 = JSON.parse(consult2.body);

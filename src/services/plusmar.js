@@ -7,7 +7,7 @@ async function check(code, lastEvent, service) {
 	let companyName = 'PLU';
 	if (service === 'Jetmar') companyName = 'MAR';
 	if (service === 'Condor Estrella') companyName = 'CON';
-	let consult = await got.post(`${vars.PLUSMAR_JETMAR_CONDOR_API_URL}`, {
+	let consult = await got.post(vars.PLUSMAR_JETMAR_CONDOR_API_URL, {
 		form: {
 			empresa: companyName,
 			tipoguia: dividedCode[0],

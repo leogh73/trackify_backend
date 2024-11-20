@@ -3,7 +3,7 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.CLICPAQ_API_URL}`, {
+	let consult = await got.post(vars.CLICPAQ_API_URL, {
 		json: {
 			operationName: 'seguimiento',
 			variables: { id: parseInt(code) },

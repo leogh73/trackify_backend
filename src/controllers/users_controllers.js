@@ -4,6 +4,7 @@ import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
 import notifyAdmin from '../modules/nodemailer.js';
+import services from '../services/_services.js';
 import { cache } from '../modules/node-cache.js';
 
 const initialize = async (req, res) => {
@@ -13,7 +14,7 @@ const initialize = async (req, res) => {
 			tokenFB: req.body.token,
 			trackings: [],
 		}).save();
-		const servicesData = cache.get('Service');
+		const servicesData = cache.get('Service') ?? (await services.servicesData());
 		res.status(200).json({ userId: newUser.id, servicesData });
 	} catch (error) {
 		let message = luxon.errorMessage(error);
@@ -78,15 +79,11 @@ const syncronize = async (req, res) => {
 				: 'Not logged in';
 		response.statusMessage =
 			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
-		if (!servicesCount && !servicesVersions) return res.status(200).json(response);
-		let servicesData = cache.get('Service') ?? (await db.Service.find());
-		let dbServicesCount = Object.keys(servicesData).length;
-		let dbServicesVersions = Object.values(servicesData)
-			.map((s) => s.__v)
-			.join('');
-		let updatedServices =
-			parseInt(servicesCount) === dbServicesCount && servicesVersions === dbServicesVersions;
-		response.updatedServices = updatedServices ? {} : servicesData;
+		response.updatedServices = await services.check(
+			cache.get('Service'),
+			servicesCount,
+			servicesVersions,
+		);
 		res.status(200).json(response);
 	} catch (error) {
 		let message = luxon.errorMessage(error);
@@ -122,20 +119,34 @@ const contactForm = async (req, res) => {
 	function checkClaimMessage() {
 		let isValid = true;
 		let includedWords = [
-			'llego',
-			'nombre',
-			'numero',
-			'turno',
-			'seguimiento',
-			'envio',
-			'envío',
-			'estado',
-			'pendiente',
-			'esperando',
-			'cuando',
+			'código',
+			'codigo',
 			'cuánto',
-			'tiempo',
+			'encomienda',
+			'envío',
+			'esperando',
+			'estado',
+			'llego',
+			'llega',
+			'llegaria',
+			'nombre',
+			'necesito',
+			'numero',
+			'número',
+			'paquete',
+			'pendiente',
+			'saber',
 			'tarda',
+			'tiempo',
+			'-',
+			'reclamo',
+			'mí',
+			'tarjeta',
+			'Nº',
+			'pieza',
+			'rastrear',
+			'seguir',
+			'pedido',
 		];
 		let lCLastEvent = message.toLowerCase();
 		for (let word of includedWords) {
@@ -143,6 +154,7 @@ const contactForm = async (req, res) => {
 				isValid = false;
 			}
 		}
+		if (!isNaN(parseFloat(message))) isValid = false;
 		return isValid;
 	}
 

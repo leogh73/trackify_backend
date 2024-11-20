@@ -4,11 +4,12 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let response1 = await got(`${vars.EPSA_API_URL1}`);
+	let response1 = await got(vars.EPSA_API_URL);
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
 
-	let response2 = await got(`${vars.EPSA_API_URL2.replace('code', code).replace('TOKEN', token)}`);
+	let url2 = `${vars.EPSA_API_URL}${vars.PRESIS_API_URL2}`;
+	let response2 = await got(`${url2.replace('code', code).replace('TOKEN', token)}`);
 	let result = JSON.parse(response2.body);
 
 	if (result.mensaje === 'Tracker no encontrado.') return { error: 'No data' };

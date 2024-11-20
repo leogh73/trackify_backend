@@ -15,25 +15,27 @@ import ecaPack from './eca_pack.js';
 import elTuristaPack from './el_turista_pack.js';
 import enviopack from './enviopack.js';
 import encotransExpress from './encotrans_express.js';
+import ePick from './e-pick.js';
 import epsa from './epsa.js';
 import expresoLancioni from './expreso_lancioni.js';
 import expresoMalargue from './expreso_malargue.js';
-import fastTrack from './fast_track.js';
+import flashLogisticaYPostal from './flash_logistica_y_postal.js';
 import fonoPack from './fono_pack.js';
 import hop from './hop.js';
 import integralPack from './integral_pack.js';
+import mailEx from './mail_ex.js';
 import mercadoLibre from './mercado_libre.js';
 import mdCargas from './md_cargas.js';
 import ocasa from './ocasa.js';
 import oca from './oca.js';
-import pickit from './pickit.js';
 import plusmar from './plusmar.js';
+import presis from './presis.js';
 import pulquiPack from './pulqui_pack.js';
-import renaper from './renaper.js';
 import rutacargo from './rutacargo.js';
 import sendBox from './send_box.js';
 import sisorgPxpOnline from './sisorg_pxp_online.js';
 import sisorgPxpRest from './sisorg_pxp_rest.js';
+import skynde from './skynde.js';
 import southPost from './south_post.js';
 import urbano from './urbano.js';
 import viaCargo from './via_cargo.js';
@@ -51,6 +53,7 @@ const list = {
 	'Condor Estrella': plusmar,
 	'Cooperativa Sportman': sisorgPxpRest,
 	'Correo Argentino': correoArgentino,
+	'Correo e-Flet': presis,
 	'Credifin Logística': credifinLogistica,
 	'Crucero Express': cruceroExpress,
 	'Cruz del Sur': cruzDelSur,
@@ -60,27 +63,37 @@ const list = {
 	'El Turista Pack': elTuristaPack,
 	'Encotrans Express': encotransExpress,
 	Enviopack: enviopack,
+	'Envíos Hijos de Gutiérrez': presis,
+	'E-Pick': ePick,
 	Epsa: epsa,
 	'Expreso Lancioni': expresoLancioni,
 	'Expreso Malargüe': expresoMalargue,
-	FastTrack: fastTrack,
+	FastTrack: presis,
+	'Fixy Logística': presis,
+	'Flash Logística y Postal': flashLogisticaYPostal,
 	'Fono Pack': fonoPack,
 	HOP: hop,
 	'Integral Pack': integralPack,
 	Jetmar: plusmar,
+	Lodi: presis,
 	'Mercado Libre': mercadoLibre,
+	MailEx: mailEx,
 	'MD Cargas': mdCargas,
+	'MG Logística': presis,
 	ÑanduPack: sisorgPxpOnline,
 	OCA: oca,
 	OCASA: ocasa,
-	pickit: pickit,
 	Plusmar: plusmar,
+	ProMail: presis,
 	'Pulqui Pack': pulquiPack,
 	Rabbione: cristalWeb,
-	Renaper: renaper,
+	'Real Express': presis,
 	'Rodríguez Hermanos Transportes': cristalWeb,
 	Rutacargo: rutacargo,
 	SendBox: sendBox,
+	Servijur: presis,
+	Skynde: skynde,
+	SmartPost: presis,
 	'South Post': southPost,
 	'Trans Dan Express': cristalWeb,
 	Urbano: urbano,
@@ -155,10 +168,36 @@ const capitalizeText = (firstWordOnly, text) => {
 		.join(' ');
 };
 
+import db from '../modules/mongodb.js';
+
+const servicesData = async () => {
+	let sData = await db.Service.find({});
+	let services = {};
+	Object.keys(list).forEach((service) => {
+		let index = sData.findIndex((d) => d.name === service);
+		if (index === -1) return;
+		services[service] = sData[index];
+	});
+	return services;
+};
+
+const check = async (servicesData, servicesCount, servicesVersions) => {
+	let sData = servicesData ?? (await servicesData());
+	let dbServicesCount = Object.keys(sData).length;
+	let dbServicesVersions = Object.values(sData)
+		.map((s) => s.__v)
+		.join('');
+	let updatedServices =
+		parseInt(servicesCount) === dbServicesCount && servicesVersions === dbServicesVersions;
+	return updatedServices ? [] : sData;
+};
+
 export default {
 	checkHandler,
 	errorResponseHandler,
 	updateResponseHandler,
 	capitalizeText,
 	list,
+	check,
+	servicesData,
 };

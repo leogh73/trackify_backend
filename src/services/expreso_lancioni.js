@@ -4,7 +4,7 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(`${vars.EXPRESO_LANCIONI_API_URL}`, {
+	let consult = await got.post(vars.EXPRESO_LANCIONI_API_URL, {
 		form: { txt_trackid: code },
 	});
 	const $ = load(consult.body);
