@@ -8,23 +8,30 @@ import services from '../services/_services.js';
 import { cache } from '../modules/node-cache.js';
 
 const initialize = async (req, res) => {
+	const { token, userId } = req.body;
+	let lastActivity = new Date(Date.now());
+
 	try {
-		const newUser = await new db.User({
-			lastActivity: new Date(Date.now()),
-			tokenFB: req.body.token,
-			trackings: [],
-		}).save();
-		const servicesData = cache.get('Service') ?? (await services.servicesData());
-		res.status(200).json({ userId: newUser.id, servicesData });
+		let response;
+		if (token) {
+			const newUser = await new db.User({
+				lastActivity,
+				tokenFB: req.body.token,
+				trackings: [],
+			}).save();
+			const servicesData = cache.get('Service') ?? (await services.servicesData());
+			response = { userId: newUser.id, servicesData };
+		}
+		if (userId) {
+			let user = await db.User.findById(userId);
+			let mercadoPagoData = user.mercadoPago
+				? mercadoPago.userPaymentData(user.mercadoPago)
+				: { isValid: false };
+			response = { mercadoPagoData };
+		}
+		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'Initialize user',
-			{ lastActivity, tokenFB: req.body.token },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.saveLog('Initialize user', { token, userId, lastActivity }, error);
 		res.status(500).json(message);
 	}
 };
@@ -47,15 +54,8 @@ const trackingAction = async (req, res) => {
 		let statusCode = response.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
 		if (req.body.service !== 'Correo Argentino')
-			await db.saveLog(
-				'Tracking action',
-				{ userId, action, body: req.body },
-				error,
-				message.date,
-				message.time,
-			);
+			await db.saveLog('Tracking action', { userId, action, body: req.body }, error);
 		res.status(500).json(message);
 	}
 };
@@ -86,13 +86,10 @@ const syncronize = async (req, res) => {
 		);
 		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
 		await db.saveLog(
 			'syncronize',
 			{ userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version },
 			error,
-			message.date,
-			message.time,
 		);
 		res.status(500).json(message);
 	}
@@ -106,9 +103,7 @@ const check = async (req, res) => {
 		let statusCode = response.result.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
-		console.log(error);
-		let message = luxon.errorMessage(error);
-		await db.saveLog('Check', { userId, trackingData }, error, message.date, message.time);
+		await db.saveLog('Check', { userId, trackingData }, error);
 		res.status(500).json(message);
 	}
 };
@@ -167,35 +162,24 @@ const contactForm = async (req, res) => {
 		res.status(200).json({ requestId: id });
 		await notifyAdmin([{ userId, email, message }], 'User Contact');
 	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'User contact',
-			{ userId, message, email },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.saveLog('User contact', { userId, message, email }, error);
 		res.status(500).json(message);
 	}
 };
 
 const remove = async (token) => {
-	let removeTasks = [];
-	let user = await db.User.findOne({ tokenFB: token });
-	if (user) {
-		removeTasks.push(db.User.findOneAndDelete({ tokenFB: token }));
-		if (user.trackings.length) removeTasks.push(db.Tracking.deleteMany({ token: token }));
-	}
-	await Promise.all(removeTasks);
+	await db.User.deleteOne({ tokenFB: token });
+	await db.Tracking.deleteMany({ token: token });
 };
 
 const update = async (user, token) => {
-	user.lastActivity = new Date(Date.now());
 	if (token !== user.tokenFB) {
 		await db.Tracking.updateMany({ token: user.tokenFB }, { $set: { token: token } });
-		user.tokenFB = token;
 	}
-	await user.save();
+	await db.User.updateOne(
+		{ _id: user.id },
+		{ $set: { lastActivity: new Date(Date.now()), tokenFB: token } },
+	);
 };
 
 export default {

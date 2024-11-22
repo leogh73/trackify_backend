@@ -14,12 +14,4 @@ const getTime = () => {
 		.padStart(2, 0)}`;
 };
 
-const errorMessage = (error) => {
-	return {
-		error: error.toString(),
-		date: getDate(),
-		time: getTime(),
-	};
-};
-
-export default { getDate, getTime, errorMessage };
+export default { getDate, getTime };

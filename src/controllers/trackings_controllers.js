@@ -30,8 +30,8 @@ async function add(user, title, service, code, driveData) {
 
 	result.trackingId = newTracking.id;
 
-	await db.User.findOneAndUpdate({ _id: user.id }, { $push: { trackings: newTracking.id } });
-	await db.Service.findOneAndUpdate({ name: service }, { $set: { exampleCode: code } });
+	await db.User.updateOne({ _id: user.id }, { $push: { trackings: newTracking.id } });
+	await db.Service.updateOne({ name: service }, { $set: { exampleCode: code } });
 
 	result.checkDate = checkDate;
 	result.checkTime = checkTime;
@@ -41,11 +41,7 @@ async function add(user, title, service, code, driveData) {
 
 async function remove(userId, trackingIds) {
 	await db.Tracking.deleteMany({ _id: { $in: trackingIds } });
-	let user = await db.User.findById(userId);
-	for (let tracking of trackingIds) {
-		user.trackings.splice(user.trackings.indexOf(tracking), 1);
-	}
-	await user.save();
+	await db.User.updateOne({ _id: userId }, { $pull: { trackings: { $in: trackingIds } } });
 }
 
 async function syncronize(lastEventsUser) {
@@ -101,8 +97,6 @@ async function addMissingTracking(userId, trackingData) {
 		'add missing tracking',
 		{ userId, idMDB, title, service, code, lastEvent },
 		'missing tracking',
-		checkDate,
-		checkTime,
 	);
 	await new db.Tracking({
 		_id: idMDB,

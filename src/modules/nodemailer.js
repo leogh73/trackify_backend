@@ -91,8 +91,7 @@ const notifyAdmin = async (data, subject) => {
 		}
 		await sendMail(html, subject);
 	} catch (error) {
-		console.log(error);
-		await db.saveLog('Send emails', data, error, luxon.getDate(), luxon.getTime());
+		await db.saveLog('Send emails', data, error);
 	}
 };
 

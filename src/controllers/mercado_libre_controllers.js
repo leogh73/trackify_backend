@@ -16,32 +16,19 @@ const initialize = async (req, res) => {
 					client_id: `${vars.ML_CLIENT_ID}`,
 					client_secret: `${vars.ML_CLIENT_SECRET}`,
 					redirect_uri: 'https://trackear.vercel.app',
-					code: code,
+					code,
 				},
 			},
 			{
 				headers: { accept: 'application/json', content_type: 'application/x-www-form-urlencoded' },
 			},
 		);
-		let response = JSON.parse(consult.body);
-		let meLiResponse = {
-			token: response.access_token,
-			userId: response.user_id,
-			refresh_token: response.refresh_token,
-		};
-		let user = await db.User.findById(userId);
-		user.mercadoLibre = meLiResponse;
-		await user.save();
+		let { access_token, user_id, refresh_token } = JSON.parse(consult.body);
+		let meLiResponse = { access_token, user_id, refresh_token };
+		await db.User.updateOne({ _id: userId }, { $set: { mercadoLibre: meLiResponse } });
 		res.status(200).json(meLiResponse);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'MercadoLibre initialize',
-			{ userId, code },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.saveLog('MercadoLibre initialize', { userId, code }, error);
 		res.status(500).json(message);
 	}
 };
@@ -62,14 +49,7 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'MercadoLibre consult',
-			{ userId, consultType },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.saveLog('MercadoLibre consult', { userId, consultType }, error);
 		res.status(500).json(message);
 	}
 };
@@ -81,33 +61,19 @@ const loadMore = async (req, res) => {
 		let results = await checkShippings(JSON.parse(shippingIds), JSON.parse(httpHeaders));
 		res.status(200).json(results);
 	} catch (error) {
-		let message = luxon.errorMessage(error);
-		await db.saveLog(
-			'MercadoLibre load more',
-			{ shippingIds, httpHeaders },
-			error,
-			message.date,
-			message.time,
-		);
+		await db.saveLog('MercadoLibre load more', { shippingIds, httpHeaders }, error);
 		res.status(500).json(message);
 	}
 };
 
 const notification = async (req, res) => {
 	const saveNotification = async (error) =>
-		await db.saveLog(
-			'ML Notification',
-			{ body: JSON.stringify(req.body) },
-			error,
-			luxon.getDate(),
-			luxon.getTime(),
-		);
+		await db.saveLog('ML Notification', { body: JSON.stringify(req.body) }, error);
 
 	try {
 		await saveNotification('meli notification');
 		res.status(200).json({ message: 'Notification received' });
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: error.toString() });
 		await saveNotification(error);
 	}
@@ -144,8 +110,6 @@ async function checkShippingOrders(userId, consultType) {
 				'MercadoLibre check shipping orders',
 				{ userId, consultType },
 				error,
-				luxon.getDate(),
-				luxon.getTime(),
 			);
 		}
 	}
@@ -226,13 +190,7 @@ async function fetchTrackingData(shippingId, token) {
 			await renewTokenML(userData.model);
 			return await fetchTrackingData(shippingId, token);
 		} else {
-			return await db.saveLog(
-				'ML Fetch Tracking Data',
-				{ userId: user.id, shippingId },
-				error,
-				luxon.getDate(),
-				luxon.getTime(),
-			);
+			return await db.saveLog('ML Fetch Tracking Data', { userId: user.id, shippingId }, error);
 		}
 	}
 }
@@ -245,19 +203,14 @@ async function renewTokenML(user) {
 				grant_type: 'refresh_token',
 				client_id: `${vars.ML_CLIENT_ID}`,
 				client_secret: `${vars.ML_CLIENT_SECRET}`,
-				refresh_token: user.mercadoLibre.refresh_token,
+				refresh_token: userData.refresh_token,
 			},
 		},
 		{ headers: { accept: 'application/json', content_type: 'application/x-www-form-urlencoded' } },
 	);
-	let response = JSON.parse(consult.body);
-	let newMeLiData = {
-		token: response.access_token,
-		userId: response.user_id,
-		refresh_token: response.refresh_token,
-	};
-	user.mercadoLibre = newMeLiData;
-	await user.save();
+	let { access_token, user_id, refresh_token } = JSON.parse(consult.body);
+	let newMeLiData = { access_token, user_id, refresh_token };
+	await db.User.updateOne({ _id: userData.userId }, { $set: { mercadoLibre: newMeLiData } });
 }
 
 function convertDate(date) {

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import luxon from './luxon.js';
 import vars from './crypto-js.js';
 const Schema = mongoose.Schema;
 
@@ -80,9 +81,15 @@ const Log = mongoose.model('Log', logSchema);
 const Service = mongoose.model('Service', serviceSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
-const saveLog = async (actionName, actionDetail, errorMessage, date, time) => {
+const saveLog = async (actionName, actionDetail, errorMessage) => {
 	try {
-		await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
+		await new Log({
+			actionName,
+			actionDetail,
+			errorMessage,
+			date: luxon.getDate(),
+			time: luxon.getTime(),
+		}).save();
 	} catch (error) {
 		console.log('Could not save log', error);
 	}

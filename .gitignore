@@ -73,3 +73,10 @@ git rm --cached codigos.txt
 # dev files
 dev_routes.js
 dev_controllers.js
+
+# test services
+/services/hachaDePiedra.js
+
+# ngrok files
+ngrok http --url=macaque-game-opossum.ngrok-free.app 3000.txt
+ngrok.exe

@@ -89,9 +89,8 @@ const checkTrackings = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
-		await db.saveLog('trackings check', error, 'failed tracking checks');
+		await db.saveLog('trackings check', 'failed tracking checks', error);
 	}
 };
 
@@ -99,7 +98,6 @@ const checkAwake = async (req, res) => {
 	try {
 		res.status(200).json({ success: 'API awaken successfully' });
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -178,8 +176,7 @@ const checkServices = async (req, res) => {
 		let failedChecksIds = totalFailedChecks.map((log) => log.id);
 		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
-		console.log(error);
-		await db.saveLog('API Check', error, 'api check failed', luxon.getDate(), luxon.getTime());
+		await db.saveLog('API Check', 'api check failed', error);
 		res.status(500).json({ error: 'API Check Failed', message: error.toString() });
 	}
 };
@@ -206,13 +203,7 @@ const checkCompletedTrackings = async (req, res) => {
 			result: { updated: completedCheckIds.length },
 		});
 	} catch (error) {
-		await db.saveLog(
-			'Check Completed Failed',
-			error,
-			'failed completed check',
-			luxon.getDate(),
-			luxon.getTime(),
-		);
+		await db.saveLog('Check Completed Failed', 'failed completed check', error);
 		res.status(500).json({ error: 'Check Completed Failed', message: error.toString() });
 	}
 };
@@ -260,7 +251,7 @@ const cleanUp = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		await db.saveLog('Clean Up Cycle', error, 'failed clean up', luxon.getDate(), luxon.getTime());
+		await db.saveLog('Clean Up Cycle', 'failed clean up', error);
 		res.status(500).json({ error: 'Clean Up Cycle Failed', message: error.toString() });
 	}
 };
