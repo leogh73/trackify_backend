@@ -1,5 +1,5 @@
 import db from '../modules/mongodb.js';
-import luxon from '../modules/luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 import services from '../services/_services.js';
 
 async function add(user, title, service, code, driveData) {
@@ -13,15 +13,14 @@ async function add(user, title, service, code, driveData) {
 
 	if (result.error) return result;
 
-	let checkDate = luxon.getDate();
-	let checkTime = luxon.getTime();
+	let { date, time } = dateAndTime();
 
 	const newTracking = await new db.Tracking({
 		title,
 		service,
 		code,
-		checkDate,
-		checkTime,
+		checkDate: date,
+		checkTime: time,
 		lastCheck: new Date(Date.now()),
 		token: user.tokenFB,
 		result,
@@ -33,8 +32,8 @@ async function add(user, title, service, code, driveData) {
 	await db.User.updateOne({ _id: user.id }, { $push: { trackings: newTracking.id } });
 	await db.Service.updateOne({ name: service }, { $set: { exampleCode: code } });
 
-	result.checkDate = checkDate;
-	result.checkTime = checkTime;
+	result.checkDate = date;
+	result.checkTime = time;
 
 	return result;
 }
@@ -90,21 +89,15 @@ async function addMissingTracking(userId, trackingData) {
 		services.checkHandler(service, code, null, user.tokenFB),
 		services.checkHandler(service, code, lastEvent, user.tokenFB),
 	]);
-	let checkDate = luxon.getDate();
-	let checkTime = luxon.getTime();
+	let { date, time } = dateAndTime();
 	let lastCheck = new Date(Date.now());
-	await db.saveLog(
-		'add missing tracking',
-		{ userId, idMDB, title, service, code, lastEvent },
-		'missing tracking',
-	);
 	await new db.Tracking({
 		_id: idMDB,
 		title,
 		service,
 		code,
-		checkDate,
-		checkTime,
+		checkDate: date,
+		checkTime: time,
 		lastCheck,
 		token: user.tokenFB,
 		result: apiChecks[0],
@@ -116,8 +109,8 @@ async function addMissingTracking(userId, trackingData) {
 		title,
 		service,
 		code,
-		checkDate,
-		checkTime,
+		checkDate: date,
+		checkTime: time,
 		lastCheck,
 		result: apiChecks[1],
 	};
@@ -128,14 +121,16 @@ async function checkTracking(tracking) {
 
 	let checkResult = await services.checkHandler(service, code, result.lastEvent, token);
 
+	let { date, time } = dateAndTime();
+
 	return {
 		idMDB: id,
 		token,
 		title,
 		service,
 		code,
-		checkDate: luxon.getDate(),
-		checkTime: luxon.getTime(),
+		checkDate: date,
+		checkTime: time,
 		lastCheck: new Date(Date.now()),
 		result: checkResult,
 	};

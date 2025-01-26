@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import vars from './crypto-js.js';
-import luxon from '../modules/luxon.js';
 import db from '../modules/mongodb.js';
 
 const transporter = nodemailer.createTransport({

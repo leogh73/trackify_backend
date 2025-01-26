@@ -1,6 +1,6 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
-import luxon from '../modules/luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
@@ -20,7 +20,9 @@ async function check(code, lastEvent) {
 
 	if (rowList[1].length === 1) return { error: 'No data' };
 
-	let event = { date: luxon.getDate(), time: luxon.getTime(), status: rowList[1].trim() };
+	let { date, time } = dateAndTime();
+
+	let event = { date, time, status: rowList[1].trim() };
 
 	return {
 		events: lastEvent ? (event.status === lastEvent.split(' - ')[2] ? [] : [event]) : [event],

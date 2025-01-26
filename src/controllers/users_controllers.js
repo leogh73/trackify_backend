@@ -1,11 +1,12 @@
 import db from '../modules/mongodb.js';
-import luxon from '../modules/luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 import tracking from './trackings_controllers.js';
 import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
 import notifyAdmin from '../modules/nodemailer.js';
 import services from '../services/_services.js';
 import { cache } from '../modules/node-cache.js';
+import mercadoPago from '../controllers/mercado_pago_controllers.js';
 
 const initialize = async (req, res) => {
 	const { token, userId } = req.body;
@@ -32,7 +33,7 @@ const initialize = async (req, res) => {
 		res.status(200).json(response);
 	} catch (error) {
 		await db.saveLog('Initialize user', { token, userId, lastActivity }, error);
-		res.status(500).json(message);
+		res.status(500).json({ error: error.toString() });
 	}
 };
 
@@ -56,13 +57,21 @@ const trackingAction = async (req, res) => {
 	} catch (error) {
 		if (req.body.service !== 'Correo Argentino')
 			await db.saveLog('Tracking action', { userId, action, body: req.body }, error);
-		res.status(500).json(message);
+		res.status(500).json({ error: error.toString() });
 	}
 };
 
 const syncronize = async (req, res) => {
-	const { userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version } =
-		req.body;
+	const {
+		userId,
+		token,
+		lastEvents,
+		payment,
+		servicesCount,
+		servicesVersions,
+		driveLoggedIn,
+		version,
+	} = req.body;
 
 	try {
 		let user = await db.User.findById(userId);
@@ -75,7 +84,7 @@ const syncronize = async (req, res) => {
 		response.data = await tracking.syncronize(JSON.parse(lastEvents));
 		response.driveStatus =
 			driveLoggedIn == 'true'
-				? await google.syncronizeDrive(userId, luxon.getDate())
+				? await google.syncronizeDrive(userId, dateAndTime().date)
 				: 'Not logged in';
 		response.statusMessage =
 			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
@@ -84,6 +93,23 @@ const syncronize = async (req, res) => {
 			servicesCount,
 			servicesVersions,
 		);
+		if ('payment' in req.body) {
+			let userPayment = JSON.parse(payment);
+			if (userPayment.status.length && !user.mercadoPago) {
+				response.mercadoPago = { status: '', isValid: false, daysRemaining: '-' };
+			}
+			if (user.mercadoPago) {
+				let mercadoPagoData = mercadoPago.userPaymentData(user.mercadoPago);
+				let paymentCheck = await mercadoPago.checkPayment(user, false);
+				let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
+				if (paymentCheck.error || isValid !== userPayment.isValid) {
+					response.mercadoPago = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
+				}
+				if (isValid !== user.mercadoPago.isValid) {
+					await mercadoPago.updateUsers([{ userId, newStatus, isValid, daysRemaining }]);
+				}
+			}
+		}
 		res.status(200).json(response);
 	} catch (error) {
 		await db.saveLog(
@@ -91,7 +117,7 @@ const syncronize = async (req, res) => {
 			{ userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version },
 			error,
 		);
-		res.status(500).json(message);
+		res.status(500).json({ error: error.toString() });
 	}
 };
 
@@ -104,12 +130,12 @@ const check = async (req, res) => {
 		res.status(statusCode).json(response);
 	} catch (error) {
 		await db.saveLog('Check', { userId, trackingData }, error);
-		res.status(500).json(message);
+		res.status(500).json({ error: error.toString() });
 	}
 };
 
 const contactForm = async (req, res) => {
-	const { userId, message, email } = req.body;
+	const { userId, uuid, message, email } = req.body;
 
 	function checkClaimMessage() {
 		let isValid = true;
@@ -142,6 +168,8 @@ const contactForm = async (req, res) => {
 			'rastrear',
 			'seguir',
 			'pedido',
+			'denuncia',
+			'sucursal',
 		];
 		let lCLastEvent = message.toLowerCase();
 		for (let word of includedWords) {
@@ -158,17 +186,20 @@ const contactForm = async (req, res) => {
 		let emailIsValid = await emailCheck.isValid(email);
 		if (!emailIsValid) return res.status(403).json({ error: 'email not valid' });
 		if (!checkClaimMessage()) return res.status(400).json({ error: 'message not valid' });
-		const { id } = await new db.Contact({ userId, message, email }).save();
+		let { date, time } = dateAndTime();
+		let deviceId = uuid ?? 'not available';
+		const { id } = await new db.Contact({ userId, deviceId, message, email, date, time }).save();
 		res.status(200).json({ requestId: id });
 		await notifyAdmin([{ userId, email, message }], 'User Contact');
 	} catch (error) {
+		console.log(error);
 		await db.saveLog('User contact', { userId, message, email }, error);
-		res.status(500).json(message);
+		res.status(500).json({ error: error.toString() });
 	}
 };
 
 const remove = async (token) => {
-	await db.User.deleteOne({ tokenFB: token });
+	await db.User.deleteMany({ tokenFB: token });
 	await db.Tracking.deleteMany({ token: token });
 };
 

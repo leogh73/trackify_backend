@@ -78,6 +78,7 @@ const list = {
 	Lodi: presis,
 	'Mercado Libre': mercadoLibre,
 	MailEx: mailEx,
+	'Mis Entregas': presis,
 	'MD Cargas': mdCargas,
 	'MG Logística': presis,
 	ÑanduPack: sisorgPxpOnline,
@@ -115,7 +116,6 @@ const checkHandler = async (service, code, lastEvent, token) => {
 	try {
 		return await Promise.race([list[service].check(code, lastEvent, service, token), timeout()]);
 	} catch (error) {
-		console.log(error);
 		return {
 			error: errorResponseHandler(error),
 			service,

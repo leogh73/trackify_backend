@@ -1,8 +1,6 @@
 import got from 'got';
 import db from '../modules/mongodb.js';
-import luxon from '../modules/luxon.js';
 import vars from '../modules/crypto-js.js';
-import notifyAdmin from '../modules/nodemailer.js';
 
 const initialize = async (req, res) => {
 	const { userId, code } = req.body;
@@ -37,19 +35,15 @@ const consult = async (req, res) => {
 	const { userId, consultType } = req.body;
 
 	try {
-		let shippingOrders = await checkShippingOrders(userId, consultType);
-		let shippingResults = await checkShippings(
-			shippingOrders.shippingIds.consult,
-			shippingOrders.httpHeaders,
-		);
+		let { shippingIds, httpHeaders } = await checkShippingOrders(userId, consultType);
+		let shippingResults = await checkShippings(shippingIds.consult, httpHeaders);
 		let response = {
 			shippingsData: shippingResults,
-			shippingsTotal: shippingOrders.shippingIds.total,
-			httpHeaders: shippingOrders.httpHeaders,
+			shippingsTotal: shippingIds.total,
+			httpHeaders,
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		await db.saveLog('MercadoLibre consult', { userId, consultType }, error);
 		res.status(500).json({ error: error.toString() });
 	}
@@ -60,7 +54,7 @@ const loadMore = async (req, res) => {
 
 	try {
 		let results = await checkShippings(JSON.parse(shippingIds), JSON.parse(httpHeaders));
-		res.status(200).json(results);
+		res.status(200).json({ items: results });
 	} catch (error) {
 		await db.saveLog('MercadoLibre load more', { shippingIds, httpHeaders }, error);
 		res.status(500).json({ error: error.toString() });
@@ -103,7 +97,6 @@ async function checkShippingOrders(userId, consultType) {
 		);
 		response = JSON.parse(consult.body);
 	} catch (error) {
-		console.log(error);
 		if (error.response.statusCode === 401) {
 			await renewTokenML(userData.model);
 			return await checkShippingOrders(userId, consultType);

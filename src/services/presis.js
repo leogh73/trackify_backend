@@ -10,6 +10,7 @@ async function check(code, lastEvent, service) {
 		FastTrack: 'fasttracklv',
 		'Fixy Logística': 'fixy',
 		Lodi: 'lodi',
+		'Mis Entregas': 'misentregas',
 		'MG Logística': 'mglogistica',
 		ProMail: 'promaillv',
 		'Real Express': 'realexpresslv',
@@ -22,8 +23,8 @@ async function check(code, lastEvent, service) {
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
 
-	let url2 = `${url1}${vars.PRESIS_API_URL2}`;
-	let response2 = await got(`${url2.replace('code', code).replace('TOKEN', token)}`);
+	let url2 = vars.PRESIS_API_URL2.replace('code', code).replace('TOKEN', token);
+	let response2 = await got(`${url1}${url2}`);
 	let result = JSON.parse(response2.body);
 
 	if (result.mensaje === 'Tracker no encontrado.') return { error: 'No data' };

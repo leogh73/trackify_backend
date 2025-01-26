@@ -33,27 +33,26 @@ async function check(code, lastEvent) {
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	let otherData = (() => {
-		const {
-			fechaDeAlta,
-			remitente,
-			servicio,
-			sucursal_custodia,
-			direccion_sucursal_custodia,
-			horario_sucursal_custodia,
-			nombreSucursalDistribucion,
-		} = resultOtherData;
-		return {
-			'Fecha de alta': `${fechaDeAlta.split(' ')[0].split('-').reverse().join('/')} - ${
-				fechaDeAlta.split(' ')[1]
-			}`,
-			Remitente: remitente,
-			Servicio: servicio,
-			'Sucursal de custodia': sucursal_custodia ?? nombreSucursalDistribucion,
-			'Dirección de sucursal': direccion_sucursal_custodia ?? 'Sin datos',
-			'Horario de atención': horario_sucursal_custodia ?? 'Sin datos',
-		};
-	})();
+	let {
+		fechaDeAlta,
+		remitente,
+		servicio,
+		sucursal_custodia,
+		direccion_sucursal_custodia,
+		horario_sucursal_custodia,
+		nombreSucursalDistribucion,
+	} = resultOtherData;
+
+	let otherData = {
+		'Fecha de alta': `${fechaDeAlta.split(' ')[0].split('-').reverse().join('/')} - ${
+			fechaDeAlta.split(' ')[1]
+		}`,
+		Remitente: remitente,
+		Servicio: servicio,
+		'Sucursal de custodia': sucursal_custodia ?? nombreSucursalDistribucion,
+		'Dirección de sucursal': direccion_sucursal_custodia ?? 'Sin datos',
+		'Horario de atención': horario_sucursal_custodia ?? 'Sin datos',
+	};
 
 	let response = {
 		events: eventsList,

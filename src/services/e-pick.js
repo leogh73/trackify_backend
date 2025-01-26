@@ -1,6 +1,6 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
-import luxon from '../modules/luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
@@ -18,7 +18,9 @@ async function check(code, lastEvent) {
 	}
 	let response = JSON.parse(consult.body);
 
-	let event = { date: luxon.getDate(), time: luxon.getTime(), status: response.message };
+	let { date, time } = dateAndTime();
+
+	let event = { date, time, status: response.message };
 
 	return {
 		events: lastEvent ? (event.status === lastEvent.split(' - ')[2] ? [] : [event]) : [event],

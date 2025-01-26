@@ -1,6 +1,6 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
-import luxon from '../modules/luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 
 async function check(code, lastEvent, service) {
 	let dividedCode = code.split('-');
@@ -21,7 +21,9 @@ async function check(code, lastEvent, service) {
 
 	if (consult.body === 'Sin resultados. Revise el numero de guia') return { error: 'No data' };
 
-	let event = { date: luxon.getDate(), time: luxon.getTime(), status: consult.body };
+	let { date, time } = dateAndTime();
+
+	let event = { date, time, status: consult.body };
 
 	if (lastEvent) {
 		return { events: event.status === lastEvent.split(' - ')[2] ? [] : [event] };

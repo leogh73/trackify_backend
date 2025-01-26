@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import luxon from './luxon.js';
+import { dateAndTime } from '../modules/luxon.js';
 import vars from './crypto-js.js';
 const Schema = mongoose.Schema;
 
@@ -34,6 +34,7 @@ const userSchema = new Schema({
 	lastActivity: { type: Date, required: true },
 	tokenFB: { type: String, required: true },
 	mercadoLibre: { type: Object },
+	mercadoPago: { type: Object },
 	googleDrive: { auth: { type: String }, backupId: { type: String } },
 	trackings: {
 		type: [String],
@@ -49,8 +50,11 @@ const googleDriveSchema = new Schema({
 
 const contactSchema = new Schema({
 	userId: { type: String, required: true },
+	deviceId: { type: String, required: true },
 	message: { type: String, required: true },
 	email: { type: String, required: true },
+	date: { type: String, required: true },
+	time: { type: String, required: true },
 });
 
 const logSchema = new Schema({
@@ -82,14 +86,9 @@ const Service = mongoose.model('Service', serviceSchema);
 const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
 const saveLog = async (actionName, actionDetail, errorMessage) => {
+	let { date, time } = dateAndTime();
 	try {
-		await new Log({
-			actionName,
-			actionDetail,
-			errorMessage,
-			date: luxon.getDate(),
-			time: luxon.getTime(),
-		}).save();
+		await new Log({ actionName, actionDetail, errorMessage, date, time }).save();
 	} catch (error) {
 		console.log('Could not save log', error);
 	}
