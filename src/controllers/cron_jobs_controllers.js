@@ -28,14 +28,15 @@ const checkTrackings = async (req, res) => {
 					response: check,
 					duplicated: t.duplicated.map((t) => {
 						const { id, token, title, service, code } = t;
+						const { date, time } = dateAndTime();
 						return {
 							idMDB: id,
 							token,
 							title,
 							service,
 							code,
-							checkDate: luxon.getDate(),
-							checkTime: luxon.getTime(),
+							checkDate: date,
+							checkTime: time,
 							lastCheck: new Date(Date.now()),
 							result: check.result,
 						};
@@ -90,6 +91,7 @@ const checkTrackings = async (req, res) => {
 			},
 		});
 	} catch (error) {
+		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
 		await db.saveLog('trackings check', 'failed tracking checks', error);
 	}

@@ -21,13 +21,13 @@ const sendNotification = async (title, body, token, data) => {
 	};
 
 	try {
-		await admin.messaging().send(notification);
+		let response = await admin.messaging().send(notification);
 		console.log({ 'Notification sended': response });
 	} catch (error) {
+		console.log(error);
 		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
 			await user.remove(token);
 		}
-		console.log(error);
 	}
 };
 
