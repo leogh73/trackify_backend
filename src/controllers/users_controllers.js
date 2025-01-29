@@ -82,10 +82,9 @@ const syncronize = async (req, res) => {
 		await update(user, token);
 		let response = {};
 		response.data = await tracking.syncronize(JSON.parse(lastEvents));
-		response.driveStatus =
-			driveLoggedIn == 'true'
-				? await google.syncronizeDrive(userId, dateAndTime().date)
-				: 'Not logged in';
+		if (driveLoggedIn === 'true') {
+			response.driveStatus = await google.syncronizeDrive(userId, dateAndTime().date);
+		}
 		response.statusMessage =
 			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
 		response.updatedServices = await services.check(

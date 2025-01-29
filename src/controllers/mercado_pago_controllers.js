@@ -21,7 +21,7 @@ const paymentRequest = async (req, res) => {
 								items: [
 									{
 										title: 'TrackeAR Premium por 30 días',
-										description: 'Versión sin publicidad por 30 días.',
+										description: 'TrackeAR Premium por 30 días',
 										quantity: 1,
 										unit_price: 2000,
 										currency_id: 'ARS',
@@ -43,9 +43,6 @@ const paymentRequest = async (req, res) => {
 									transaction_amount: 2000,
 									currency_id: 'ARS',
 									billing_day_proportional: false,
-								},
-								payment_methods_allowed: {
-									payment_types: [{ id: 'credit_card' }, { id: 'debit_card' }],
 								},
 								back_url: `${notification_url}newSubscription`,
 						  },

@@ -44,17 +44,21 @@ const checkTrackings = async (req, res) => {
 				};
 			}),
 		);
-		let trackingsCheckFinal = [];
+		let trackingsCheckTotal = [];
+		let updatedChecks = [];
+		let failedChecks = [];
 		for (let tracking of trackingsCheckResult) {
 			let { response, duplicated } = tracking;
-			trackingsCheckFinal.push(response);
+			if (response.result.events?.length) updatedChecks.push(response);
+			if (response.result.error) failedChecks.push(response);
+			trackingsCheckTotal.push(response);
 			for (let dup of duplicated) {
-				trackingsCheckFinal.push(dup);
+				trackingsCheckTotal.push(dup);
 			}
 		}
-		let succededChecks = trackingsCheckFinal.filter((check) => check.result.events?.length);
+		let updatedChecksTotal = trackingsCheckTotal.filter((check) => check.result.events?.length);
 		let totalUserResults = [];
-		for (let checkResult of succededChecks) {
+		for (let checkResult of updatedChecksTotal) {
 			let userResult = { token: checkResult.token };
 			let resultIndex = totalUserResults.findIndex((r) => r.token === checkResult.token);
 			if (resultIndex == -1) {
@@ -76,8 +80,7 @@ const checkTrackings = async (req, res) => {
 				sendNotification(title, body, userResult.token, JSON.stringify(userResult.results)),
 			);
 		}
-		operationsCollection.push(tracking.updateDatabase(succededChecks));
-		let failedChecks = trackingsCheckFinal.filter((check) => check.result.error);
+		operationsCollection.push(tracking.updateDatabase(updatedChecksTotal));
 		if (failedChecks.length) {
 			operationsCollection.push(db.saveLog('check cycle', failedChecks, 'failed checks'));
 		}
@@ -86,12 +89,11 @@ const checkTrackings = async (req, res) => {
 			message: 'Trackings Check Completed',
 			trackings: {
 				checked: trackingsCheckResult.length,
-				updated: succededChecks.length,
+				updated: updatedChecks.length,
 				failed: failedChecks.length,
 			},
 		});
 	} catch (error) {
-		console.log(error);
 		res.status(500).json({ error: 'Trackings Check Failed', message: error.toString() });
 		await db.saveLog('trackings check', 'failed tracking checks', error);
 	}
