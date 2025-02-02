@@ -38,9 +38,22 @@ async function add(user, title, service, code, driveData) {
 	return result;
 }
 
+async function rename(trackingId, newTitle) {
+	let allTrackings = await findAllTrackings(trackingId);
+	let ids = allTrackings.map((t) => t.id);
+	await db.Tracking.updateMany({ _id: { $in: ids } }, { $set: { title: newTitle } });
+	return { newTitle };
+}
+
 async function remove(userId, trackingIds) {
-	await db.Tracking.deleteMany({ _id: { $in: trackingIds } });
+	let fullTrackingsIds = [];
+	for (let tId of trackingIds) {
+		let allTrackings = await findAllTrackings(tId);
+		allTrackings.map((t) => fullTrackingsIds.push(t.id));
+	}
+	await db.Tracking.deleteMany({ _id: { $in: fullTrackingsIds } });
 	await db.User.updateOne({ _id: userId }, { $pull: { trackings: { $in: trackingIds } } });
+	return { trackingIds };
 }
 
 async function syncronize(lastEventsUser) {
@@ -80,6 +93,11 @@ async function check(userId, trackingData) {
 	let response = await checkTracking(tracking);
 	if (response.result.events?.length) await updateDatabase([response]);
 	return response;
+}
+
+async function findAllTrackings(id) {
+	let { title, code, service, tokenFB } = await db.Tracking.findById(id);
+	return await db.Tracking.find({ title, code, service, tokenFB });
 }
 
 async function addMissingTracking(userId, trackingData) {
@@ -211,6 +229,7 @@ async function updateDatabase(trackingsData) {
 
 export default {
 	add,
+	rename,
 	remove,
 	syncronize,
 	check,

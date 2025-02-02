@@ -39,6 +39,7 @@ import skynde from './skynde.js';
 import southPost from './south_post.js';
 import urbano from './urbano.js';
 import viaCargo from './via_cargo.js';
+import welivery from './welivery.js';
 
 const list = {
 	'Andesmar Cargas': andesmarCargas,
@@ -99,6 +100,7 @@ const list = {
 	'Trans Dan Express': cristalWeb,
 	Urbano: urbano,
 	'Via Cargo': viaCargo,
+	Welivery: welivery,
 };
 
 const checkHandler = async (service, code, lastEvent, token) => {

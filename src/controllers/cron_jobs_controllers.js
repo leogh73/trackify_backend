@@ -218,11 +218,12 @@ const checkCompletedTrackings = async (req, res) => {
 			);
 			if (daysDifference > 7) completedCheckIds.push(tracking.id);
 		}
-		if (completedCheckIds.length)
+		if (completedCheckIds.length) {
 			await db.Tracking.updateMany(
 				{ _id: { $in: completedCheckIds } },
 				{ $set: { completed: true } },
 			);
+		}
 		res.status(200).json({
 			message: 'Check Completed Successful',
 			result: { updated: completedCheckIds.length },

@@ -44,17 +44,23 @@ const trackingAction = async (req, res) => {
 		let user = await db.User.findById(userId);
 		if (!user) return res.status(400).json({ error: 'Not authorized' });
 		let response;
-		if (action == 'add') {
+		let statusCode = 200;
+		if (action === 'add') {
 			const { title, service, code } = req.body;
 			response = await tracking.add(user, title, service, code, false);
-		} else {
-			const { trackingIds } = req.body;
-			await tracking.remove(userId, JSON.parse(trackingIds));
-			response = { trackingIds };
+			if (response.error) statusCode = 500;
 		}
-		let statusCode = response.error ? 500 : 200;
+		if (action === 'rename') {
+			const { trackingId, newTitle } = req.body;
+			response = await tracking.rename(trackingId, newTitle);
+		}
+		if (action === 'remove') {
+			const { trackingIds } = req.body;
+			response = await tracking.remove(userId, JSON.parse(trackingIds));
+		}
 		res.status(statusCode).json(response);
 	} catch (error) {
+		console.log(error);
 		if (req.body.service !== 'Correo Argentino')
 			await db.saveLog('Tracking action', { userId, action, body: req.body }, error);
 		res.status(500).json({ error: error.toString() });

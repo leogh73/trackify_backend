@@ -40,9 +40,9 @@ const paymentRequest = async (req, res) => {
 										let nextDay = new Date(Date.now()).getDate() + 1;
 										return nextDay > 28 ? 1 : nextDay;
 									})(),
+									billing_day_proportional: false,
 									transaction_amount: 2000,
 									currency_id: 'ARS',
-									billing_day_proportional: false,
 								},
 								back_url: `${notification_url}newSubscription`,
 						  },
