@@ -60,7 +60,6 @@ const trackingAction = async (req, res) => {
 		}
 		res.status(statusCode).json(response);
 	} catch (error) {
-		console.log(error);
 		if (req.body.service !== 'Correo Argentino')
 			await db.saveLog('Tracking action', { userId, action, body: req.body }, error);
 		res.status(500).json({ error: error.toString() });
