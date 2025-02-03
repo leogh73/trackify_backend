@@ -39,23 +39,28 @@ async function add(user, title, service, code, driveData) {
 }
 
 async function rename(trackingId, newTitle) {
-	let { title, code, service, token } = await db.Tracking.findById(trackingId);
-	let allTrackings = await db.Tracking.find({ title, code, service, token });
+	let allTrackings = await findDuplicateds(trackingId);
+	if (allTrackings.error) return;
 	let ids = allTrackings.map((t) => t.id);
 	await db.Tracking.updateMany({ _id: { $in: ids } }, { $set: { title: newTitle } });
-	return { newTitle };
 }
 
 async function remove(userId, trackingIds) {
 	let fullTrackingsIds = [];
 	for (let tId of trackingIds) {
-		let { code, service, token } = await db.Tracking.findById(tId);
-		let allTrackings = await db.Tracking.find({ code, service, token });
+		let allTrackings = await findDuplicateds(tId);
+		if (allTrackings.error) return;
 		allTrackings.map((t) => fullTrackingsIds.push(t.id));
 	}
 	await db.Tracking.deleteMany({ _id: { $in: fullTrackingsIds } });
 	await db.User.updateOne({ _id: userId }, { $pull: { trackings: { $in: trackingIds } } });
-	return { trackingIds };
+}
+
+async function findDuplicateds(id) {
+	let tracking = await db.Tracking.findById(id);
+	if (!tracking) return { error: 'tracking not found' };
+	let { title, code, service, token } = tracking;
+	return await db.Tracking.find({ title, code, service, token });
 }
 
 async function syncronize(lastEventsUser) {

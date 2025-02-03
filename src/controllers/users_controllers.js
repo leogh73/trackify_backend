@@ -52,11 +52,13 @@ const trackingAction = async (req, res) => {
 		}
 		if (action === 'rename') {
 			const { trackingId, newTitle } = req.body;
-			response = await tracking.rename(trackingId, newTitle);
+			await tracking.rename(trackingId, newTitle);
+			response = newTitle;
 		}
 		if (action === 'remove') {
 			const { trackingIds } = req.body;
-			response = await tracking.remove(userId, JSON.parse(trackingIds));
+			await tracking.remove(userId, JSON.parse(trackingIds));
+			response = trackingIds;
 		}
 		res.status(statusCode).json(response);
 	} catch (error) {
