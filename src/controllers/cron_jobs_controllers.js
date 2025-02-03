@@ -109,7 +109,10 @@ const checkAwake = async (req, res) => {
 
 const checkPayments = async (req, res) => {
 	try {
-		let users = await db.User.find({ mercadoPago: { $exists: true } });
+		let users = await db.User.find({
+			mercadoPago: { $exists: true },
+			'mercadoPago.status': { $nin: ['cancelled'] },
+		});
 		let checkResults = await Promise.all(
 			users.map((user) => mercadoPago.checkPayment(user, true)),
 		);

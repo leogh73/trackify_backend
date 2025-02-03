@@ -103,13 +103,13 @@ const syncronize = async (req, res) => {
 				response.mercadoPago = { status: '', isValid: false, daysRemaining: '-' };
 			}
 			if (user.mercadoPago) {
-				let mercadoPagoData = mercadoPago.userPaymentData(user.mercadoPago);
 				let paymentCheck = await mercadoPago.checkPayment(user, false);
 				let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
-				if (paymentCheck.error || isValid !== userPayment.isValid) {
+				if (userPayment.isValid !== isValid || userPayment.status !== newStatus) {
+					let mercadoPagoData = mercadoPago.userPaymentData(user.mercadoPago);
 					response.mercadoPago = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
 				}
-				if (isValid !== user.mercadoPago.isValid) {
+				if (user.mercadoPago.isValid !== isValid || user.mercadoPago.status !== newStatus) {
 					await mercadoPago.updateUsers([{ userId, newStatus, isValid, daysRemaining }]);
 				}
 			}
