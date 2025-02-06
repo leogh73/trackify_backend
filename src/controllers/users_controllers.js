@@ -25,10 +25,12 @@ const initialize = async (req, res) => {
 		}
 		if (userId) {
 			let user = await db.User.findById(userId);
-			let mercadoPagoData = user.mercadoPago
-				? mercadoPago.userPaymentData(user.mercadoPago)
-				: { isValid: false };
-			response = { mercadoPagoData };
+			if (user) {
+				let mercadoPagoData = user.mercadoPago
+					? mercadoPago.userPaymentData(user.mercadoPago)
+					: { isValid: false };
+				response = { mercadoPagoData };
+			}
 		}
 		res.status(200).json(response);
 	} catch (error) {

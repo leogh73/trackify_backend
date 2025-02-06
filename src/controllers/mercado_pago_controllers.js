@@ -219,8 +219,6 @@ const storeUpdatePayment = async (paymentDetail, created, device) => {
 	const { id, additional_info, date_created, date_last_updated, payer, status, status_detail } =
 		paymentDetail;
 	let deviceData = device ?? JSON.parse(additional_info.items[0].id);
-	const user = await db.User.findById(deviceData.userId);
-	if (user.mercadoPago && created) return;
 	const dateCheck = created
 		? { isValid: status === 'approved', daysRemaining: 30 }
 		: checkPaymentStatus(date_last_updated, status);
