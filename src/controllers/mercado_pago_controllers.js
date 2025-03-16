@@ -22,12 +22,19 @@ const paymentRequest = async (req, res) => {
 									{
 										title: 'TrackeAR Premium por 30 días',
 										description: 'TrackeAR Premium por 30 días',
+										category_id: 'services',
 										quantity: 1,
 										unit_price: 2000,
 										currency_id: 'ARS',
-										id: deviceData,
 									},
 								],
+								back_urls: {
+									success: 'https://www.mercadopago.com.ar/',
+									pending: 'https://www.mercadopago.com.ar/',
+									failure: 'https://www.mercadopago.com.ar/',
+								},
+								external_reference: deviceData,
+								statement_descriptor: 'TRACKEAR PREMIUM POR 30 DÍAS',
 								notification_url: `${notification_url}newPayment`,
 						  }
 						: {
@@ -41,9 +48,11 @@ const paymentRequest = async (req, res) => {
 										return nextDay > 28 ? 1 : nextDay;
 									})(),
 									billing_day_proportional: false,
+									category_id: 'services',
 									transaction_amount: 2000,
 									currency_id: 'ARS',
 								},
+								statement_descriptor: 'TRACKEAR PREMIUM SUSCRIPCIÓN',
 								back_url: `${notification_url}newSubscription`,
 						  },
 				headers: {
@@ -57,7 +66,7 @@ const paymentRequest = async (req, res) => {
 		let newPayment = JSON.parse(paymentRequest.body);
 		res.status(200).json({ url: newPayment.init_point });
 	} catch (error) {
-		await db.saveLog('mercado pago initialization', { paymentType, deviceData }, error);
+		await db.saveLog('mercado pago initialization', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -102,7 +111,7 @@ const cancelSubscription = async (req, res) => {
 			});
 			response = JSON.parse(consult.body);
 		} catch (error) {
-			await db.saveLog('cancel subscription request error', { body: req.body }, error);
+			await db.saveLog('cancel subscription request error', { ...req.body }, error);
 			response = { error: error.toString() };
 		}
 		return response;
@@ -116,7 +125,7 @@ const cancelSubscription = async (req, res) => {
 		let paymentData = await storeUpdateSubscription(updatedData, user.mercadoPago.device);
 		res.status(200).json({ paymentData: userPaymentData(paymentData) });
 	} catch (error) {
-		await db.saveLog('cancel subscription error', { body: req.body }, error);
+		await db.saveLog('cancel subscription error', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -148,7 +157,7 @@ const checkDeviceId = async (req, res) => {
 		}
 		res.status(200).json({ result: userPaymentData(user.mercadoPago) });
 	} catch (error) {
-		await db.saveLog('mercado pago payment check', { device }, error);
+		await db.saveLog('mercado pago payment check', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -177,7 +186,7 @@ const checkPaymentId = async (req, res) => {
 		existingId = JSON.parse(subscriptionData.external_reference).userId;
 	} else {
 		mercadoPago = await storeUpdatePayment(paymentDetail, false, { userId, uuid });
-		existingId = JSON.parse(paymentDetail.additional_info.items[0].id).userId;
+		existingId = JSON.parse(paymentDetail.external_reference).userId;
 	}
 
 	if (mercadoPago.error) {
@@ -216,9 +225,9 @@ const getPaymentDetail = async (id, paymentType, cronJob) => {
 };
 
 const storeUpdatePayment = async (paymentDetail, created, device) => {
-	const { id, additional_info, date_created, date_last_updated, payer, status, status_detail } =
+	const { id, date_created, date_last_updated, external_reference, payer, status, status_detail } =
 		paymentDetail;
-	let deviceData = device ?? JSON.parse(additional_info.items[0].id);
+	let deviceData = device ?? JSON.parse(external_reference);
 	const dateCheck = created
 		? { isValid: status === 'approved', daysRemaining: 30 }
 		: checkPaymentStatus(date_last_updated, status);
@@ -371,6 +380,31 @@ const updateUsers = async (usersData) => {
 	await db.User.bulkWrite(databaseUpdates);
 };
 
+const syncPaymentData = async (user, payment) => {
+	if (!payment) return false;
+	let response;
+	let userPayment = JSON.parse(payment);
+	if (userPayment.status.length && !user.mercadoPago) {
+		response = { status: '', isValid: false, daysRemaining: '-' };
+	}
+	if (user.mercadoPago) {
+		let paymentCheck = await checkPayment(user, false);
+		let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
+		if (userPayment.isValid !== isValid || userPayment.status !== newStatus) {
+			let mercadoPagoData = userPaymentData(user.mercadoPago);
+			response = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
+		}
+		if (
+			newStatus !== 'could not be checked' &&
+			user.mercadoPago.isValid !== isValid &&
+			user.mercadoPago.status !== newStatus
+		) {
+			await updateUsers([{ userId, newStatus, isValid, daysRemaining }]);
+		}
+	}
+	return response;
+};
+
 export default {
 	paymentRequest,
 	newPayment,
@@ -381,4 +415,6 @@ export default {
 	userPaymentData,
 	checkPayment,
 	updateUsers,
+	syncPaymentData,
+	getPaymentDetail,
 };

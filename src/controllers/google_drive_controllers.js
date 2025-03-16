@@ -34,7 +34,7 @@ const initialize = async (req, res) => {
 		await user.save();
 		res.status(200).json(tokens);
 	} catch (error) {
-		await db.saveLog('Google initialize', { userId, authCode, email }, error);
+		await db.saveLog('Google initialize', { ...req.body }, error);
 		res.status(500).json(message);
 	}
 };
@@ -76,7 +76,7 @@ const createUpdate = async (req, res) => {
 		}
 		res.status(200).json(response);
 	} catch (error) {
-		await db.saveLog('Google create/update', { userId, userData }, error);
+		await db.saveLog('Google create/update', { ...req.body }, error);
 		res.status(500).json(message);
 	}
 };
@@ -103,7 +103,7 @@ const restore = async (req, res) => {
 		}
 		res.status(200).json(userData);
 	} catch (error) {
-		await db.saveLog('Google restore', { userId, backupId }, error);
+		await db.saveLog('Google restore', { ...req.body }, error);
 		res.status(500).json(message);
 	}
 };
@@ -121,7 +121,7 @@ const remove = async (req, res) => {
 		await drive.files.delete({ fileId: backupId });
 		res.status(200).json({ message: 'OK' });
 	} catch (error) {
-		await db.saveLog('Google remove', { userId, backupId }, error);
+		await db.saveLog('Google remove', { ...req.body }, error);
 		res.status(500).json(message);
 	}
 };

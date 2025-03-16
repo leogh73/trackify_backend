@@ -26,7 +26,7 @@ const initialize = async (req, res) => {
 		await db.User.updateOne({ _id: userId }, { $set: { mercadoLibre: meLiResponse } });
 		res.status(200).json(meLiResponse);
 	} catch (error) {
-		await db.saveLog('MercadoLibre initialize', { userId, code }, error);
+		await db.saveLog('MercadoLibre initialize', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -44,7 +44,7 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		await db.saveLog('MercadoLibre consult', { userId, consultType }, error);
+		await db.saveLog('MercadoLibre consult', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -56,7 +56,7 @@ const loadMore = async (req, res) => {
 		let results = await checkShippings(JSON.parse(shippingIds), JSON.parse(httpHeaders));
 		res.status(200).json({ items: results });
 	} catch (error) {
-		await db.saveLog('MercadoLibre load more', { shippingIds, httpHeaders }, error);
+		await db.saveLog('MercadoLibre load more', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };

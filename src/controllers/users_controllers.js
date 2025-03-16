@@ -34,7 +34,7 @@ const initialize = async (req, res) => {
 		}
 		res.status(200).json(response);
 	} catch (error) {
-		await db.saveLog('Initialize user', { token, userId, lastActivity }, error);
+		await db.saveLog('Initialize user', { ...req.body, lastActivity }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -71,16 +71,8 @@ const trackingAction = async (req, res) => {
 };
 
 const syncronize = async (req, res) => {
-	const {
-		userId,
-		token,
-		lastEvents,
-		payment,
-		servicesCount,
-		servicesVersions,
-		driveLoggedIn,
-		version,
-	} = req.body;
+	const { userId, token, lastEvents, payment, servicesCount, servicesVersions, driveLoggedIn } =
+		req.body;
 
 	try {
 		let user = await db.User.findById(userId);
@@ -101,30 +93,11 @@ const syncronize = async (req, res) => {
 			servicesCount,
 			servicesVersions,
 		);
-		if ('payment' in req.body) {
-			let userPayment = JSON.parse(payment);
-			if (userPayment.status.length && !user.mercadoPago) {
-				response.mercadoPago = { status: '', isValid: false, daysRemaining: '-' };
-			}
-			if (user.mercadoPago) {
-				let paymentCheck = await mercadoPago.checkPayment(user, false);
-				let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
-				if (userPayment.isValid !== isValid || userPayment.status !== newStatus) {
-					let mercadoPagoData = mercadoPago.userPaymentData(user.mercadoPago);
-					response.mercadoPago = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
-				}
-				if (user.mercadoPago.isValid !== isValid || user.mercadoPago.status !== newStatus) {
-					await mercadoPago.updateUsers([{ userId, newStatus, isValid, daysRemaining }]);
-				}
-			}
-		}
+		let paymentData = await mercadoPago.syncPaymentData(user, payment);
+		if (paymentData) response.mercadoPago = paymentData;
 		res.status(200).json(response);
 	} catch (error) {
-		await db.saveLog(
-			'syncronize',
-			{ userId, token, lastEvents, servicesCount, servicesVersions, driveLoggedIn, version },
-			error,
-		);
+		await db.saveLog('syncronize', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -137,7 +110,7 @@ const check = async (req, res) => {
 		let statusCode = response.result.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
-		await db.saveLog('Check', { userId, trackingData }, error);
+		await db.saveLog('Check', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
@@ -200,8 +173,7 @@ const contactForm = async (req, res) => {
 		res.status(200).json({ requestId: id });
 		await notifyAdmin([{ userId, email, message }], 'User Contact');
 	} catch (error) {
-		console.log(error);
-		await db.saveLog('User contact', { userId, message, email }, error);
+		await db.saveLog('User contact', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
 };
