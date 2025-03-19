@@ -33,7 +33,7 @@ async function check(code, lastEvent) {
 	let eventsList = eventsData.map((event) => {
 		let dateAndTime = event.slice(-1)[0].split('        ');
 		let date = dateAndTime[0].split(', ')[1];
-		let time = dateAndTime[1];
+		let time = dateAndTime[1].split(' (')[0];
 		let status = event[0];
 		let detail = event[1] === event.slice(-1)[0] ? 'Sin datos' : event[1].split(' -')[0];
 		return { date, time, status, detail };
