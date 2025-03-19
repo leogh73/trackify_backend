@@ -412,9 +412,7 @@ export default {
 	cancelSubscription,
 	checkDeviceId,
 	checkPaymentId,
-	userPaymentData,
 	checkPayment,
 	updateUsers,
 	syncPaymentData,
-	getPaymentDetail,
 };

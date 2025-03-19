@@ -23,6 +23,7 @@ import flashLogisticaYPostal from './flash_logistica_y_postal.js';
 import fonoPack from './fono_pack.js';
 import hop from './hop.js';
 import integralPack from './integral_pack.js';
+import mailAmericas from './mail_americas.js';
 import mailEx from './mail_ex.js';
 import mercadoLibre from './mercado_libre.js';
 import mdCargas from './md_cargas.js';
@@ -77,8 +78,9 @@ const list = {
 	'Integral Pack': integralPack,
 	Jetmar: plusmar,
 	Lodi: presis,
-	'Mercado Libre': mercadoLibre,
+	MailAmericas: mailAmericas,
 	MailEx: mailEx,
+	'Mercado Libre': mercadoLibre,
 	'Mis Entregas': presis,
 	'MD Cargas': mdCargas,
 	'MG Logística': presis,
