@@ -22,6 +22,7 @@ const paymentRequest = async (req, res) => {
 									{
 										title: 'TrackeAR Premium por 30 días',
 										description: 'TrackeAR Premium por 30 días',
+										id: 'Premium App',
 										category_id: 'services',
 										quantity: 1,
 										unit_price: 2000,

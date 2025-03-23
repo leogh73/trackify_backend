@@ -137,7 +137,10 @@ async function addMissingTracking(userId, trackingData) {
 }
 
 async function checkTracking(tracking) {
-	const { id, token, title, service, code, result } = tracking;
+	const { id, token, title, service, result } = tracking;
+
+	let code = tracking.code;
+	if (service === 'Correo Argentino') code = result.extCode;
 
 	let checkResult = await services.checkHandler(service, code, result.lastEvent, token);
 
