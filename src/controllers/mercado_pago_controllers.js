@@ -219,8 +219,9 @@ const getPaymentDetail = async (id, paymentType, cronJob) => {
 		);
 		return JSON.parse(result.body);
 	} catch (error) {
-		if (!cronJob)
+		if (!cronJob && error.response.statusCode !== 404) {
 			await db.saveLog('MercadoPago payment consult', { paymentId: id, paymentType }, error);
+		}
 		return { error: error.toString() };
 	}
 };

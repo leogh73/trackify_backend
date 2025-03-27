@@ -116,7 +116,9 @@ const checkPayments = async (req, res) => {
 		let checkResults = await Promise.all(
 			users.map((user) => mercadoPago.checkPayment(user, true)),
 		);
-		let failedChecks = checkResults.filter((ch) => ch.error);
+		let failedChecks = checkResults.filter(
+			(r) => r.error && r.error !== 'HTTPError: Response code 404 (Not Found)',
+		);
 		if (failedChecks.length) await db.saveLog('payments check', failedChecks, 'failed checks');
 		await mercadoPago.updateUsers(checkResults);
 		res.status(200).json({
