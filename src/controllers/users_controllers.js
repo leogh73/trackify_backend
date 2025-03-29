@@ -46,11 +46,15 @@ const trackingAction = async (req, res) => {
 		let user = await db.User.findById(userId);
 		if (!user) return res.status(400).json({ error: 'Not authorized' });
 		let response;
+		let statusCode = 200;
 		if (action === 'add') {
 			const { title, service, code } = req.body;
 			response = await tracking.add(user, title, service, code, false);
-			if (response.error !== 'No data') {
-				await db.saveLog('Tracking action', { userId, action, body: req.body }, response.error);
+			if (response.error) {
+				statusCode = 500;
+				if (response.error !== 'No data') {
+					await db.saveLog('Tracking action', { userId, action, body: req.body }, response.error);
+				}
 			}
 		}
 		if (action === 'rename') {
@@ -63,7 +67,7 @@ const trackingAction = async (req, res) => {
 			await tracking.remove(userId, JSON.parse(trackingIds));
 			response = trackingIds;
 		}
-		res.status(response.error ? 500 : 200).json(response);
+		res.status(statusCode).json(response);
 	} catch (error) {
 		await db.saveLog('Tracking action', { userId, action, body: req.body }, error);
 		res.status(500).json({ error: error.toString() });
