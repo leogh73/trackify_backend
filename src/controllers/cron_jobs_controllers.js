@@ -1,10 +1,10 @@
 import db from '../modules/mongodb.js';
-import { dateAndTime } from '../modules/luxon.js';
 import sendNotification from '../modules/firebase_notification.js';
-import notifyAdmin from '../modules/nodemailer.js';
-import tracking from './trackings_controllers.js';
+import { dateAndTime } from '../modules/luxon.js';
 import { cache } from '../modules/node-cache.js';
+import notifyAdmin from '../modules/nodemailer.js';
 import mercadoPago from './mercado_pago_controllers.js';
+import tracking from './trackings_controllers.js';
 
 const checkTrackings = async (req, res) => {
 	try {
@@ -109,12 +109,12 @@ const checkAwake = async (req, res) => {
 
 const checkPayments = async (req, res) => {
 	try {
-		let users = await db.User.find({
-			mercadoPago: { $exists: true },
-			'mercadoPago.status': { $nin: ['cancelled'] },
-		});
+		let users = await Promise.all([
+			db.User.find({ 'mercadoPago.isValid': true }),
+			db.User.find({ 'mercadoPago.status': 'could not be checked' }),
+		]);
 		let checkResults = await Promise.all(
-			users.map((user) => mercadoPago.checkPayment(user, true)),
+			users.flat().map((user) => mercadoPago.checkPayment(user, true)),
 		);
 		let failedChecks = checkResults.filter(
 			(r) => r.error && r.error !== 'HTTPError: Response code 404 (Not Found)',
