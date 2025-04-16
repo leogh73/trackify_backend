@@ -13,82 +13,37 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-const generateHtmlTable = (data, contact) => {
-	let rowsArray = [];
+const notifyAdmin = async (data, subject) => {
+	let paragraphData = data.map((d, i) => {
+		let subValues = Object.keys(d).map((k) => {
+			return `<p><b>${k}</b>: ${d[k]}</p>`;
+		});
+		return `${subValues.join('')}${data.length === i + 1 ? '' : '<hr>'}`;
+	});
 
-	for (let e of data) {
-		contact
-			? rowsArray.push(`<tr>
-	<td>${e.userId}</td>
-	<td>${e.email}</td>
-	<td>${e.message}</td>
-	</tr>`)
-			: rowsArray.push(`<tr>
-		<td>${e.service}</td>
-		<td>${e.code}</td>
-		<td>${e.type}</td>
-		<td>${e.body}</td>
-	</tr>`);
-	}
-	let rowsList = rowsArray.join('');
-
-	return `<html>
-	<head>
+	let html = `<html>
 	<style>
-	table {
+	body {
 		font-family: arial, sans-serif;
 		border-collapse: collapse;
 		width: 100%;
 	}
-	
-	td, th {
-		border: 1px solid #dddddd;
-		text-align: left;
-		padding: 8px;
-	}
-	
-	tr:nth-child(even) {
-		background-color: #dddddd;
-	}
 	</style>
-	</head>
-	<body>
-
-	<h2>${contact ? 'User Contact' : 'Errors'}</h2>
-	
-	<table>
-		<tr>
-			${
-				contact
-					? '<th>UserId</th><th>Email</th><th>Message</th>'
-					: '<th>Service</th><th>Code</th><th>Type</th><th>Body</th>'
-			}
-		</tr>
-	${rowsList}
-	</table>
-	
+	 <body>
+	${paragraphData.join('')}
 	</body>
 	</html>`;
-};
 
-const sendMail = async (html, subject) => {
-	const mailDetails = {
-		from: `TrackeAR: Seguimientos Argentina<${vars.EMAIL_USER}>`,
-		to: `${vars.EMAIL_ADMIN}`,
-		subject,
-		html,
-	};
-	await transporter.sendMail(mailDetails);
-};
-
-const notifyAdmin = async (data, subject) => {
 	try {
-		let html = data;
-		if (subject === 'User Contact' || subject === 'API Access Failed') {
-			let contact = subject === 'User Contact';
-			html = generateHtmlTable(data, contact);
+		let result = await transporter.sendMail({
+			from: `TrackeAR: Seguimientos Argentina<${vars.EMAIL_USER}>`,
+			to: `${vars.EMAIL_ADMIN}`,
+			subject,
+			html,
+		});
+		if (result.rejected.length) {
+			await db.saveLog('Send emails', data, result);
 		}
-		await sendMail(html, subject);
 	} catch (error) {
 		await db.saveLog('Send emails', data, error);
 	}
