@@ -123,8 +123,8 @@ const checkPayments = async (req, res) => {
 		await mercadoPago.updateUsers(checkResults);
 		res.status(200).json({
 			success: 'Payments Check Completed',
-			simplesChecked: checkResults.filter((r) => r.paymentType === 'simple').length,
-			subscriptionsChecked: checkResults.filter((r) => r.paymentType === 'subscription').length,
+			simples: checkResults.filter((r) => r.paymentType === 'simple').length,
+			subscriptions: checkResults.filter((r) => r.paymentType === 'subscription').length,
 		});
 	} catch (error) {
 		res.status(500).json({ error: 'Payments check Failed', message: error.toString() });

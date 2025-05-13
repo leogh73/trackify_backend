@@ -7,18 +7,24 @@ async function check(code, lastEvent) {
 	let consult = await got(`${vars.CRUZ_DEL_SUR_API_URL}${code}`);
 	const $ = load(consult.body);
 
+	if (
+		$(
+			'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > div > span',
+		).text() === 'No existe NIC.'
+	) {
+		return { error: 'No data' };
+	}
+
 	let baseTexts = [];
 	$(
-		'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div> form > div > div > label',
+		'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > form > div > div > label',
 	).each(function () {
 		baseTexts.push($(this).text());
 	});
 
-	if (baseTexts.length === 6) return { error: 'No data' };
-
 	let baseInputsTexts = [];
 	$(
-		'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > form > div > div> input',
+		'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > form > div > div > input',
 	).each(function () {
 		baseInputsTexts.push($(this).val());
 	});

@@ -391,8 +391,12 @@ const syncPaymentData = async (user, payment) => {
 	}
 	if (user.mercadoPago) {
 		let paymentCheck = await checkPayment(user, false);
-		let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
-		if (userPayment.isValid !== isValid || userPayment.status !== newStatus) {
+		let { userId, newStatus, daysRemaining, isValid } = paymentCheck;
+		if (
+			userPayment.isValid !== isValid ||
+			userPayment.status !== newStatus ||
+			userPayment.daysRemaining !== daysRemaining
+		) {
 			let mercadoPagoData = userPaymentData(user.mercadoPago);
 			response = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
 		}
