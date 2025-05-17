@@ -5,6 +5,8 @@ import { cache } from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import mercadoPago from './mercado_pago_controllers.js';
 import tracking from './trackings_controllers.js';
+import got from 'got';
+import { load } from 'cheerio';
 
 const checkTrackings = async (req, res) => {
 	try {
@@ -87,10 +89,11 @@ const checkTrackings = async (req, res) => {
 		await Promise.all(operationsCollection);
 		res.status(200).json({
 			message: 'Trackings Check Completed',
-			trackings: {
-				checked: trackingsCheckResult.length,
+			result: {
+				successful: trackingsCheckResult.length - failedChecks.length,
 				updated: updatedChecks.length,
 				failed: failedChecks.length,
+				total: trackingsCheckResult.length,
 			},
 		});
 	} catch (error) {
@@ -139,7 +142,7 @@ const checkServices = async (req, res) => {
 			errorMessage: 'failed checks',
 		});
 		let response = {
-			message: 'API Check Completed',
+			message: 'Services Check Completed',
 			erroredServices: [],
 		};
 		let filterResults = [];
@@ -206,8 +209,8 @@ const checkServices = async (req, res) => {
 		let failedChecksIds = totalFailedChecks.map((log) => log.id);
 		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
-		await db.saveLog('API Check', 'api check failed', error);
-		res.status(500).json({ error: 'API Check Failed', message: error.toString() });
+		res.status(500).json({ error: 'Services Check Failed', message: error.toString() });
+		await db.saveLog('Services Check', 'services check failed', error);
 	}
 };
 
@@ -234,8 +237,8 @@ const checkCompletedTrackings = async (req, res) => {
 			result: { updated: completedCheckIds.length },
 		});
 	} catch (error) {
-		await db.saveLog('Check Completed Failed', 'failed completed check', error);
 		res.status(500).json({ error: 'Check Completed Failed', message: error.toString() });
+		await db.saveLog('Check Completed Failed', 'failed completed check', error);
 	}
 };
 
@@ -282,8 +285,8 @@ const cleanUp = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		await db.saveLog('Clean Up Cycle', 'failed clean up', error);
 		res.status(500).json({ error: 'Clean Up Cycle Failed', message: error.toString() });
+		await db.saveLog('Clean Up Cycle', 'failed clean up', error);
 	}
 };
 
