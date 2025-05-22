@@ -45,8 +45,8 @@ const paymentRequest = async (req, res) => {
 									frequency: 1,
 									frequency_type: 'months',
 									billing_day: (() => {
-										let nextDay = new Date(Date.now()).getDate() + 1;
-										return nextDay > 28 ? 1 : nextDay;
+										let today = new Date(Date.now()).getDate();
+										return today > 28 ? 1 : today;
 									})(),
 									billing_day_proportional: false,
 									category_id: 'services',
