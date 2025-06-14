@@ -45,8 +45,8 @@ const paymentRequest = async (req, res) => {
 									frequency: 1,
 									frequency_type: 'months',
 									billing_day: (() => {
-										let nextDay = new Date(Date.now()).getDate() + 1;
-										return nextDay > 28 ? 1 : nextDay;
+										let today = new Date(Date.now()).getDate();
+										return today > 28 ? 1 : today;
 									})(),
 									billing_day_proportional: false,
 									category_id: 'services',
@@ -391,8 +391,12 @@ const syncPaymentData = async (user, payment) => {
 	}
 	if (user.mercadoPago) {
 		let paymentCheck = await checkPayment(user, false);
-		let { userId, newStatus, isValid, daysRemaining } = paymentCheck;
-		if (userPayment.isValid !== isValid || userPayment.status !== newStatus) {
+		let { userId, newStatus, daysRemaining, isValid } = paymentCheck;
+		if (
+			userPayment.isValid !== isValid ||
+			userPayment.status !== newStatus ||
+			userPayment.daysRemaining !== daysRemaining
+		) {
 			let mercadoPagoData = userPaymentData(user.mercadoPago);
 			response = { ...mercadoPagoData, status: newStatus, daysRemaining, isValid };
 		}

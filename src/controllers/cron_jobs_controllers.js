@@ -5,6 +5,7 @@ import { cache } from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import mercadoPago from './mercado_pago_controllers.js';
 import tracking from './trackings_controllers.js';
+import services from '../services/_services.js';
 
 const checkTrackings = async (req, res) => {
 	try {
@@ -87,10 +88,11 @@ const checkTrackings = async (req, res) => {
 		await Promise.all(operationsCollection);
 		res.status(200).json({
 			message: 'Trackings Check Completed',
-			trackings: {
-				checked: trackingsCheckResult.length,
+			result: {
+				successful: trackingsCheckResult.length - failedChecks.length,
 				updated: updatedChecks.length,
 				failed: failedChecks.length,
+				total: trackingsCheckResult.length,
 			},
 		});
 	} catch (error) {
@@ -123,8 +125,8 @@ const checkPayments = async (req, res) => {
 		await mercadoPago.updateUsers(checkResults);
 		res.status(200).json({
 			success: 'Payments Check Completed',
-			simplesChecked: checkResults.filter((r) => r.paymentType === 'simple').length,
-			subscriptionsChecked: checkResults.filter((r) => r.paymentType === 'subscription').length,
+			simples: checkResults.filter((r) => r.paymentType === 'simple').length,
+			subscriptions: checkResults.filter((r) => r.paymentType === 'subscription').length,
 		});
 	} catch (error) {
 		res.status(500).json({ error: 'Payments check Failed', message: error.toString() });
@@ -139,7 +141,7 @@ const checkServices = async (req, res) => {
 			errorMessage: 'failed checks',
 		});
 		let response = {
-			message: 'API Check Completed',
+			message: 'Services Check Completed',
 			erroredServices: [],
 		};
 		let filterResults = [];
@@ -206,8 +208,8 @@ const checkServices = async (req, res) => {
 		let failedChecksIds = totalFailedChecks.map((log) => log.id);
 		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
-		await db.saveLog('API Check', 'api check failed', error);
-		res.status(500).json({ error: 'API Check Failed', message: error.toString() });
+		res.status(500).json({ error: 'Services Check Failed', message: error.toString() });
+		await db.saveLog('Services Check', 'services check failed', error);
 	}
 };
 
@@ -234,8 +236,8 @@ const checkCompletedTrackings = async (req, res) => {
 			result: { updated: completedCheckIds.length },
 		});
 	} catch (error) {
-		await db.saveLog('Check Completed Failed', 'failed completed check', error);
 		res.status(500).json({ error: 'Check Completed Failed', message: error.toString() });
+		await db.saveLog('Check Completed Failed', 'failed completed check', error);
 	}
 };
 
@@ -282,8 +284,193 @@ const cleanUp = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		await db.saveLog('Clean Up Cycle', 'failed clean up', error);
 		res.status(500).json({ error: 'Clean Up Cycle Failed', message: error.toString() });
+		await db.saveLog('Clean Up Cycle', 'failed clean up', error);
+	}
+};
+
+const vc = async (req, res) => {
+	const codes = [
+		'999026460333',
+		'999026460333',
+		'999027013638',
+		'999026886478',
+		'999027055228',
+		'999027042045',
+		'999027039515',
+		'999026800943',
+		'999027045390',
+		'999027047465',
+		'999027074630',
+		'999027041169',
+		'999027094927',
+		'999027094860',
+		'999027077961',
+		'999027077961',
+		'999027097789',
+		'999027098834',
+		'999027098509',
+		'999027118574',
+		'999027114127',
+		'999027114127',
+		'999027114127',
+		'999027100699',
+		'999027118574',
+		'999027099981',
+		'999027033816',
+		'999027082213',
+		'999027108165',
+		'999027045120',
+		'999027098627',
+		'999027123176',
+		'999027103379',
+		'999026460333',
+		'999026460333',
+		'999027013638',
+		'999026886478',
+		'999027055228',
+		'999027042045',
+		'999027039515',
+		'999026800943',
+		'999027045390',
+		'999027047465',
+		'999027074630',
+		'999027041169',
+		'999027094927',
+		'999027094860',
+		'999027077961',
+		'999027077961',
+		'999027097789',
+		'999027098834',
+		'999027098509',
+		'999027118574',
+		'999027114127',
+		'999027114127',
+		'999027114127',
+		'999027100699',
+		'999027118574',
+		'999027099981',
+		'999027033816',
+		'999027082213',
+		'999027108165',
+		'999027045120',
+		'999027098627',
+		'999027123176',
+		'999027103379',
+	];
+
+	try {
+		let results = (
+			await Promise.all([
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+				Promise.all(
+					codes
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i])
+						.flatMap((i) => [i, i]),
+				),
+			])
+		)
+			.flat()
+			.map((c) => services.checkHandler('Via Cargo', c));
+		if (results.filter((r) => r.result).length) {
+			res.status(200).json({ result: 'via cargo working' });
+			return await notifyAdmin({ message: 'Via Cargo working' }, 'Via Cargo working');
+		}
+		res.status(200).json({ result: 'spamming completed', codes: results.flat().length });
+	} catch (error) {
+		res.status(500).json({
+			error: 'vc spamming failed',
+			message: error.toString(),
+			result: {
+				error: services.errorResponseHandler(error),
+				service: 'Via Cargo',
+				code: 'all',
+			},
+		});
 	}
 };
 
@@ -294,4 +481,5 @@ export default {
 	checkServices,
 	checkCompletedTrackings,
 	cleanUp,
+	vc,
 };

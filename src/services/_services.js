@@ -173,6 +173,7 @@ const capitalizeText = (firstWordOnly, text) => {
 };
 
 import db from '../modules/mongodb.js';
+import { cache } from '../modules/node-cache.js';
 
 const servicesData = async () => {
 	let sData = await db.Service.find({});
@@ -185,8 +186,8 @@ const servicesData = async () => {
 	return services;
 };
 
-const check = async (servicesData, servicesCount, servicesVersions) => {
-	let sData = servicesData ?? (await servicesData());
+const check = async (servicesCount, servicesVersions) => {
+	let sData = cache.get('Service') ?? (await servicesData());
 	let dbServicesCount = Object.keys(sData).length;
 	let dbServicesVersions = Object.values(sData)
 		.map((s) => s.__v)

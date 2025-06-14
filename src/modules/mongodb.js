@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { dateAndTime } from '../modules/luxon.js';
 import vars from './crypto-js.js';
+import nodeCache from './node-cache.js';
 const Schema = mongoose.Schema;
 
 mongoose.set('strictQuery', false);
@@ -12,7 +13,10 @@ mongoose
 			useUnifiedTopology: true,
 		},
 	)
-	.then(() => console.log('Connected to MongoDB...'))
+	.then(async () => {
+		await nodeCache.setCache();
+		console.log('Connected to MongoDB...');
+	})
 	.catch((error) => console.error('Could not connect to MongoDB', error));
 
 const trackingSchema = new Schema({
