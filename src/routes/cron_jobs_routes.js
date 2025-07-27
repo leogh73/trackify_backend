@@ -3,10 +3,7 @@ export const router = express.Router();
 import cronJobs from '../controllers/cron_jobs_controllers.js';
 
 router.use((req, res, next) => {
-	if (!req.headers.authorization) {
-		return res.status(401).json({ error: 'not authorized' });
-	}
-	let authCode = req.headers.authorization.split('Key ')[1];
+	let authCode = req.headers.authorization?.split('Key ')[1];
 	if (!authCode || authCode !== process.env.SERVICE_ENCRYPTION_KEY) {
 		return res.status(401).json({ error: 'not authorized' });
 	}
@@ -19,4 +16,3 @@ router.get('/checkServices', cronJobs.checkServices);
 router.get('/checkPayments', cronJobs.checkPayments);
 router.get('/checkCompleted', cronJobs.checkCompletedTrackings);
 router.get('/cleanUp', cronJobs.cleanUp);
-router.get('/vc', cronJobs.vc);

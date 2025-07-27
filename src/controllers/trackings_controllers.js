@@ -45,7 +45,8 @@ async function rename(trackingId, newTitle) {
 	await db.Tracking.updateMany({ _id: { $in: ids } }, { $set: { title: newTitle } });
 }
 
-async function remove(userId, trackingIds) {
+async function remove(userId, ids) {
+	let trackingIds = JSON.parse(ids);
 	let fullTrackingsIds = [];
 	for (let tId of trackingIds) {
 		let allTrackings = await findDuplicateds(tId);

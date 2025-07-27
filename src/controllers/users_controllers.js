@@ -53,19 +53,22 @@ const trackingAction = async (req, res) => {
 			if (response.error) {
 				statusCode = 500;
 				if (response.error !== 'No data') {
-					await db.saveLog('Tracking action', { userId, action, body: req.body }, response.error);
+					await db.saveLog(
+						'tracking add failed',
+						{ userId: user.id, data: req.body, error: response.error },
+						'tracking add failed',
+					);
 				}
 			}
 		}
 		if (action === 'rename') {
 			const { trackingId, newTitle } = req.body;
 			await tracking.rename(trackingId, newTitle);
-			response = newTitle;
+			response = req.body.newTitle;
 		}
 		if (action === 'remove') {
-			const { trackingIds } = req.body;
-			await tracking.remove(userId, JSON.parse(trackingIds));
-			response = trackingIds;
+			await tracking.remove(userId, req.body.trackingIds);
+			response = req.body.trackingIds;
 		}
 		res.status(statusCode).json(response);
 	} catch (error) {

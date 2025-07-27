@@ -42,10 +42,10 @@ const notifyAdmin = async (data, subject) => {
 			html,
 		});
 		if (result.rejected.length) {
-			await db.saveLog('Send emails', data, result);
+			await db.saveLog('Send email', data, result);
 		}
 	} catch (error) {
-		await db.saveLog('Send emails', data, error);
+		await db.saveLog('Send email', data, error);
 	}
 };
 

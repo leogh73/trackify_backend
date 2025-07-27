@@ -223,7 +223,7 @@ const checkCompletedTrackings = async (req, res) => {
 			let daysDifference = Math.floor(
 				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
 			);
-			if (daysDifference > 7) completedCheckIds.push(tracking.id);
+			if (daysDifference > 10) completedCheckIds.push(tracking.id);
 		}
 		if (completedCheckIds.length) {
 			await db.Tracking.updateMany(
@@ -260,7 +260,7 @@ const cleanUp = async (req, res) => {
 		let trackingIds = [];
 		for (let tracking of dbQueries[1]) {
 			let daysElapsed = calculateDays(tracking.lastCheck);
-			if (daysElapsed > 7) trackingIds.push(tracking._id);
+			if (daysElapsed > 10) trackingIds.push(tracking._id);
 		}
 		let logIds = [];
 		for (let log of dbQueries[2]) {
@@ -289,191 +289,6 @@ const cleanUp = async (req, res) => {
 	}
 };
 
-const vc = async (req, res) => {
-	const codes = [
-		'999026460333',
-		'999026460333',
-		'999027013638',
-		'999026886478',
-		'999027055228',
-		'999027042045',
-		'999027039515',
-		'999026800943',
-		'999027045390',
-		'999027047465',
-		'999027074630',
-		'999027041169',
-		'999027094927',
-		'999027094860',
-		'999027077961',
-		'999027077961',
-		'999027097789',
-		'999027098834',
-		'999027098509',
-		'999027118574',
-		'999027114127',
-		'999027114127',
-		'999027114127',
-		'999027100699',
-		'999027118574',
-		'999027099981',
-		'999027033816',
-		'999027082213',
-		'999027108165',
-		'999027045120',
-		'999027098627',
-		'999027123176',
-		'999027103379',
-		'999026460333',
-		'999026460333',
-		'999027013638',
-		'999026886478',
-		'999027055228',
-		'999027042045',
-		'999027039515',
-		'999026800943',
-		'999027045390',
-		'999027047465',
-		'999027074630',
-		'999027041169',
-		'999027094927',
-		'999027094860',
-		'999027077961',
-		'999027077961',
-		'999027097789',
-		'999027098834',
-		'999027098509',
-		'999027118574',
-		'999027114127',
-		'999027114127',
-		'999027114127',
-		'999027100699',
-		'999027118574',
-		'999027099981',
-		'999027033816',
-		'999027082213',
-		'999027108165',
-		'999027045120',
-		'999027098627',
-		'999027123176',
-		'999027103379',
-	];
-
-	try {
-		let results = (
-			await Promise.all([
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-				Promise.all(
-					codes
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i])
-						.flatMap((i) => [i, i]),
-				),
-			])
-		)
-			.flat()
-			.map((c) => services.checkHandler('Via Cargo', c));
-		if (results.filter((r) => r.result).length) {
-			res.status(200).json({ result: 'via cargo working' });
-			return await notifyAdmin({ message: 'Via Cargo working' }, 'Via Cargo working');
-		}
-		res.status(200).json({ result: 'spamming completed', codes: results.flat().length });
-	} catch (error) {
-		res.status(500).json({
-			error: 'vc spamming failed',
-			message: error.toString(),
-			result: {
-				error: services.errorResponseHandler(error),
-				service: 'Via Cargo',
-				code: 'all',
-			},
-		});
-	}
-};
-
 export default {
 	checkTrackings,
 	checkAwake,
@@ -481,5 +296,4 @@ export default {
 	checkServices,
 	checkCompletedTrackings,
 	cleanUp,
-	vc,
 };

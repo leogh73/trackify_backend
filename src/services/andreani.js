@@ -3,19 +3,15 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consults = [];
+	let consult1;
 	try {
-		consults = await Promise.all([
-			got(`${vars.ANDREANI_API_URL1.replace('code', code)}`),
-			got(`${vars.ANDREANI_API_URL2}${code}`),
-		]);
+		consult1 = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`);
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
 		if (JSON.parse(response.body).message === 'Envío no encontrado') return { error: 'No data' };
 	}
 
-	let resultEvents = JSON.parse(consults[0].body);
-	let resultOtherData = JSON.parse(consults[1].body);
+	let resultEvents = JSON.parse(consult1.body);
 
 	let eventsList = resultEvents.map((e) => {
 		let motive = 'Sin datos';
@@ -32,6 +28,9 @@ async function check(code, lastEvent) {
 	});
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+
+	let consult2 = await got(`${vars.ANDREANI_API_URL2}${code}`);
+	let resultOtherData = JSON.parse(consult2.body);
 
 	let {
 		fechaDeAlta,
