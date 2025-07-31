@@ -5,7 +5,7 @@ import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let url;
-	if (code.toString().length > 16) {
+	if (code.toLowerCase().startsWith('dvp')) {
 		code = code.toString().split('00000000')[1];
 		url = vars.URBANO_API_URL1.replace('shicode', '002273').replace(
 			'clicode',

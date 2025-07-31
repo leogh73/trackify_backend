@@ -1,12 +1,12 @@
 import NodeCache from 'node-cache';
 import db from '../modules/mongodb.js';
-import _services from '../services/_services.js';
+import services from '../services/_services.js';
 
 export const cache = new NodeCache();
 
 const setCache = async () => {
 	try {
-		let servicesData = await _services.servicesData();
+		let servicesData = await services.servicesData();
 		cache.set('Service', servicesData);
 		let statusMessage = (await db.StatusMessage.find())[0].message;
 		cache.set('StatusMessage', statusMessage);

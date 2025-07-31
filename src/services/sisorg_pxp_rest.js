@@ -73,14 +73,7 @@ async function check(code, lastEvent, service) {
 
 	let eventsList = result3
 		.map((event) => {
-			let timeStamp = new Date(event.FechaOperacion);
-			let date = `${timeStamp.getDate().toString().padStart(2, 0)}/${(timeStamp.getMonth() + 1)
-				.toString()
-				.padStart(2, 0)}/${timeStamp.getFullYear()}`;
-			let time = `${timeStamp.getHours().toString().padStart(2, 0)}:${timeStamp
-				.getMinutes()
-				.toString()
-				.padStart(2, 0)}`;
+			let { date, time } = services.dateStringHandler(event.FechaOperacion);
 			if (event.Evento === 19) return null;
 			return {
 				date,

@@ -1,7 +1,6 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
-import _services from './_services.js';
 
 async function check(code, lastEvent) {
 	let splittedCode = code.split('-');

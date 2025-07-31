@@ -1,5 +1,5 @@
-import { load } from 'cheerio';
 import got from 'got';
+import { load } from 'cheerio';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
@@ -52,37 +52,12 @@ async function check(code, lastEvent) {
 
 	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
 
-	let data2 = longCode ? data1.slice(0, 10) : data1.slice(0, 7);
-
-	let otherData = longCode
-		? {
-				'Número de factura': data2[2].split(': ')[1],
-				'Cantidad de piezas': data2[3].split(': ')[1],
-				'Números de piezas': data2[4].split(':')[1],
-				Peso: data2[5].split(':')[1].trim().length
-					? data2[5].split(': ')[1].split('.')[0] + ' kg.'
-					: 'Sin datos',
-				'Entrega a domicilio': data2[6].split(': ')[1].trim(),
-				Destinatario: data2[7].split(':')[1].trim().length
-					? data2[7].split(': ')[1].trim()
-					: 'Sin datos',
-				'DNI del destinatario': data2[7].split(': ')[1].trim().length
-					? data2[7].split(': ')[1].trim('-')
-					: 'Sin datos',
-				'Sucursal de destino': data2[9].replaceAll('-', '').length ? data2[9] : 'Sin datos',
-		  }
-		: {
-				'Número de factura': data2[3].split(': ')[1],
-				'Cantidad de piezas': data2[4].split(': ')[1],
-				'Números de piezas': data2[5].split(':')[1],
-				Peso: data2[6].split(': ')[1].length
-					? data2[6].split(': ')[1].split('.')[0] + ' kg.'
-					: 'Sin datos',
-				'Entrega a domicilio': 'Sin datos',
-				Destinatario: 'Sin datos',
-				'DNI del destinatario': 'Sin datos',
-				'Sucursal de destino': 'Sin datos',
-		  };
+	let otherData = {};
+	data1.slice(3, 8).forEach((t) => {
+		let data = t.split(':');
+		if (data.length < 2) return;
+		otherData[data[0].trim()] = data[1].trim().length ? data[1].trim() : 'Sin datos';
+	});
 
 	return {
 		events: eventsList,

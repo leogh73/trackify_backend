@@ -5,7 +5,6 @@ import { cache } from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import mercadoPago from './mercado_pago_controllers.js';
 import tracking from './trackings_controllers.js';
-import services from '../services/_services.js';
 
 const checkTrackings = async (req, res) => {
 	try {

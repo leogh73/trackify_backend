@@ -19,7 +19,7 @@ async function check(code, lastEvent) {
 		});
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
-		if (response.body.Message?.startsWith('System.Web.Services.Protocols.SoapException'))
+		if (JSON.parse(response.body).Message?.startsWith('System.Web.Services.Protocols'))
 			return { error: 'No data' };
 	}
 
@@ -37,14 +37,7 @@ async function check(code, lastEvent) {
 	let result2 = JSON.parse(JSON.parse(consult2.body).d).Table;
 
 	let eventsList = result2.map((event) => {
-		let timeStamp = new Date(event.FechaHis);
-		let date = `${timeStamp.getDate().toString().padStart(2, 0)}/${(timeStamp.getMonth() + 1)
-			.toString()
-			.padStart(2, 0)}/${timeStamp.getFullYear()}`;
-		let time = `${timeStamp.getHours().toString().padStart(2, 0)}:${timeStamp
-			.getMinutes()
-			.toString()
-			.padStart(2, 0)}`;
+		let { date, time } = services.dateStringHandler(event.FechaHis);
 		let location = `${event.Calle} ${event.CalleNro} - ${services.capitalizeText(
 			false,
 			event.LocalidadDescrip,

@@ -8,14 +8,7 @@ async function check(code, lastEvent, service, token) {
 
 	let eventsList = result1
 		.map((e) => {
-			let timeStamp = new Date(e.date);
-			let date = `${timeStamp.getDate().toString().padStart(2, 0)}/${(timeStamp.getMonth() + 1)
-				.toString()
-				.padStart(2, 0)}/${timeStamp.getFullYear()}`;
-			let time = `${timeStamp.getHours().toString().padStart(2, 0)}:${timeStamp
-				.getMinutes()
-				.toString()
-				.padStart(2, 0)}:${timeStamp.getSeconds().toString().padStart(2, 0)}`;
+			let { date, time } = services.dateStringHandler(e.date);
 			return {
 				date,
 				time,

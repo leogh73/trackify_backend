@@ -95,7 +95,10 @@ const syncronize = async (req, res) => {
 		}
 		response.statusMessage =
 			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
-		response.updatedServices = await services.check(servicesCount, servicesVersions);
+		response.updatedServices = await services.servicesCheckHandler(
+			servicesCount,
+			servicesVersions,
+		);
 		let paymentData = await mercadoPago.syncPaymentData(user, payment);
 		if (paymentData) response.mercadoPago = paymentData;
 		res.status(200).json(response);

@@ -8,6 +8,13 @@ async function check(code, lastEvent) {
 
 	const $ = load(consult.body);
 
+	if (
+		$('body > div > div.main > div > div > div.col > div > div').text() ===
+		'No se ha encontrado un paquete con ese numero de tracking.'
+	) {
+		return { error: 'No data' };
+	}
+
 	let rowStatus = [];
 	$(
 		'table > tbody > tr > td.col-md-8 > div.d-flex.mb-2.justify-content-start.align-items-center > div',

@@ -33,14 +33,7 @@ async function check(code, lastEvent) {
 				.reverse()
 		: response
 				.map((event) => {
-					let timeStamp = new Date(event.createdDate);
-					let date = `${timeStamp.getDate().toString().padStart(2, 0)}/${(timeStamp.getMonth() + 1)
-						.toString()
-						.padStart(2, 0)}/${timeStamp.getFullYear()}`;
-					let time = `${timeStamp.getHours().toString().padStart(2, 0)}:${timeStamp
-						.getMinutes()
-						.toString()
-						.padStart(2, 0)}`;
+					let { date, time } = services.dateStringHandler(event.createdDate);
 					return {
 						date,
 						time,
