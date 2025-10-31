@@ -4,6 +4,10 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
+	if (/[a-zA-Z]/g.test(code)) {
+		return { error: 'No data' };
+	}
+
 	let consult = await got.post(vars.SKYNDE_API_URL, {
 		form: { remito: '', nro_guia: code },
 	});
@@ -14,8 +18,9 @@ async function check(code, lastEvent) {
 		$(
 			'body > section > div > div > div > div.col-lg-6.col-xl-6 > div > div.card-body > div > h2',
 		).text() === 'NO HAY NÚMERO DE SEGUIMIENTO'
-	)
+	) {
 		return { error: 'No data' };
+	}
 
 	let textContent = [];
 	$(
@@ -82,7 +87,9 @@ async function check(code, lastEvent) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -100,4 +107,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 5 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

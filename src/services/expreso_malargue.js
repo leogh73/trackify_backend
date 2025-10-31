@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let splittedCode = code.split('-');
@@ -10,20 +11,24 @@ async function check(code, lastEvent) {
 
 	let result = JSON.parse(consult.body);
 
-	if (!result.data.length) return { error: 'No data' };
+	if (!result.data.length) {
+		return { error: 'No data' };
+	}
 
 	let eventsList = result.data
 		.map((event) => {
 			return {
 				date: event.fecha.split(' ')[0].split('-').reverse().join('/'),
 				time: event.fecha.split(' ')[1],
-				location: _services.capitalizeText(true, event.dondeEsta),
+				location: utils.capitalizeText(true, event.dondeEsta),
 				detail: event.des.replace(/\n/g, '').replace(/\r/g, ''),
 			};
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -31,4 +36,13 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 17 && !/^\d+$/.test(code.slice(-1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

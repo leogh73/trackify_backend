@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
@@ -9,8 +10,9 @@ async function check(code, lastEvent) {
 	});
 	const $ = load(consult.body);
 
-	if ($('#quienes').text() === 'No encontramos su número de seguimiento.Intente más tarde.')
+	if ($('#quienes').text() === 'No encontramos su número de seguimiento.Intente más tarde.') {
 		return { error: 'No data' };
+	}
 
 	let textContent1 = [];
 	$('#contenedor > section > article > div:nth-child(2) > div.tc1 > div').each(function () {
@@ -29,7 +31,7 @@ async function check(code, lastEvent) {
 	});
 
 	let origin = {
-		Sucursal: services.capitalizeText(false, textContent2[4].split('Sucursal ')[1]),
+		Sucursal: utils.capitalizeText(false, textContent2[4].split('Sucursal ')[1]),
 		Remitente: textContent2[5],
 	};
 
@@ -58,12 +60,14 @@ async function check(code, lastEvent) {
 			return {
 				date: event[0] + '/' + currenYear,
 				time: event[1],
-				detail: services.capitalizeText(true, event[2]),
+				detail: utils.capitalizeText(true, event[2]),
 			};
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -85,4 +89,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 9 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

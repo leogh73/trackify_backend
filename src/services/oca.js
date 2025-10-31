@@ -8,7 +8,9 @@ async function check(code, lastEvent) {
 	});
 	let resultEvents = JSON.parse(consultEvents.body).d;
 
-	if (!resultEvents.length) return { error: 'No data' };
+	if (!resultEvents.length) {
+		return { error: 'No data' };
+	}
 
 	let eventsList = resultEvents.map((e) => {
 		return {
@@ -21,7 +23,9 @@ async function check(code, lastEvent) {
 	});
 	eventsList.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let productNumber = resultEvents[0].NroProducto;
 
@@ -59,4 +63,16 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (
+		(code.length === 19 || code.length === 20) &&
+		code.slice(6, 10) === '0000' &&
+		/^\d+$/.test(code)
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

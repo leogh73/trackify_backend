@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult;
@@ -13,17 +14,22 @@ async function check(code, lastEvent) {
 			},
 		});
 	} catch (error) {
-		if (error.response.statusCode === 404) return { error: 'No data' };
+		if (error.response.statusCode === 404) {
+			return { error: 'No data' };
+		}
 	}
 
 	let result = JSON.parse(consult.body);
 
-	const { tracking, correo, localidad, provincia } = result[0];
+	const { tracking, correo, localidad, provincia, fecha_estimada_de_entrega } = result[0];
 
 	let eventsList = tracking.map((e) => {
 		let time = e.fecha.substr(e.fecha.length - 5);
+		let year = fecha_estimada_de_entrega.split('/')[2];
+		let splittedDate = e.fecha.split(time)[0].trim().split(' de ');
+		let month = utils.getMonthNumber['spanish'][splittedDate[1]];
 		return {
-			date: e.fecha.split(time)[0].trim(),
+			date: `${splittedDate[0]}/${month}/${year}`,
 			time,
 			detail: e.mensaje,
 		};
@@ -35,9 +41,12 @@ async function check(code, lastEvent) {
 		Teléfono: correo?.telefono ?? 'Sin datos',
 		Localidad: localidad,
 		Provincia: provincia,
+		'Fecha estimada de entrega': fecha_estimada_de_entrega,
 	};
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -51,4 +60,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 12 && !/^\d+$/.test(code.slice(0, 2)) && !/^\d+$/.test(code.slice(-1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

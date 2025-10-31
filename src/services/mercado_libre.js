@@ -1,4 +1,5 @@
 import services from './_services.js';
+import utils from './_utils.js';
 import mercadoLibre from '../controllers/mercado_libre_controllers.js';
 
 async function check(code, lastEvent, service, token) {
@@ -8,7 +9,7 @@ async function check(code, lastEvent, service, token) {
 
 	let eventsList = result1
 		.map((e) => {
-			let { date, time } = services.dateStringHandler(e.date);
+			let { date, time } = utils.dateStringHandler(e.date);
 			return {
 				date,
 				time,
@@ -47,8 +48,6 @@ async function check(code, lastEvent, service, token) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
-
-export default { check };
 
 function eventTranslate(text) {
 	switch (text) {
@@ -90,3 +89,13 @@ function eventTranslate(text) {
 			return 'Sin datos';
 	}
 }
+
+function testCode(code) {
+	let pass = false;
+	if (code.length === 11 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

@@ -1,15 +1,18 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult = await got(`${vars.CREDIFIN_LOGISTICA_API_URL}${code}`);
 	let result = JSON.parse(consult.body);
 
-	if (!result.data.tracking) return { error: 'No data' };
+	if (!result.data.tracking) {
+		return { error: 'No data' };
+	}
 
 	let eventsList = result.data.tracking.map((e) => {
-		let { date, time } = services.dateStringHandler(e.fecha);
+		let { date, time } = utils.dateStringHandler(e.fecha);
 		return {
 			date,
 			time,
@@ -19,7 +22,9 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let sender = (() => {
 		const { odocumento, onombre, ocalle, onumero, olocalidad, ocp } =
@@ -99,4 +104,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 18 && code.slice(8, 11) === '000' && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

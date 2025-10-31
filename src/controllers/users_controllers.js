@@ -1,12 +1,12 @@
 import db from '../modules/mongodb.js';
 import { dateAndTime } from '../modules/luxon.js';
-import tracking from './trackings_controllers.js';
-import google from './google_drive_controllers.js';
 import emailCheck from 'node-email-check';
-import notifyAdmin from '../modules/nodemailer.js';
-import services from '../services/_services.js';
 import { cache } from '../modules/node-cache.js';
-import mercadoPago from '../controllers/mercado_pago_controllers.js';
+import notifyAdmin from '../modules/nodemailer.js';
+import google from './google_drive_controllers.js';
+import mercadoPago from './mercado_pago_controllers.js';
+import trackingControllers from './trackings_controllers.js';
+import services from '../services/_services.js';
 
 const initialize = async (req, res) => {
 	const { token, userId } = req.body;
@@ -26,10 +26,10 @@ const initialize = async (req, res) => {
 		if (userId) {
 			let user = await db.User.findById(userId);
 			if (user) {
-				let mercadoPagoData = user.mercadoPago
-					? mercadoPago.userPaymentData(user.mercadoPago)
-					: { isValid: false };
-				response = { mercadoPagoData };
+				response = { isvalid: false };
+				if (user.mercadoPago) {
+					response = { mercadoPagoData: mercadoPago.userPaymentData(user.mercadoPago) };
+				}
 			}
 		}
 		res.status(200).json(response);
@@ -44,12 +44,14 @@ const trackingAction = async (req, res) => {
 
 	try {
 		let user = await db.User.findById(userId);
-		if (!user) return res.status(400).json({ error: 'Not authorized' });
+		if (!user) {
+			return res.status(400).json({ error: 'not authorized' });
+		}
 		let response;
 		let statusCode = 200;
 		if (action === 'add') {
 			const { title, service, code } = req.body;
-			response = await tracking.add(user, title, service, code, false);
+			response = await trackingControllers.add(user, title, service, code.trim(), false);
 			if (response.error) {
 				statusCode = 500;
 				if (response.error !== 'No data') {
@@ -61,13 +63,21 @@ const trackingAction = async (req, res) => {
 				}
 			}
 		}
+		if (action === 'autodetect') {
+			let checkResult = services.autodetect(req.body.code.toLowerCase());
+			response = { result: checkResult };
+		}
+		if (action === 'serviceNotFound') {
+			const { code, service } = req.body;
+			await db.saveLog('Service not found', { userId, code, service }, 'service not found');
+		}
 		if (action === 'rename') {
 			const { trackingId, newTitle } = req.body;
-			await tracking.rename(trackingId, newTitle);
+			await trackingControllers.rename(trackingId, newTitle);
 			response = req.body.newTitle;
 		}
 		if (action === 'remove') {
-			await tracking.remove(userId, req.body.trackingIds);
+			await trackingControllers.remove(userId, req.body.trackingIds);
 			response = req.body.trackingIds;
 		}
 		res.status(statusCode).json(response);
@@ -89,12 +99,13 @@ const syncronize = async (req, res) => {
 		}
 		await update(user, token);
 		let response = {};
-		response.data = await tracking.syncronize(JSON.parse(lastEvents));
+		response.data = await trackingControllers.syncronize(JSON.parse(lastEvents));
 		if (driveLoggedIn === 'true') {
 			response.driveStatus = await google.syncronizeDrive(userId, dateAndTime().date);
 		}
-		response.statusMessage =
-			cache.get('StatusMessage') ?? (await db.StatusMessage.find())[0].message;
+		////// REMOVE ///////
+		response.statusMessage = '';
+		////// REMOVE ///////
 		response.updatedServices = await services.servicesCheckHandler(
 			servicesCount,
 			servicesVersions,
@@ -112,7 +123,13 @@ const check = async (req, res) => {
 	const { userId, trackingData } = req.body;
 
 	try {
-		let response = await tracking.check(userId, JSON.parse(trackingData));
+		let tracking = JSON.parse(trackingData);
+		let completed = trackingControllers.checkCompletedStatus(tracking.lastEvent);
+		if (completed) {
+			let { date, time } = dateAndTime();
+			return res.status(200).json({ result: { events: [] }, checkDate: date, checkTime: time });
+		}
+		let response = await trackingControllers.check(userId, tracking);
 		let statusCode = response.result.error ? 500 : 200;
 		res.status(statusCode).json(response);
 	} catch (error) {
@@ -199,6 +216,16 @@ const update = async (user, token) => {
 	);
 };
 
+const serviceContact = async (req, res) => {
+	try {
+		let service = await db.Service.findOne({ name: req.body.serviceName });
+		res.status(200).json({ data: service.contact });
+	} catch (error) {
+		await db.saveLog('Service contact', { ...req.body }, error);
+		res.status(500).json({ error: error.toString() });
+	}
+};
+
 export default {
 	initialize,
 	trackingAction,
@@ -206,4 +233,5 @@ export default {
 	check,
 	contactForm,
 	remove,
+	serviceContact,
 };

@@ -18,6 +18,10 @@ async function check(code, lastEvent) {
 	}
 	let response = JSON.parse(consult.body);
 
+	if (response.message.startsWith('PAQUETE INEXISTENTE')) {
+		return { error: 'No data' };
+	}
+
 	let { date, time } = dateAndTime();
 
 	let event = { date, time, status: response.message };
@@ -28,4 +32,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if ((code.length === 11 || code.length === 12) && !/^\d+$/.test(code.slice(0, 5))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

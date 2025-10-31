@@ -11,7 +11,7 @@ const trackingCheckHandler = async (service, code, lastEvent, token) => {
 					statusMessage: 'Gateway Timeout',
 					body: 'Service timeout',
 				});
-			}, 8500);
+			}, 12000);
 		});
 
 	try {
@@ -29,7 +29,7 @@ const errorResponseHandler = (error) => {
 	let response = {
 		statusCode: 500,
 		statusMessage: 'Internal Server Error',
-		body: error.toString(),
+		body: error.toString() ?? null,
 	};
 	if (error.response) {
 		let { statusCode, statusMessage, body } = error.response;
@@ -41,7 +41,9 @@ const errorResponseHandler = (error) => {
 		}
 		response = { statusCode, statusMessage, body: responseBody };
 	}
-	if (error.body) response = error;
+	if (error.body) {
+		response = error;
+	}
 	return response;
 };
 
@@ -55,39 +57,17 @@ const updateResponseHandler = (eventsList, lastEvent) => {
 	};
 };
 
-const dateStringHandler = (ts) => {
-	let timestamp = new Date(ts);
-	let date = `${timestamp.getDate().toString().padStart(2, 0)}/${(timestamp.getMonth() + 1)
-		.toString()
-		.padStart(2, 0)}/${timestamp.getFullYear()}`;
-	let time = `${timestamp.getHours().toString().padStart(2, 0)}:${timestamp
-		.getMinutes()
-		.toString()
-		.padStart(2, 0)}:${timestamp.getSeconds().toString().padStart(2, 0)}`;
-	return { date, time };
-};
-
-const capitalizeText = (firstWordOnly, text) => {
-	return text
-		.toLowerCase()
-		.split(' ')
-		.map((word, index) =>
-			firstWordOnly
-				? !index
-					? word.charAt(0).toUpperCase() + word.slice(1)
-					: word
-				: word.charAt(0).toUpperCase() + word.slice(1),
-		)
-		.join(' ');
-};
-
 const servicesData = async () => {
 	let sData = await db.Service.find({});
 	let services = {};
 	Object.keys(list).forEach((service) => {
 		let index = sData.findIndex((d) => d.name === service);
-		if (index === -1) return;
-		services[service] = sData[index];
+		if (index === -1) {
+			return;
+		}
+		let serviceData = sData[index].toObject();
+		delete serviceData.contact;
+		services[service] = serviceData;
 	});
 	return services;
 };
@@ -103,12 +83,23 @@ const servicesCheckHandler = async (servicesCount, servicesVersions) => {
 	return updatedServices ? [] : sData;
 };
 
+const autodetect = (code) => {
+	return Object.keys(list)
+		.map((s) => {
+			return {
+				service: s,
+				pass: list[s].testCode(code),
+			};
+		})
+		.filter((r) => r.pass)
+		.map((r) => r.service);
+};
+
 export default {
 	trackingCheckHandler,
 	errorResponseHandler,
 	updateResponseHandler,
-	dateStringHandler,
-	capitalizeText,
 	servicesData,
 	servicesCheckHandler,
+	autodetect,
 };

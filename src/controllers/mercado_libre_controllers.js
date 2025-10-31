@@ -1,6 +1,7 @@
 import got from 'got';
 import db from '../modules/mongodb.js';
 import vars from '../modules/crypto-js.js';
+import services from '../services/_services.js';
 
 const initialize = async (req, res) => {
 	const { userId, code } = req.body;
@@ -35,7 +36,8 @@ const consult = async (req, res) => {
 	const { userId, consultType } = req.body;
 
 	try {
-		let { shippingIds, httpHeaders } = await checkShippingOrders(userId, consultType);
+		let { id, mercadoLibre } = await db.User.findById(userId);
+		let { shippingIds, httpHeaders } = await checkShippingOrders(id, mercadoLibre, consultType);
 		let shippingResults = await checkShippings(shippingIds.consult, httpHeaders);
 		let response = {
 			shippingsData: shippingResults,
@@ -44,6 +46,7 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
+		console.log(error);
 		await db.saveLog('MercadoLibre consult', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
@@ -74,39 +77,25 @@ const notification = async (req, res) => {
 	}
 };
 
-const checkUser = async (userId) => {
-	let user = await db.User.findById(userId);
-	return {
-		model: user,
-		id: user.mercadoLibre.user_id,
-		refresh_token: user.mercadoLibre.refresh_token,
-		httpHeaders: {
-			Authorization: `Bearer ${user.mercadoLibre.access_token}`,
-			'x-format-new': true,
-		},
+async function checkShippingOrders(userId, mercadoLibre, consultType) {
+	let { user_id, access_token, refresh_token } = mercadoLibre;
+	let httpHeaders = {
+		Authorization: `Bearer ${access_token}`,
+		'x-format-new': true,
 	};
-};
-
-async function checkShippingOrders(userId, consultType) {
-	let userData = await checkUser(userId);
 	let response = [];
 	try {
 		const consult = await got(
-			`https://api.mercadolibre.com/orders/search?${consultType}=${userData.id}&sort=date_desc`,
-			{ headers: userData.httpHeaders },
+			`https://api.mercadolibre.com/orders/search?${consultType}=${user_id}&sort=date_desc`,
+			{ headers: httpHeaders },
 		);
 		response = JSON.parse(consult.body);
 	} catch (error) {
 		if (error.response.statusCode === 401) {
-			await renewTokenML(userData.model);
-			return await checkShippingOrders(userId, consultType);
-		} else {
-			return await db.saveLog(
-				'MercadoLibre check shipping orders',
-				{ userId, consultType },
-				error,
-			);
+			let newMeLiData = await renewTokenML(refresh_token, userId);
+			return await checkShippingOrders(userId, newMeLiData, consultType);
 		}
+		await db.saveLog('MercadoLibre check shipping orders', { userId, consultType }, error);
 	}
 
 	let shippingOrders = response.results
@@ -132,7 +121,7 @@ async function checkShippingOrders(userId, consultType) {
 			consult: consultPart,
 			total: shippingOrders,
 		},
-		httpHeaders: userData.httpHeaders,
+		httpHeaders: httpHeaders,
 	};
 }
 
@@ -168,44 +157,57 @@ async function checkShipping(shippingOrder, httpHeaders) {
 	};
 }
 
-async function fetchTrackingData(shippingId, token) {
-	let user = await db.User.findOne({ tokenFB: token });
-	let userData = await checkUser(user.id);
+async function fetchTrackingData(shippingId, mercadoLibre, userId) {
+	let { access_token, refresh_token } = mercadoLibre;
+	let httpHeaders = {
+		Authorization: `Bearer ${access_token}`,
+		'x-format-new': true,
+	};
 	try {
 		return await Promise.all([
 			got(`https://api.mercadolibre.com/shipments/${shippingId}/history`, {
-				headers: userData.httpHeaders,
+				headers: httpHeaders,
 			}),
 			got(`https://api.mercadolibre.com/shipments/${shippingId}`, {
-				headers: userData.httpHeaders,
+				headers: httpHeaders,
 			}),
 		]);
 	} catch (error) {
 		if (error.response.statusCode === 401) {
-			await renewTokenML(userData.model);
-			return await fetchTrackingData(shippingId, token);
-		} else {
-			return await db.saveLog('ML Fetch Tracking Data', { userId: user.id, shippingId }, error);
+			let newMeLiData = await renewTokenML(refresh_token, userId);
+			return await fetchTrackingData(shippingId, newMeLiData, userId);
 		}
+		await db.saveLog(
+			'ML Fetch Tracking Data',
+			{ userId, shippingId: shippingId ?? 'Sin datos' },
+			error,
+		);
 	}
 }
 
-async function renewTokenML(user) {
-	let consult = await got.post(
-		'https://api.mercadolibre.com/oauth/token',
-		{
-			form: {
-				grant_type: 'refresh_token',
-				client_id: `${vars.ML_CLIENT_ID}`,
-				client_secret: `${vars.ML_CLIENT_SECRET}`,
-				refresh_token: user.mercadoLibre.refresh_token,
+async function renewTokenML(refreshToken, userId) {
+	try {
+		let consult = await got.post(
+			'https://api.mercadolibre.com/oauth/token',
+			{
+				form: {
+					grant_type: 'refresh_token',
+					client_id: `${vars.ML_CLIENT_ID}`,
+					client_secret: `${vars.ML_CLIENT_SECRET}`,
+					refresh_token: refreshToken,
+				},
 			},
-		},
-		{ headers: { accept: 'application/json', content_type: 'application/x-www-form-urlencoded' } },
-	);
-	let { access_token, user_id, refresh_token } = JSON.parse(consult.body);
-	let newMeLiData = { access_token, user_id, refresh_token };
-	await db.User.updateOne({ _id: user.id }, { $set: { mercadoLibre: newMeLiData } });
+			{
+				headers: { accept: 'application/json', content_type: 'application/x-www-form-urlencoded' },
+			},
+		);
+		let { access_token, user_id, refresh_token } = JSON.parse(consult.body);
+		let newMeLiData = { access_token, user_id, refresh_token };
+		await db.User.updateOne({ _id: userId }, { $set: { mercadoLibre: newMeLiData } });
+		return newMeLiData;
+	} catch (error) {
+		await db.saveLog('ML token renew failed', { refreshToken, userId }, error);
+	}
 }
 
 function convertDate(date) {

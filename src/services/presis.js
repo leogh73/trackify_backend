@@ -45,4 +45,16 @@ async function check(code, lastEvent, service) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (
+		(code.length === 5 && /^\d+$/.test(code)) ||
+		(code.length === 8 && /^\d+$/.test(code)) ||
+		code.length === 9
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

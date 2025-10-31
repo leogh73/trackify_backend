@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent, service) {
 	let serviceCode;
@@ -33,7 +34,9 @@ async function check(code, lastEvent, service) {
 
 	let result2 = JSON.parse(consult2.body);
 
-	if (!result2.length) return { error: 'No data' };
+	if (!result2.length) {
+		return { error: 'No data' };
+	}
 
 	let {
 		RemitenteCliente,
@@ -44,10 +47,10 @@ async function check(code, lastEvent, service) {
 	} = result2[0];
 
 	let otherData = {
-		Remitente: services.capitalizeText(false, RemitenteCliente.RazonSocial ?? 'Sin datos'),
-		Destinatario: services.capitalizeText(false, DestinatarioCliente.RazonSocial ?? 'Sin datos'),
-		Origen: services.capitalizeText(false, LocalidadOrigenNombre ?? 'Sin datos'),
-		Destino: services.capitalizeText(false, LocalidadDestinoNombre ?? 'Sin datos'),
+		Remitente: utils.capitalizeText(false, RemitenteCliente.RazonSocial ?? 'Sin datos'),
+		Destinatario: utils.capitalizeText(false, DestinatarioCliente.RazonSocial ?? 'Sin datos'),
+		Origen: utils.capitalizeText(false, LocalidadOrigenNombre ?? 'Sin datos'),
+		Destino: utils.capitalizeText(false, LocalidadDestinoNombre ?? 'Sin datos'),
 	};
 
 	let detail = {
@@ -73,7 +76,7 @@ async function check(code, lastEvent, service) {
 
 	let eventsList = result3
 		.map((event) => {
-			let { date, time } = services.dateStringHandler(event.FechaOperacion);
+			let { date, time } = utils.dateStringHandler(event.FechaOperacion);
 			if (event.Evento === 19) return null;
 			return {
 				date,
@@ -84,7 +87,9 @@ async function check(code, lastEvent, service) {
 		.filter((e) => !!e)
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -95,8 +100,6 @@ async function check(code, lastEvent, service) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
-
-export default { check };
 
 function eventDecode(code, location) {
 	switch (code) {
@@ -143,3 +146,18 @@ function eventDecode(code, location) {
 			return 'Evento sin descripción';
 	}
 }
+
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (
+		code.length === 13 &&
+		code.slice(5, 8) === '000' &&
+		/^\d+$/.test(code.slice(0, 1)) === false
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

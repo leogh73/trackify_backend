@@ -1,6 +1,5 @@
 import andesmarCargas from './andesmar_cargas.js';
 import andreani from './andreani.js';
-import argCargo from './arg_cargo.js';
 import buspack from './buspack.js';
 import cainiao from './cainiao.js';
 import centralDeCargasTerrestres from './central_de_cargas_terrestres.js';
@@ -49,7 +48,6 @@ import welivery from './welivery.js';
 const list = {
 	'Andesmar Cargas': andesmarCargas,
 	Andreani: andreani,
-	'Arg Cargo': argCargo,
 	'Balut Express': sisorgPxpRest,
 	Buspack: buspack,
 	'Cainiao (AliExpress)': cainiao,

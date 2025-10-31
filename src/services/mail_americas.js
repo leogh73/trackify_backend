@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
@@ -32,14 +33,16 @@ async function check(code, lastEvent) {
 
 	let eventsList = eventsData.map((event) => {
 		let dateAndTime = event.slice(-1)[0].split('        ');
-		let date = dateAndTime[0].split(', ')[1];
-		let time = dateAndTime[1].split(' (')[0];
+		let date = dateAndTime[0].split(', ').slice(1).join(', ');
+		let time = utils.convert12to24Hour(dateAndTime[1].split(' (')[0]);
 		let status = event[0];
 		let detail = event[1] === event.slice(-1)[0] ? 'Sin datos' : event[1].split(' -')[0];
 		return { date, time, status, detail };
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -47,4 +50,15 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 15 && code.slice(0, 4) === 'mlar' && code.slice(-2) === 'ex') {
+		pass = true;
+	}
+	if (code.length === 13 && /^\d+$/.test(code.slice(2, 11))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

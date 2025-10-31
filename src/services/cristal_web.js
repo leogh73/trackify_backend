@@ -34,4 +34,13 @@ async function check(code, lastEvent, service) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if ((code.length === 9 || code.length === 7) && !/^\d+$/.test(code.slice(-1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

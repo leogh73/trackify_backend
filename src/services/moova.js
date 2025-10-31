@@ -7,7 +7,9 @@ async function check(code, lastEvent) {
 	try {
 		consult = await got(vars.MOOVA_API_URL.replace('code', code));
 	} catch (error) {
-		if (error.response.statusCode === 404) return { error: 'No data' };
+		if (error.response.statusCode === 404) {
+			return { error: 'No data' };
+		}
 	}
 
 	let result = JSON.parse(consult.body);
@@ -45,7 +47,9 @@ async function check(code, lastEvent) {
 		Conductor: courier.name,
 	};
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -58,8 +62,6 @@ async function check(code, lastEvent) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
-
-export default { check };
 
 function eventTranslate(text) {
 	switch (text) {
@@ -83,3 +85,14 @@ function eventTranslate(text) {
 			return 'Sin datos';
 	}
 }
+
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 32) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

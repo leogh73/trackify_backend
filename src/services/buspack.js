@@ -12,8 +12,9 @@ async function check(code, lastEvent) {
 	let consult = await got(`${vars.BUSPACK_API_URL.replace('code', checkCode)}`);
 	let result = JSON.parse(consult.body);
 
-	if (result.mensaje.startsWith('No se encontro la operacion con numero:'))
+	if (result.mensaje.startsWith('No se encontro la operacion con numero:')) {
 		return { error: 'No data' };
+	}
 
 	const $ = load(result.template.template);
 
@@ -50,7 +51,9 @@ async function check(code, lastEvent) {
 	});
 	let eventsList = longCode ? events.reverse() : events;
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let otherData = {};
 	data1.slice(3, 8).forEach((t) => {
@@ -71,4 +74,30 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (
+		code.length === 13 &&
+		code.slice(5, 8) === '000' &&
+		!/^\d+$/.test(code.slice(0, 1)) &&
+		/^\d+$/.test(code.slice(1, 2))
+	) {
+		pass = true;
+	}
+	if (code.length === 10 && !/^\d+$/.test(code.slice(0, 1))) {
+		pass = true;
+	}
+	if ((code.length === 9 || code.length === 8) && code.slice(-2) === '25') {
+		pass = true;
+	}
+	if (
+		((code.length === 9 || code.length === 8 || code.length === 13) && code.slice(0, 1) === 'r') ||
+		code.slice(0, 1) === 'b'
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

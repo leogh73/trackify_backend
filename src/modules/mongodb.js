@@ -77,17 +77,12 @@ const serviceSchema = new Schema({
 	contact: { type: Object, required: true },
 });
 
-const statusMessageSchema = new Schema({
-	message: { type: String, required: true },
-});
-
 const User = mongoose.model('User', userSchema);
 const Tracking = mongoose.model('Tracking', trackingSchema);
 const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
 const Contact = mongoose.model('Contact', contactSchema);
 const Log = mongoose.model('Log', logSchema);
 const Service = mongoose.model('Service', serviceSchema);
-const StatusMessage = mongoose.model('Status Message', statusMessageSchema);
 
 const saveLog = async (actionName, actionDetail, errorMessage) => {
 	let { date, time } = dateAndTime();
@@ -105,6 +100,5 @@ export default {
 	Contact,
 	Log,
 	Service,
-	StatusMessage,
 	saveLog,
 };

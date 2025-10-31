@@ -1,9 +1,10 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
-	let splittedData = await vars.VIACARGO_API_URL.split('----');
+	let splittedData = vars.VIACARGO_API_URL.split('----');
 
 	let consult = await got(`${splittedData[0]}${code}`, {
 		headers: {
@@ -16,7 +17,9 @@ async function check(code, lastEvent) {
 
 	let result = JSON.parse(consult.body);
 
-	if (!result.ok.length) return { error: 'No data' };
+	if (!result.ok.length) {
+		return { error: 'No data' };
+	}
 
 	let data = result.ok[0].objeto;
 
@@ -30,9 +33,9 @@ async function check(code, lastEvent) {
 	});
 
 	let destination = {
-		'Nombre del destinatario': services.capitalizeText(false, data.nombreDestinatario),
+		'Nombre del destinatario': utils.capitalizeText(false, data.nombreDestinatario),
 		'DNI del destinatario': data.nitDestinatario,
-		Dirección: services.capitalizeText(false, data.direccionDestinatario),
+		Dirección: utils.capitalizeText(false, data.direccionDestinatario),
 		'Código postal': data.codigoPostalDestinatario,
 		Localidad: data.poblacionDestinatario,
 		Provincia: data.nombreProvinciaDestinatario,
@@ -63,9 +66,9 @@ async function check(code, lastEvent) {
 	}
 
 	let origin = {
-		Nombre: services.capitalizeText(false, data.nombreRemitente),
+		Nombre: utils.capitalizeText(false, data.nombreRemitente),
 		DNI: data.nitRemitente,
-		Dirección: services.capitalizeText(false, data.direccionRemitente),
+		Dirección: utils.capitalizeText(false, data.direccionRemitente),
 		'Código postal': data.codigoPostalRemitente,
 		Localidad: data.poblacionRemitente,
 		Fecha: data.fechaHoraAdmision.split(' ')[0],
@@ -75,7 +78,7 @@ async function check(code, lastEvent) {
 	let otherData = {
 		'Peso declarado': `${data.kilos + ' kg.'}`,
 		'Número de piezas': data.numeroTotalPiezas,
-		Servicio: services.capitalizeText(false, data.descripcionServicio),
+		Servicio: utils.capitalizeText(false, data.descripcionServicio),
 		Firma: `${data.nifQuienRecibe ? data.nifQuienRecibe : '-'}`,
 	};
 
@@ -99,4 +102,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 12 && /^\d+$/.test(code) && code.slice(0, 4) === '9990') {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

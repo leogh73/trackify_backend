@@ -3,21 +3,33 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent) {
-	let consult = await got.post(vars.CLICPAQ_API_URL, {
-		json: {
-			operationName: 'seguimiento',
-			variables: { id: parseInt(code) },
-			query:
-				'query seguimiento($id: Int!) {\n  trazabilidadPublica(id: $id) {\n    infoGuia {\n      guia\n      fecha\n      oblea\n      remitente {\n        localidad {\n          nombre\n          __typename\n        }\n        __typename\n      }\n      destinatario {\n        localidad {\n          nombre\n          __typename\n        }\n        __typename\n      }\n      adicionales {\n        ultimoEstado {\n          posicion\n          observacion\n          __typename\n        }\n        __typename\n      }\n      transporte {\n        nombre\n        seguimiento\n        __typename\n      }\n      __typename\n    }\n    trazabilidad {\n      fecha\n      descripcion\n      observacion\n      __typename\n    }\n    __typename\n  }\n}\n',
-		},
-	});
-	let result = JSON.parse(consult.body);
+	let consult;
 
+	try {
+		consult = await got.post(vars.CLICPAQ_API_URL, {
+			json: {
+				operationName: 'seguimiento',
+				variables: { id: parseInt(code) },
+				query:
+					'query seguimiento($id: Int!) {\n  trazabilidadPublica(id: $id) {\n    infoGuia {\n      guia\n      fecha\n      oblea\n      remitente {\n        localidad {\n          nombre\n          __typename\n        }\n        __typename\n      }\n      destinatario {\n        localidad {\n          nombre\n          __typename\n        }\n        __typename\n      }\n      adicionales {\n        ultimoEstado {\n          posicion\n          observacion\n          __typename\n        }\n        __typename\n      }\n      transporte {\n        nombre\n        seguimiento\n        __typename\n      }\n      __typename\n    }\n    trazabilidad {\n      fecha\n      descripcion\n      observacion\n      __typename\n    }\n    __typename\n  }\n}\n',
+			},
+		});
+	} catch (error) {
+		let result = services.errorResponseHandler(error);
+		if (result.body.errors[0].message.includes('must not be null.')) {
+			return { error: 'No data' };
+		}
+		return result;
+	}
+
+	let result = JSON.parse(consult.body);
 	const { trazabilidad, infoGuia } = result.data.trazabilidadPublica;
-	if (!trazabilidad && !infoGuia) return { error: 'No data' };
+	if (!trazabilidad && !infoGuia) {
+		return { error: 'No data' };
+	}
 
 	let eventsList = trazabilidad.map((e) => {
-		let { date, time } = services.dateStringHandler(e.fecha);
+		let { date, time } = Handler(parseInt(e.fecha));
 		return {
 			date,
 			time,
@@ -36,7 +48,9 @@ async function check(code, lastEvent) {
 			.join(' '),
 	};
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -50,4 +64,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 7 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

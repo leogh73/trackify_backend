@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult = await got.post(vars.WELIVERY_API_URL, {
@@ -19,12 +20,14 @@ async function check(code, lastEvent) {
 		return {
 			date: splittedData[0],
 			time: splittedData[1],
-			status: services.capitalizeText(true, e.estado),
+			status: utils.capitalizeText(true, e.estado),
 		};
 	});
 	eventsList.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let splittedDateBuy = date_buy.split(' ');
 	let otherData = {
@@ -47,4 +50,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 8 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

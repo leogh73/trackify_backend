@@ -18,7 +18,9 @@ async function check(code, lastEvent) {
 		rowList.push($(this).text());
 	});
 
-	if (rowList[1].length === 1) return { error: 'No data' };
+	if (rowList[1].length === 1) {
+		return { error: 'No data' };
+	}
 
 	let { date, time } = dateAndTime();
 
@@ -30,4 +32,13 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 13 && !/^\d+$/.test(code.slice(0, 1)) && /^\d+$/.test(code.slice(1, 2))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

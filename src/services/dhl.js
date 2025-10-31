@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult;
@@ -12,13 +13,16 @@ async function check(code, lastEvent) {
 			},
 		});
 	} catch (error) {
-		if (JSON.parse(error.response.body).detail === 'No shipment with given tracking number found.')
+		if (
+			JSON.parse(error.response.body).detail === 'No shipment with given tracking number found.'
+		) {
 			return { error: 'No data' };
+		}
 	}
 	let result = JSON.parse(consult.body).shipments[0];
 
 	let eventsList = result.events.map((e) => {
-		let { date, time } = services.dateStringHandler(e.timestamp);
+		let { date, time } = utils.dateStringHandler(e.timestamp);
 		return {
 			date,
 			time,
@@ -27,9 +31,9 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	const { id, service, origin, destination, status, details } = result;
+	const { id, status, details, service, origin, destination } = result;
 
-	let { date, time } = services.dateStringHandler(status.timestamp);
+	let { date, time } = utils.dateStringHandler(status.timestamp);
 
 	let shippingStatus = {
 		Fecha: date,
@@ -61,12 +65,14 @@ async function check(code, lastEvent) {
 		return response;
 	}
 
-	let shippingDetail = {
-		Número: id,
-		Servicio: service,
-		Origen: origin.address.addressLocality,
-		Destino: destination.address.addressLocality,
-	};
+	let shippingDetail = origin
+		? {
+				Número: id,
+				Servicio: service,
+				Origen: origin.address.addressLocality,
+				Destino: destination.address.addressLocality,
+		  }
+		: { 'Sin datos': 'Sin datos' };
 
 	let detailsData = {
 		'Cantidad de piezas': details.totalNumberOfPieces,
@@ -83,7 +89,7 @@ async function check(code, lastEvent) {
 		detailsData['Link de firma'] = details.proofOfDelivery.signatureUrl;
 		detailsData['Link de documento'] = details.proofOfDelivery.documentUrl;
 		if (details.proofOfDelivery.timestamp) {
-			detailsData.Fecha = services.dateStringHandler(details.proofOfDelivery.timestamp);
+			detailsData.Fecha = utils.dateStringHandler(details.proofOfDelivery.timestamp);
 			detailsData.Hora = details.proofOfDelivery.timestamp.split('T')[1];
 		}
 		if (details.proofOfDelivery.signed) {
@@ -112,4 +118,27 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+const patterns = [
+	// Specific DHL patterns to avoid conflicts
+	new RegExp(/^[A-Z]{3}\d{7}$/i), // DHL eCommerce (3 letters + 7 digits)
+	new RegExp(/^[A-Z]{2}\d{16,18}$/i), // DHL eCommerce GM format
+	new RegExp(/^GM\d{16}$/), // DHL Global Mail
+	new RegExp(/^J[A-Z]{2}\d{10}$/i), // DHL Global Forwarding
+	new RegExp(/^\d{4}[- ]\d{4}[- ]\d{2}$/), // DHL formatted - require separators
+	new RegExp(/^[1-7]\d{9}$/), // DHL Express (10 digits) - avoid 8xxx and 9xxx
+	new RegExp(/^[1-7]\d{10}$/), // DHL Express extended (11 digits)
+	// Legacy pattern - consolidated to avoid duplicates
+	new RegExp(/^[1-7]\d{2}[- ]\d{8}$/), // Legacy DHL with separators
+];
+
+function testCode(code) {
+	let pass = false;
+	for (let pattern of patterns) {
+		if (pattern.test(code)) {
+			return true;
+		}
+	}
+	return pass;
+}
+
+export default { check, testCode };

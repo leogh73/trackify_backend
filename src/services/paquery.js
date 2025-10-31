@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult;
@@ -9,7 +10,9 @@ async function check(code, lastEvent) {
 			headers: { Authorization: vars.PAQUERY_API_AUTHORIZATION },
 		});
 	} catch (error) {
-		if (services.errorResponseHandler(error).statusCode === 404) return { error: 'No data' };
+		if (services.errorResponseHandler(error).statusCode === 404) {
+			return { error: 'No data' };
+		}
 	}
 
 	let result = JSON.parse(consult.body).data[0];
@@ -19,7 +22,7 @@ async function check(code, lastEvent) {
 	});
 
 	let eventsList = events.map((e) => {
-		let { date, time } = services.dateStringHandler(e.creationDate);
+		let { date, time } = utils.dateStringHandler(e.creationDate);
 		let status = e.message.split(' a estado ')[1].split(', usuario:')[0];
 		let motive = 'usuario' + e.message.split(' a estado ')[1].split(' usuario:')[1];
 		if (status.includes('Intento de Entrega ')) {
@@ -33,7 +36,7 @@ async function check(code, lastEvent) {
 	});
 
 	let firstElement = (() => {
-		let { date, time } = services.dateStringHandler(result.creationDate);
+		let { date, time } = utils.dateStringHandler(result.creationDate);
 		let message = result.logStatusPackages[0].message.split(' a estado ')[0];
 		return {
 			date,
@@ -44,7 +47,9 @@ async function check(code, lastEvent) {
 	})();
 	eventsList.push(firstElement);
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let resultOtherData = result.shippingScheduleDestination;
 
@@ -94,4 +99,15 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 12 && !/^\d+$/.test(code.slice(0, 2)) && /^\d+$/.test(code.slice(3))) {
+		pass = true;
+	}
+	if (code.length === 15 && /^\d+$/.test(code) && code.slice(2, 5) !== '000') {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

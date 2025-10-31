@@ -31,8 +31,9 @@ async function check(code, lastEvent) {
 	if (
 		$('body > div > div > div.col-xs-10.col-xs-offset-1.col-sm-8.col-sm-offset-2 > h3').text() ===
 		'No se registran movimientos para el comprobante enviado'
-	)
+	) {
 		return { error: 'No data' };
+	}
 
 	let eventsList = rowDateTime
 		.map((e, i) => {
@@ -42,7 +43,9 @@ async function check(code, lastEvent) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -50,4 +53,18 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (
+		code.length === 13 &&
+		code.slice(5, 8) === '000' &&
+		/^\d+$/.test(code.slice(0, 1)) === false &&
+		/^\d+$/.test(code.slice(1, 2))
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

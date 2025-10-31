@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let checkCode = code.split('-');
@@ -26,14 +27,16 @@ async function check(code, lastEvent) {
 			return {
 				date: result.movimientos[k].Fecha,
 				time: result.movimientos[k].Hora,
-				location: services.capitalizeText(false, result.movimientos[k].Localidad),
-				branch: services.capitalizeText(false, result.movimientos[k].Sucursal),
-				description: services.capitalizeText(false, result.movimientos[k].Evento),
+				location: utils.capitalizeText(false, result.movimientos[k].Localidad),
+				branch: utils.capitalizeText(false, result.movimientos[k].Sucursal),
+				description: utils.capitalizeText(false, result.movimientos[k].Evento),
 			};
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -41,4 +44,13 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 11 && !/^\d+$/.test(code.slice(4, 1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

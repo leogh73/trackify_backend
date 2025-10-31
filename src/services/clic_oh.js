@@ -8,7 +8,9 @@ async function check(code, lastEvent) {
 	});
 	let result1 = JSON.parse(consult1.body);
 
-	if (result1.message === 'Servicio no encontrado por codigo') return { error: 'No data' };
+	if (result1.message.startsWith('Servicio no encontrado por codigo')) {
+		return { error: 'No data' };
+	}
 
 	let { destinatarioNombre, destino, entrgTraces } = result1.delivery;
 
@@ -25,7 +27,9 @@ async function check(code, lastEvent) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let destination = (() => {
 		const { direccionNmz, instrucciones } = destino;
@@ -108,4 +112,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 12 && /^\d+$/.test(code) && code.slice(0, 4) !== '9990') {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

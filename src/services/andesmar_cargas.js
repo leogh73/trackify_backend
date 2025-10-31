@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consult1;
@@ -19,8 +20,9 @@ async function check(code, lastEvent) {
 		});
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
-		if (JSON.parse(response.body).Message?.startsWith('System.Web.Services.Protocols'))
+		if (JSON.parse(response.body).Message?.startsWith('System.Web.Services.Protocols')) {
 			return { error: 'No data' };
+		}
 	}
 
 	let resultOtherData = JSON.parse(JSON.parse(consult1.body).d).Table[0];
@@ -38,10 +40,10 @@ async function check(code, lastEvent) {
 
 	let eventsList = result2.map((event) => {
 		let { date, time } = services.dateStringHandler(event.FechaHis);
-		let location = `${event.Calle} ${event.CalleNro} - ${services.capitalizeText(
+		let location = `${event.Calle} ${event.CalleNro} - ${utils.capitalizeText(
 			false,
 			event.LocalidadDescrip,
-		)} - ${services.capitalizeText(false, event.Provincia)} - Tel: ${event.Telefono}`;
+		)} - ${utils.capitalizeText(false, event.Provincia)} - Tel: ${event.Telefono}`;
 		return {
 			date,
 			time,
@@ -50,12 +52,14 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let otherData = {
-		Origen: services.capitalizeText(false, resultOtherData.Origen),
-		Destino: services.capitalizeText(false, resultOtherData.Destino),
-		Destinatario: services.capitalizeText(false, resultOtherData.Destinatario),
+		Origen: utils.capitalizeText(false, resultOtherData.Origen),
+		Destino: utils.capitalizeText(false, resultOtherData.Destino),
+		Destinatario: utils.capitalizeText(false, resultOtherData.Destinatario),
 		'Modalidad de entrega': resultOtherData.ModalidadEntregaDescrip,
 		'Tipo de venta': resultOtherData.UnidadVentaDescrip,
 	};
@@ -67,4 +71,15 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 6 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	if (code.slice(0, 2) === 'as' && /^\d+$/.test(code.slice(2))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

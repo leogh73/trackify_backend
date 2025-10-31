@@ -52,7 +52,9 @@ async function check(code, lastEvent) {
 		Servicio: serviceData[3].length ? serviceData[3] : 'Sin datos',
 	};
 
-	if (!JSON.parse(param1).producto) return { error: 'No data' };
+	if (!JSON.parse(param1).producto) {
+		return { error: 'No data' };
+	}
 
 	let response2 = await got.post(`${vars.URBANO_API_URL2}`, {
 		form: { accion: 'getDetalle', param1 },
@@ -90,7 +92,9 @@ async function check(code, lastEvent) {
 	});
 	eventsList.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -108,4 +112,22 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 24 && code.slice(0, 4) === 'dvpq') {
+		pass = true;
+	}
+	if (code.length === 19 && code.slice(0, 8) === '1039mlar') {
+		pass = true;
+	}
+	if ((code.length === 11 || code.length === 14) && /^\d+$/.test(code)) {
+		pass = true;
+		return pass;
+	}
+	if (code.length === 16 && !/^\d+$/.test(code.slice(-1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

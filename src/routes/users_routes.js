@@ -7,3 +7,4 @@ router.post('/:userId/:action', user.trackingAction);
 router.post('/syncronize', user.syncronize);
 router.post('/check', user.check);
 router.post('/contact', user.contactForm);
+router.post('/serviceContact', user.serviceContact);

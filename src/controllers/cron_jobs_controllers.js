@@ -135,16 +135,9 @@ const checkPayments = async (req, res) => {
 
 const checkServices = async (req, res) => {
 	try {
-		let totalFailedChecks = await db.Log.find({
-			actionName: 'check cycle',
-			errorMessage: 'failed checks',
-		});
-		let response = {
-			message: 'Services Check Completed',
-			erroredServices: [],
-		};
-		let filterResults = [];
-		for (let failedCheck of totalFailedChecks) {
+		let cycleFailedChecks = await db.Log.find({ actionName: 'check cycle' });
+		let groupCycleFailed = [];
+		for (let failedCheck of cycleFailedChecks) {
 			let logResults = [];
 			for (let check of failedCheck.actionDetail) {
 				let index = logResults.findIndex((log) => log.service === check.service);
@@ -159,10 +152,16 @@ const checkServices = async (req, res) => {
 					logResults.push(serviceResult);
 				}
 			}
-			filterResults.push(logResults);
+			groupCycleFailed.push(logResults);
 		}
+		let addTrackingFailed = await db.Log.find({ actionName: 'tracking add failed' });
+		let groupTrackingFailed = addTrackingFailed.map((log) => {
+			let { error, data } = log.actionDetail;
+			return { id: log.id, error, service: data.service, code: data.code };
+		});
+		let totalFailedChecks = [...groupCycleFailed.flat(), ...groupTrackingFailed];
 		let filteredChecks = [];
-		filterResults.flat().forEach((check) => {
+		totalFailedChecks.forEach((check) => {
 			let index = filteredChecks.findIndex((ch) => ch.service === check.service);
 			if (index === -1) {
 				check.count = 1;
@@ -171,41 +170,17 @@ const checkServices = async (req, res) => {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
-		let failedServices = filteredChecks.filter(
-			(service) => service.count > 30 && service.body !== 'No data',
-		);
-		let message = '';
+		console.log(filteredChecks);
+		let failedServices = filteredChecks.filter((service) => service.count > 30);
+		let response = {
+			message: 'Services Check Completed',
+			erroredServices: [],
+		};
 		if (failedServices.length) {
-			response.failedServices = failedServices.map((api) => api.service);
-			let serviceMessage = '';
-			if (response.failedServices.length === 1) {
-				serviceMessage = `el sitio de ${response.failedServices[0]}`;
-			}
-			if (response.failedServices.length > 1) {
-				let servicesList = [...response.failedServices];
-				let lastService = ` y ${servicesList.splice(-1)[0]}`;
-				let servicesMessageList = servicesList.join(', ') + lastService;
-				serviceMessage = `los sitios de ${servicesMessageList}`;
-			}
-			message = `Habría demoras y/o fallos en ${serviceMessage}. La funcionalidad de la aplicación con ${
-				serviceMessage.startsWith('los') ? 'éstos servicios' : 'éste servicio'
-			}, podría estar limitada.`;
+			response.erroredServices = failedServices.map((api) => api.service);
+			notifyAdmin(failedServices, 'Services Access Failed');
 		}
-		await Promise.all([
-			failedServices.length ? notifyAdmin(failedServices, 'Services Access Failed') : null,
-			db.StatusMessage.findOneAndUpdate(
-				{ _id: '653d5e9b1f65bb18ab367986' },
-				{
-					$set: {
-						message: message,
-					},
-				},
-			),
-		]);
-		cache.set('StatusMessage', message);
 		res.status(200).json(response);
-		let failedChecksIds = totalFailedChecks.map((log) => log.id);
-		await db.Log.deleteMany({ _id: { $in: failedChecksIds } });
 	} catch (error) {
 		res.status(500).json({ error: 'Services Check Failed', message: error.toString() });
 		await db.saveLog('Services Check', 'services check failed', error);

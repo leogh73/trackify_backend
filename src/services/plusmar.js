@@ -7,6 +7,7 @@ async function check(code, lastEvent, service) {
 	let companyName = 'PLU';
 	if (service === 'Jetmar') companyName = 'MAR';
 	if (service === 'Condor Estrella') companyName = 'CON';
+
 	let consult = await got.post(vars.PLUSMAR_JETMAR_CONDOR_API_URL, {
 		form: {
 			empresa: companyName,
@@ -19,7 +20,9 @@ async function check(code, lastEvent, service) {
 		},
 	});
 
-	if (consult.body === 'Sin resultados. Revise el numero de guia') return { error: 'No data' };
+	if (consult.body === 'Sin resultados. Revise el numero de guia') {
+		return { error: 'No data' };
+	}
 
 	let { date, time } = dateAndTime();
 
@@ -35,4 +38,13 @@ async function check(code, lastEvent, service) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 9 && !/^\d+$/.test(code.slice(0, 1))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

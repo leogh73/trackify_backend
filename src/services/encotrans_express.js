@@ -13,7 +13,9 @@ async function check(code, lastEvent) {
 		},
 	});
 
-	if (consult.body === '3') return { error: 'No data' };
+	if (consult.body === '3') {
+		return { error: 'No data' };
+	}
 
 	const $ = load(consult.body.trim());
 
@@ -38,7 +40,9 @@ async function check(code, lastEvent) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -46,4 +50,13 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 13 && !/^\d+$/.test(code.slice(0, 1)) && /^\d+$/.test(code.slice(1, 2))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

@@ -9,7 +9,9 @@ async function check(code, lastEvent) {
 	let consult = await got(`${vars.HOP_API_URL2.replace('buildId', buildId)}${code}`);
 	let result = JSON.parse(consult.body).pageProps.trackingData;
 
-	if (!result) return { error: 'No data' };
+	if (!result) {
+		return { error: 'No data' };
+	}
 
 	const dateFormat = (data) => {
 		let date = data.split(' ')[0].split('-').reverse().join('/');
@@ -36,7 +38,9 @@ async function check(code, lastEvent) {
 		return { date, time, description: t.description };
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let client = {
 		Nombre: client_name,
@@ -92,4 +96,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 15 && /^\d+$/.test(code) && code.slice(2, 5) !== '000') {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

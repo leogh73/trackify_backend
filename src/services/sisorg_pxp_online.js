@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent, service) {
 	let serviceCode = {
@@ -17,7 +18,9 @@ async function check(code, lastEvent, service) {
 	);
 	let result = JSON.parse(consult.body);
 
-	if (result.message === 'Numero de Guia inexistente.') return { error: 'No data' };
+	if (result.message === 'Numero de Guia inexistente.') {
+		return { error: 'No data' };
+	}
 
 	let {
 		Piezas,
@@ -28,14 +31,14 @@ async function check(code, lastEvent, service) {
 	} = result;
 
 	let otherData = {
-		Remitente: services.capitalizeText(false, RemitenteRazonSocial ?? 'Sin datos'),
-		Destinatario: services.capitalizeText(false, DestinatarioRazonSocial ?? 'Sin datos'),
-		Origen: services.capitalizeText(false, LocalidadOrigen ?? 'Sin datos'),
-		Destino: services.capitalizeText(false, LocalidadDestino ?? 'Sin datos'),
+		Remitente: utils.capitalizeText(false, RemitenteRazonSocial ?? 'Sin datos'),
+		Destinatario: utils.capitalizeText(false, DestinatarioRazonSocial ?? 'Sin datos'),
+		Origen: utils.capitalizeText(false, LocalidadOrigen ?? 'Sin datos'),
+		Destino: utils.capitalizeText(false, LocalidadDestino ?? 'Sin datos'),
 	};
 
 	let detail = {
-		Tipo: services.capitalizeText(true, Piezas[0].Nombre ?? 'Sin datos'),
+		Tipo: utils.capitalizeText(true, Piezas[0].Nombre ?? 'Sin datos'),
 		'Importe de flete': '$' + Piezas[0].Flete ?? 'Sin datos',
 		'Importe de seguro': '$' + Piezas[0].Seguro ?? 'Sin datos',
 		Bultos: Piezas[0].Cantidad ?? 'Sin datos',
@@ -45,15 +48,17 @@ async function check(code, lastEvent, service) {
 	};
 
 	let eventsList = result.Eventos.map((e) => {
-		let { date, time } = services.dateStringHandler(e.FechaEvento);
+		let { date, time } = utils.dateStringHandler(e.FechaEvento);
 		return {
 			date,
 			time,
-			description: eventDecode(e.EventoID),
+			status: eventDecode(e.EventoID),
 		};
 	}).reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -64,8 +69,6 @@ async function check(code, lastEvent, service) {
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
-
-export default { check };
 
 function eventDecode(code) {
 	switch (code) {
@@ -117,3 +120,19 @@ function eventDecode(code) {
 			return 'Evento sin descripción';
 	}
 }
+
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (
+		code.length === 13 &&
+		code.slice(5, 8) === '000' &&
+		/^\d+$/.test(code.slice(0, 1)) === false &&
+		/^\d+$/.test(code.slice(1, 2))
+	) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

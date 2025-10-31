@@ -59,7 +59,9 @@ async function remove(userId, ids) {
 
 async function findDuplicateds(id) {
 	let tracking = await db.Tracking.findById(id);
-	if (!tracking) return { error: 'tracking not found' };
+	if (!tracking) {
+		return { error: 'tracking not found' };
+	}
 	let { title, code, service, token } = tracking;
 	return await db.Tracking.find({ title, code, service, token });
 }
@@ -177,9 +179,15 @@ function checkCompletedStatus(lastEvent) {
 		'incautado',
 		'no pudo ser retirado',
 		'entrega en sucursal',
+		'delivered',
+		'returned',
+		'refused',
+		'seized',
+		'retained',
+		'could not be picked up',
 	];
 	let notIncludedWords = ['no entregada', 'no entregado', 'no fue entregado', 'no fue entregada'];
-	let lCLastEvent = lastEvent.toLowerCase();
+	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-1)[0];
 	for (let word of includedWords) {
 		if (lCLastEvent.includes(word)) {
 			status = true;

@@ -8,7 +8,9 @@ async function check(code, lastEvent) {
 		consult1 = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`);
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
-		if (JSON.parse(response.body).message === 'Envío no encontrado') return { error: 'No data' };
+		if (JSON.parse(response.body).message === 'Envío no encontrado') {
+			return { error: 'No data' };
+		}
 	}
 
 	let resultEvents = JSON.parse(consult1.body);
@@ -22,12 +24,14 @@ async function check(code, lastEvent) {
 			date: e.fecha.dia.split('-').join('/'),
 			time: e.fecha.hora,
 			location: location,
-			condition: e.estado,
+			status: e.estado,
 			motive: motive,
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let consult2 = await got(`${vars.ANDREANI_API_URL2}${code}`);
 	let resultOtherData = JSON.parse(consult2.body);
@@ -67,4 +71,15 @@ async function check(code, lastEvent) {
 	return response;
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 15 && code.slice(2, 5) === '000' && code.slice(-1) === '0') {
+		pass = true;
+	}
+	if (code.length === 9 && !/^\d+$/.test(code.slice(0))) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

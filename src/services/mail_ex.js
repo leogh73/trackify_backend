@@ -1,10 +1,21 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let consult = await got(`${vars.MAIL_EX_API_URL}${code}`);
+	let consult;
+
+	try {
+		consult = await got(`${vars.MAIL_EX_API_URL}${code}`);
+	} catch (error) {
+		let response = services.errorResponseHandler(error);
+		if (response.statusCode === 404) {
+			return { error: 'No data' };
+		}
+		return response;
+	}
 
 	const $ = load(consult.body);
 
@@ -43,17 +54,26 @@ async function check(code, lastEvent) {
 		return {
 			date: rowDate[i].split('-').reverse().join('/'),
 			time: rowTime[i],
-			status: services.capitalizeText(false, status),
+			status: utils.capitalizeText(false, status),
 			detail: rowDetail[i].length ? rowDetail[i] : 'Sin datos',
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
-
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 8 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

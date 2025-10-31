@@ -5,12 +5,14 @@ import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let consult = await got(`${vars.CRUZ_DEL_SUR_API_URL}${code}`);
+
 	const $ = load(consult.body);
 
+	const errorSelector =
+		'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > div > span';
 	if (
-		$(
-			'body > div.content_wrap > div.row.row_full.row_space_mobile > div > div > div > span',
-		).text() === 'No existe NIC.'
+		$(errorSelector).text() === 'No existe NIC.' ||
+		$(errorSelector).text() === 'NIC debe ser numérico.'
 	) {
 		return { error: 'No data' };
 	}
@@ -89,7 +91,9 @@ async function check(code, lastEvent) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -103,4 +107,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 9 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

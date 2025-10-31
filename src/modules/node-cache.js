@@ -8,8 +8,6 @@ const setCache = async () => {
 	try {
 		let servicesData = await services.servicesData();
 		cache.set('Service', servicesData);
-		let statusMessage = (await db.StatusMessage.find())[0].message;
-		cache.set('StatusMessage', statusMessage);
 	} catch (error) {
 		console.log(`Could not set cache: ${error}`);
 	}

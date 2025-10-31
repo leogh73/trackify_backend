@@ -1,28 +1,32 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let response1 = await got(vars.EPSA_API_URL);
+	let response1 = await got(vars.EPSA_API_URL1);
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
 
-	let url2 = `${vars.EPSA_API_URL}${vars.PRESIS_API_URL2}`;
-	let response2 = await got(`${url2.replace('code', code).replace('TOKEN', token)}`);
+	let response2 = await got(`${vars.EPSA_API_URL2.replace('code', code).replace('TOKEN', token)}`);
 	let result = JSON.parse(response2.body);
 
-	if (result.mensaje === 'Tracker no encontrado.') return { error: 'No data' };
+	if (result.mensaje === 'Tracker no encontrado.') {
+		return { error: 'No data' };
+	}
 
 	let eventsList = result.guia.fechas.map((f) => {
 		return {
 			date: f.fecha,
 			time: f.hora,
-			status: services.capitalizeText(false, f.estado),
+			status: utils.capitalizeText(false, f.estado),
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -30,4 +34,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if (code.length === 7 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

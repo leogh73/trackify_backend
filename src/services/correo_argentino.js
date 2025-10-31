@@ -2,6 +2,7 @@ import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 import { load } from 'cheerio';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	const fetchData = async (form) => {
@@ -109,7 +110,7 @@ async function check(code, lastEvent) {
 		let eventData = eventsData[i];
 		let date = eventData[0].split(' ')[0].split('-').join('/');
 		let time = eventData[0].split(' ')[1];
-		let condition = services.capitalizeText(false, eventData[3] ?? 'Sin datos');
+		let condition = utils.capitalizeText(false, eventData[3] ?? 'Sin datos');
 		if (!condition.length) condition = 'Sin datos';
 		let event = {
 			date,
@@ -130,8 +131,6 @@ async function check(code, lastEvent) {
 		extCode: code + '----' + consult.type,
 	};
 }
-
-export default { check };
 
 let selectService = {
 	CU: 'ondnp',
@@ -199,3 +198,23 @@ let selectService = {
 	XR: 'ondi',
 	RP: 'ondi',
 };
+
+function testCode(c) {
+	let code = c.split('-').join('');
+	let pass = false;
+	if (code.length === 13 && /^\d+$/.test(code.slice(11, 13)) === false) {
+		pass = true;
+	}
+	if (
+		(code.length === 23 && code.slice(0, 3) === '000') ||
+		(code.length === 18 && code.slice(-2) === '01')
+	) {
+		pass = true;
+	}
+	if (code.length === 11 && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };

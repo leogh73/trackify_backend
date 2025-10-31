@@ -9,12 +9,15 @@ async function check(code, lastEvent) {
 			json: { nro_guia: code },
 		});
 	} catch (error) {
-		return {
-			error:
-				JSON.parse(error.response.body).mensaje === 'Tracker no encontrado.'
-					? 'No data'
-					: error.toString(),
-		};
+		let response = services.errorResponseHandler(error);
+		if (
+			response.body === 'El número de guía debe ser un número.' ||
+			response.body.mensaje === 'Tracker no encontrado.' ||
+			response.body.error == 'Error servidor Epresi'
+		) {
+			return { error: 'No data' };
+		}
+		return response;
 	}
 	let result = JSON.parse(consult.body);
 
@@ -41,7 +44,9 @@ async function check(code, lastEvent) {
 				.join(' ')
 		: 'Sin datos';
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
@@ -55,4 +60,12 @@ async function check(code, lastEvent) {
 	};
 }
 
-export default { check };
+function testCode(code) {
+	let pass = false;
+	if ((code.length === 7 || code.length === 8) && /^\d+$/.test(code)) {
+		pass = true;
+	}
+	return pass;
+}
+
+export default { check, testCode };
