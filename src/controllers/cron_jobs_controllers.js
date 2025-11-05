@@ -88,10 +88,9 @@ const checkTrackings = async (req, res) => {
 		res.status(200).json({
 			message: 'Trackings Check Completed',
 			result: {
-				successful: trackingsCheckResult.length - failedChecks.length,
+				checked: trackingsCheckResult.length,
 				updated: updatedChecks.length,
 				failed: failedChecks.length,
-				total: trackingsCheckResult.length,
 			},
 		});
 	} catch (error) {

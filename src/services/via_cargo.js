@@ -62,6 +62,9 @@ async function check(code, lastEvent) {
 				},
 			];
 		}
+		if (response.events.length > 2) {
+			await db.saveLog('via cargo abnormal response', { result }, 'via cargo error');
+		}
 		return response;
 	}
 

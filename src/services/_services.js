@@ -2,7 +2,7 @@ import list from './_list.js';
 import db from '../modules/mongodb.js';
 import { cache } from '../modules/node-cache.js';
 
-const trackingCheckHandler = async (service, code, lastEvent, token) => {
+const trackingCheckHandler = async (service, code, lastEvent, extraData) => {
 	const timeout = () =>
 		new Promise((resolve, reject) => {
 			setTimeout(() => {
@@ -15,7 +15,7 @@ const trackingCheckHandler = async (service, code, lastEvent, token) => {
 		});
 
 	try {
-		return await Promise.race([list[service].check(code, lastEvent, service, token), timeout()]);
+		return await Promise.race([list[service].check(code, lastEvent, extraData), timeout()]);
 	} catch (error) {
 		return {
 			error: errorResponseHandler(error),

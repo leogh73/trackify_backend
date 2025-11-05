@@ -4,7 +4,7 @@ import services from './_services.js';
 import { load } from 'cheerio';
 import utils from './_utils.js';
 
-async function check(code, lastEvent) {
+async function check(code, lastEvent, extraData) {
 	const fetchData = async (form) => {
 		try {
 			let response = await got.post(vars.CORREO_ARGENTINO_API_URL, {
@@ -43,7 +43,9 @@ async function check(code, lastEvent) {
 						notFound = c.value;
 						return null;
 					}
-					if ($('p').text().includes('Resultados de la consulta')) return c.value;
+					if ($('p').text().includes('Resultados de la consulta')) {
+						return c.value;
+					}
 				})
 				.filter((r) => !!r);
 			response = !consult.length ? notFound : consult[0];
@@ -51,10 +53,8 @@ async function check(code, lastEvent) {
 		return response;
 	};
 
-	let serviceType = code.split('----')[1] ?? null;
-	let cleanCode = serviceType
-		? code.split('----')[0].toUpperCase().split('-').join('').split(' ').join('')
-		: code.toUpperCase().split('-').join('').split(' ').join('');
+	let serviceType = extraData.serviceType;
+	let cleanCode = code.toUpperCase().split('-').join('').split(' ').join('');
 	let checkData = { letters: null, code: cleanCode };
 	if (cleanCode.slice(-2) === 'AR') {
 		let minCode = cleanCode.split('AR')[0];
@@ -83,11 +83,15 @@ async function check(code, lastEvent) {
 		consult = await firstCheck(letters, code, service);
 	}
 
-	if (consult.error) return { error: consult.error };
+	if (consult.error) {
+		return { error: consult.error };
+	}
 
 	const $ = load(consult.body);
 
-	if ($('div > strong').text() === 'No se encontraron resultados') return { error: 'No data' };
+	if ($('div > strong').text() === 'No se encontraron resultados') {
+		return { error: 'No data' };
+	}
 
 	let rowsList = [];
 	$('#no-more-tables > table > tbody > tr> td').each(function () {
@@ -121,14 +125,18 @@ async function check(code, lastEvent) {
 		};
 		eventsList.push(event);
 	}
-	if (consult.type === 'oidn') eventsList.reverse();
+	if (consult.type === 'oidn') {
+		eventsList.reverse();
+	}
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
-		extCode: code + '----' + consult.type,
+		extraData: { ...extraData, serviceType: consult.type },
 	};
 }
 

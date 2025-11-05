@@ -9,9 +9,11 @@ async function add(user, title, service, code, driveData) {
 				moreData: driveData.moreData,
 				lastEvent: Object.values(driveData.events[0]).join(' - '),
 		  }
-		: await services.trackingCheckHandler(service, code, null, user.tokenFB);
+		: await services.trackingCheckHandler(service, code, null, { service, user });
 
-	if (result.error) return result;
+	if (result.error) {
+		return result;
+	}
 
 	let { date, time } = dateAndTime();
 
@@ -34,6 +36,8 @@ async function add(user, title, service, code, driveData) {
 
 	result.checkDate = date;
 	result.checkTime = time;
+
+	delete result.extraData;
 
 	return result;
 }
@@ -140,15 +144,14 @@ async function addMissingTracking(userId, trackingData) {
 }
 
 async function checkTracking(tracking) {
-	const { id, token, title, service, result } = tracking;
-
-	let code = tracking.code;
-	if (service === 'Correo Argentino') code = result.extCode;
-
-	let checkResult = await services.trackingCheckHandler(service, code, result.lastEvent, token);
-
+	const { id, title, code, service, token, result } = tracking;
+	let checkResult = await services.trackingCheckHandler(
+		service,
+		code,
+		result.lastEvent,
+		result.extraData,
+	);
 	let { date, time } = dateAndTime();
-
 	return {
 		idMDB: id,
 		token,

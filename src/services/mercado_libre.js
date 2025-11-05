@@ -2,8 +2,12 @@ import services from './_services.js';
 import utils from './_utils.js';
 import mercadoLibre from '../controllers/mercado_libre_controllers.js';
 
-async function check(code, lastEvent, service, token) {
-	let consult = await mercadoLibre.fetchTrackingData(code, token);
+async function check(code, lastEvent, extraData) {
+	let consult = await mercadoLibre.fetchTrackingData(
+		code,
+		extraData.user.mercadoLibre,
+		extraData.user.id,
+	);
 
 	let result1 = JSON.parse(consult[0].body);
 
@@ -46,6 +50,7 @@ async function check(code, lastEvent, service, token) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		extraData,
 	};
 }
 

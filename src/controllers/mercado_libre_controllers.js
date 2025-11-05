@@ -46,7 +46,6 @@ const consult = async (req, res) => {
 		};
 		res.status(200).json(response);
 	} catch (error) {
-		console.log(error);
 		await db.saveLog('MercadoLibre consult', { ...req.body }, error);
 		res.status(500).json({ error: error.toString() });
 	}
@@ -145,7 +144,7 @@ async function checkShipping(shippingOrder, httpHeaders) {
 	return {
 		shippingId: shippingOrder.shippingId.toString(),
 		title: shippingOrder.items[0],
-		code: response.tracking_number,
+		code: shippingOrder.shippingId.toString(),
 		items: shippingOrder.items,
 		creationDate: convertDate(response.date_created),
 		lastUpdate: convertDate(response.last_updated),
