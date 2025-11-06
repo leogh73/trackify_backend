@@ -3,14 +3,14 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 import utils from './_utils.js';
 
-async function check(code, lastEvent, service) {
+async function check(code, lastEvent, extraData) {
 	let serviceCode;
 	let serviceLicenseKeyNumber;
-	if (service === 'Balut Express') {
+	if (extraData.service === 'Balut Express') {
 		serviceCode = 'blut';
 		serviceLicenseKeyNumber = 'AABMXRAAABAADYCSE';
 	}
-	if (service === 'Cooperativa Sportman') {
+	if (extraData.service === 'Cooperativa Sportman') {
 		serviceCode = 'sptm';
 		serviceLicenseKeyNumber = 'AABPPAAAABAAABCVE';
 	}

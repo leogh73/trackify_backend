@@ -2,18 +2,22 @@ import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
-async function check(code, lastEvent, service) {
+async function check(code, lastEvent, extraData) {
 	let serviceCode;
-	if (service === 'Expreso Fueguino') serviceCode = 49;
-	if (service === 'Rabbione') serviceCode = 17;
-	if (service === 'Rodríguez Hermanos Transportes') serviceCode = 21;
-	if (service === 'Trans Dan Express') serviceCode = 65;
+	if (extraData.service === 'Expreso Fueguino') serviceCode = 49;
+	if (extraData.service === 'Rabbione') serviceCode = 17;
+	if (extraData.service === 'Rodríguez Hermanos Transportes') serviceCode = 21;
+	if (extraData.service === 'Trans Dan Express') serviceCode = 65;
 
 	let splittedCode = code.split('-');
 	let consult = await got.post(`${vars.CRISTAL_WEB_API_URL}${serviceCode}`, {
 		form: { id: parseFloat(splittedCode[1]), o: splittedCode[2] },
 	});
 	let result = JSON.parse(consult.body);
+
+	if (!result.data.length) {
+		return { error: 'No data' };
+	}
 
 	let eventsList = result.data
 		.map((event) => {
@@ -26,11 +30,14 @@ async function check(code, lastEvent, service) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		extraData,
 	};
 }
 

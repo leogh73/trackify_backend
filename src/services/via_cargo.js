@@ -1,5 +1,6 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
+import db from '../modules/mongodb.js';
 import services from './_services.js';
 import utils from './_utils.js';
 

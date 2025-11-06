@@ -1,12 +1,13 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 import { load } from 'cheerio';
 
-async function check(code, lastEvent, service) {
+async function check(code, lastEvent, extraData) {
 	let servicesCode = {
 		'Correo e-Flet': 'correoflet',
-		'Envíos Hijos de Gutierrez': 'gutierrez',
+		'Envíos Hijos de Gutiérrez': 'gutierrez',
 		FastTrack: 'fasttracklv',
 		'Fixy Logística': 'fixy',
 		Lodi: 'lodi',
@@ -18,7 +19,7 @@ async function check(code, lastEvent, service) {
 		SmartPost: 'smartpost',
 	};
 
-	let url1 = vars.PRESIS_API_URL1.replace('service', servicesCode[service]);
+	let url1 = vars.PRESIS_API_URL1.replace('service', servicesCode[extraData.service]);
 	let response1 = await got(url1);
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
@@ -27,21 +28,26 @@ async function check(code, lastEvent, service) {
 	let response2 = await got(`${url1}${url2}`);
 	let result = JSON.parse(response2.body);
 
-	if (result.mensaje === 'Tracker no encontrado.') return { error: 'No data' };
+	if (result.mensaje === 'Tracker no encontrado.') {
+		return { error: 'No data' };
+	}
 
 	let eventsList = result.guia.fechas.map((f) => {
 		return {
 			date: f.fecha,
 			time: f.hora,
-			status: services.capitalizeText(false, f.estado),
+			status: utils.capitalizeText(false, f.estado),
 		};
 	});
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		extraData,
 	};
 }
 

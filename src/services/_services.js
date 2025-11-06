@@ -15,7 +15,10 @@ const trackingCheckHandler = async (service, code, lastEvent, extraData) => {
 		});
 
 	try {
-		return await Promise.race([list[service].check(code, lastEvent, extraData), timeout()]);
+		return await Promise.race([
+			list[service].check(code, lastEvent, { ...extraData, service }),
+			timeout(),
+		]);
 	} catch (error) {
 		return {
 			error: errorResponseHandler(error),
