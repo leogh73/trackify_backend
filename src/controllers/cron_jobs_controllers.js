@@ -169,7 +169,6 @@ const checkServices = async (req, res) => {
 				filteredChecks[index].count = filteredChecks[index].count + 1;
 			}
 		});
-		console.log(filteredChecks);
 		let failedServices = filteredChecks.filter((service) => service.count > 30);
 		let response = {
 			message: 'Services Check Completed',

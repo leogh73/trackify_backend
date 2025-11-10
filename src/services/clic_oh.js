@@ -5,6 +5,7 @@ import services from './_services.js';
 async function check(code, lastEvent) {
 	let consult1 = await got.post(vars.CLICOH_API_URL1, {
 		json: { codeService: code },
+		headers: { 'private-key': vars.CLICOH_PRIVATE_KEY },
 	});
 	let result1 = JSON.parse(consult1.body);
 
@@ -12,7 +13,7 @@ async function check(code, lastEvent) {
 		return { error: 'No data' };
 	}
 
-	let { destinatarioNombre, destino, entrgTraces } = result1.delivery;
+	let { destino, entrgTraces } = result1.delivery;
 
 	let eventsList = entrgTraces
 		.map((e) => {
@@ -31,21 +32,30 @@ async function check(code, lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);
 	}
 
-	let destination = (() => {
-		const { direccionNmz, instrucciones } = destino;
-		return {
-			Dirección: direccionNmz,
-			Servicio: instrucciones ?? 'Sin datos',
-			Destinatario: destinatarioNombre,
-		};
-	})();
-
 	let consult2 = await got.post(vars.CLICOH_API_URL2, {
 		json: { codeService: code },
 	});
 	let result2 = JSON.parse(consult2.body);
 
-	let { origen, bodega, usuario, centro, tamanioPaquete, rastreo } = result2.delivery[0];
+	let {
+		origen,
+		bodega,
+		usuario,
+		centro,
+		tamanioPaquete,
+		rastreo,
+		destinatarioNombre,
+		destinatarioTelef,
+		destinatarioEmail,
+	} = result2.delivery[0];
+
+	let receiver = {
+		Nombre: destinatarioNombre,
+		Dirección: destino.direccionNmz,
+		Teléfono: destinatarioTelef,
+		'Correo electrónico': destinatarioEmail,
+		Servicio: destino.instrucciones ?? 'Sin datos',
+	};
 
 	let origin = (() => {
 		const { codigoPostal, direccionNmz, instrucciones } = origen;
@@ -88,12 +98,12 @@ async function check(code, lastEvent) {
 				data: origin,
 			},
 			{
-				title: 'DESTINO',
-				data: destination,
-			},
-			{
 				title: 'REMITENTE',
 				data: sender,
+			},
+			{
+				title: 'DESTINATARIO',
+				data: receiver,
 			},
 			{
 				title: 'ALMACENAMIENTO',

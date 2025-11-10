@@ -5,14 +5,12 @@ import services from './_services.js';
 import utils from './_utils.js';
 
 async function check(code, lastEvent) {
-	let splittedData = vars.VIACARGO_API_URL.split('----');
-
-	let consult = await got(`${splittedData[0]}${code}`, {
+	let consult = await got(`${vars.VIACARGO_API_URL}${code}`, {
 		headers: {
 			'content-type': 'application/json',
 			origin: 'https://formularios.viacargo.com.ar',
 			referer: `https://formularios.viacargo.com.ar/seguimiento-envio/${code}`,
-			'public-key': splittedData[1],
+			'public-key': vars.VIACARGO_PUBLIC_KEY,
 		},
 	});
 
@@ -24,13 +22,29 @@ async function check(code, lastEvent) {
 
 	let data = result.ok[0].objeto;
 
-	let eventsList = data.listaEventos.map((e) => {
+	let startEventsList = data.listaEventos.map((e) => {
+		let splittedDate = e.fechaEvento.split(' ')[0].split('/');
+		let splittedTime = e.fechaEvento.split(' ')[1].split(':');
 		return {
+			dateObject: Date(
+				splittedDate[2],
+				splittedDate[1] - 1,
+				splittedDate[0],
+				splittedTime[0],
+				splittedTime[1],
+			),
 			date: e.fechaEvento.split(' ')[0],
 			time: e.fechaEvento.split(' ')[1],
 			location: e.deleNombre,
 			status: e.descripcion,
 		};
+	});
+
+	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
+
+	let eventsList = startEventsList.map((e) => {
+		delete e.dateObject;
+		return e;
 	});
 
 	let destination = {
@@ -62,9 +76,6 @@ async function check(code, lastEvent) {
 					data: destination,
 				},
 			];
-		}
-		if (response.events.length > 2) {
-			await db.saveLog('via cargo abnormal response', { result }, 'via cargo error');
 		}
 		return response;
 	}

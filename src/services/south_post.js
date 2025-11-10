@@ -11,9 +11,9 @@ async function check(code, lastEvent) {
 	} catch (error) {
 		let response = services.errorResponseHandler(error);
 		if (
-			response.body === 'El número de guía debe ser un número.' ||
-			response.body.mensaje === 'Tracker no encontrado.' ||
-			response.body.error == 'Error servidor Epresi'
+			response.body === 'Not Found\n' ||
+			response.body.statusMessage === '"Not Found"' ||
+			response.body.statusCode == 404
 		) {
 			return { error: 'No data' };
 		}
