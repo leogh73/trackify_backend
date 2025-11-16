@@ -88,8 +88,15 @@ const trackingAction = async (req, res) => {
 };
 
 const syncronize = async (req, res) => {
-	const { userId, token, lastEvents, payment, servicesCount, servicesVersions, driveLoggedIn } =
-		req.body;
+	const {
+		userId,
+		token,
+		trackingEvents,
+		payment,
+		servicesCount,
+		servicesVersions,
+		driveLoggedIn,
+	} = req.body;
 
 	try {
 		let user = await db.User.findById(userId);
@@ -99,19 +106,20 @@ const syncronize = async (req, res) => {
 		}
 		await update(user, token);
 		let response = {};
-		response.data = await trackingControllers.syncronize(JSON.parse(lastEvents));
+		response.data = trackingEvents
+			? await trackingControllers.syncronize(JSON.parse(trackingEvents))
+			: [];
 		if (driveLoggedIn === 'true') {
 			response.driveStatus = await google.syncronizeDrive(userId, dateAndTime().date);
 		}
-		////// REMOVE ///////
-		response.statusMessage = '';
-		////// REMOVE ///////
 		response.updatedServices = await services.servicesCheckHandler(
 			servicesCount,
 			servicesVersions,
 		);
 		let paymentData = await mercadoPago.syncPaymentData(user, payment);
-		if (paymentData) response.mercadoPago = paymentData;
+		if (paymentData) {
+			response.mercadoPago = paymentData;
+		}
 		res.status(200).json(response);
 	} catch (error) {
 		await db.saveLog('syncronize', { ...req.body }, error);
@@ -124,8 +132,8 @@ const check = async (req, res) => {
 
 	try {
 		let tracking = JSON.parse(trackingData);
-		let completed = trackingControllers.checkCompletedStatus(tracking.lastEvent);
-		if (completed) {
+		let { finished } = trackingControllers.checkFinishedStatus(tracking.lastEvent);
+		if (finished) {
 			let { date, time } = dateAndTime();
 			return res.status(200).json({ result: { events: [] }, checkDate: date, checkTime: time });
 		}

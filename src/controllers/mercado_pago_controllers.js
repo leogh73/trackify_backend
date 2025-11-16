@@ -73,15 +73,25 @@ const paymentRequest = async (req, res) => {
 };
 
 const newPayment = async (req, res) => {
-	if (!req.body.data) return res.status(204);
+	if (!req.body.data) {
+		return res.status(204);
+	}
 	const { data, action } = req.body;
+
+	if (action !== 'payment.created') {
+		await db.saveLog('mercado pago webhook timeout', { body: req.body }, 'mp webhook timeout');
+		return res.status(200).json({ success: 'payment event received' });
+	}
 
 	try {
 		let paymentDetail = await getPaymentDetail(data.id, 'simple', false);
-		if (paymentDetail.error) return res.status(503).json({ error: 'mercado pago error' });
+		if (paymentDetail.error) {
+			return res.status(503).json({ error: 'mercado pago error' });
+		}
 		await storeUpdatePayment(paymentDetail, action === 'payment.created');
 		res.status(200).json('notification received');
 	} catch (error) {
+		console.log(error);
 		await db.saveLog('mercado pago webhook', { body: req.body }, error);
 		res.status(500).json('an error has occurred');
 	}
@@ -286,7 +296,9 @@ const updateDatabase = async (userId, mercadoPago) => {
 };
 
 const checkPaymentStatus = (date, newStatus) => {
-	if (newStatus !== 'approved') return { newStatus, isValid: false, daysRemaining: 0 };
+	if (newStatus !== 'approved') {
+		return { newStatus, isValid: false, daysRemaining: 0 };
+	}
 	let isValid = true;
 	let daysDifference = Math.floor(
 		(new Date(Date.now()).getTime() - new Date(date).getTime()) / (1000 * 3600 * 24),

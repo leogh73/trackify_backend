@@ -1,14 +1,13 @@
 import db from '../modules/mongodb.js';
 import sendNotification from '../modules/firebase_notification.js';
 import { dateAndTime } from '../modules/luxon.js';
-import { cache } from '../modules/node-cache.js';
 import notifyAdmin from '../modules/nodemailer.js';
 import mercadoPago from './mercado_pago_controllers.js';
 import tracking from './trackings_controllers.js';
 
 const checkTrackings = async (req, res) => {
 	try {
-		let trackingsCollection = await db.Tracking.find({ completed: false });
+		let trackingsCollection = await db.Tracking.find({ finished: false });
 		let uniqueTrackings = [];
 		for (let tracking of trackingsCollection) {
 			let trackingResult = { tracking, duplicated: [] };
@@ -39,6 +38,8 @@ const checkTrackings = async (req, res) => {
 							checkTime: time,
 							lastCheck: new Date(Date.now()),
 							result: check.result,
+							finished: check.finished,
+							status: check.status,
 						};
 					}),
 				};
@@ -49,8 +50,12 @@ const checkTrackings = async (req, res) => {
 		let failedChecks = [];
 		for (let tracking of trackingsCheckResult) {
 			let { response, duplicated } = tracking;
-			if (response.result.events?.length) updatedChecks.push(response);
-			if (response.result.error) failedChecks.push(response);
+			if (response.result.events?.length) {
+				updatedChecks.push(response);
+			}
+			if (response.result.error) {
+				failedChecks.push(response);
+			}
 			trackingsCheckTotal.push(response);
 			for (let dup of duplicated) {
 				trackingsCheckTotal.push(dup);
@@ -185,31 +190,33 @@ const checkServices = async (req, res) => {
 	}
 };
 
-const checkCompletedTrackings = async (req, res) => {
+const checkFinishedTrackings = async (req, res) => {
 	try {
-		let trackingsCollection = await db.Tracking.find({ completed: false });
-		let completedCheckIds = [];
+		let trackingsCollection = await db.Tracking.find({ finished: false });
+		let finishedCheckIds = [];
 		for (let tracking of trackingsCollection) {
 			let eventDate = tracking.checkDate.split('/');
 			let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
 			let daysDifference = Math.floor(
 				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
 			);
-			if (daysDifference > 10) completedCheckIds.push(tracking.id);
+			if (daysDifference > 10) {
+				finishedCheckIds.push(tracking.id);
+			}
 		}
-		if (completedCheckIds.length) {
+		if (finishedCheckIds.length) {
 			await db.Tracking.updateMany(
-				{ _id: { $in: completedCheckIds } },
-				{ $set: { completed: true } },
+				{ _id: { $in: finishedCheckIds } },
+				{ $set: { finished: true } },
 			);
 		}
 		res.status(200).json({
-			message: 'Check Completed Successful',
-			result: { updated: completedCheckIds.length },
+			message: 'Check Finished Successful',
+			result: { updated: finishedCheckIds.length },
 		});
 	} catch (error) {
-		res.status(500).json({ error: 'Check Completed Failed', message: error.toString() });
-		await db.saveLog('Check Completed Failed', 'failed completed check', error);
+		res.status(500).json({ error: 'Check Finished Failed', message: error.toString() });
+		await db.saveLog('Check Finished Failed', 'failed finished check', error);
 	}
 };
 
@@ -221,7 +228,7 @@ const cleanUp = async (req, res) => {
 	try {
 		let dbQueries = await Promise.all([
 			db.User.find(),
-			db.Tracking.find({ completed: true }),
+			db.Tracking.find({ finished: true }),
 			db.Log.find(),
 		]);
 		let userIds = [];
@@ -266,6 +273,6 @@ export default {
 	checkAwake,
 	checkPayments,
 	checkServices,
-	checkCompletedTrackings,
+	checkFinishedTrackings,
 	cleanUp,
 };

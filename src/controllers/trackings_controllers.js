@@ -16,6 +16,7 @@ async function add(user, title, service, code, driveData) {
 	}
 
 	let { date, time } = dateAndTime();
+	let { finished, status } = checkFinishedStatus(result.lastEvent);
 
 	const newTracking = await new db.Tracking({
 		title,
@@ -26,7 +27,8 @@ async function add(user, title, service, code, driveData) {
 		lastCheck: new Date(Date.now()),
 		token: user.tokenFB,
 		result,
-		completed: checkCompletedStatus(result.lastEvent),
+		finished,
+		status,
 	}).save();
 
 	result.trackingId = newTracking.id;
@@ -70,35 +72,41 @@ async function findDuplicateds(id) {
 	return await db.Tracking.find({ title, code, service, token });
 }
 
-async function syncronize(lastEventsUser) {
-	let trackingsDB = await db.Tracking.find({ _id: { $in: lastEventsUser.map((e) => e.idMDB) } });
-	return trackingsDB
-		.map((tracking) => findUpdatedTrackings(tracking, lastEventsUser))
-		.filter((result) => !!result);
-}
-
-function findUpdatedTrackings(tracking, lastEventsUser) {
-	let trackingIndex = lastEventsUser.findIndex((t) => t.idMDB === tracking.id);
-	if (
-		trackingIndex !== -1 &&
-		lastEventsUser[trackingIndex].eventDescription !== tracking.result.lastEvent
-	) {
-		let lastEventData = lastEventsUser[trackingIndex].eventDescription.split(' - ');
-		let endIndex = tracking.result.events.findIndex(
-			(e) => e.date === lastEventData[0] && e.time === lastEventData[1],
-		);
-		const { id, service, checkDate, checkTime, result } = tracking;
-		return {
-			id,
-			service,
-			checkDate,
-			checkTime,
-			result: {
-				...result,
-				events: result.events.slice(0, endIndex),
-			},
-		};
-	} else return null;
+async function syncronize(trackingEvents) {
+	let trackingsDb = await db.Tracking.find({ _id: { $in: trackingEvents.map((e) => e.idMDB) } });
+	let missingData = [];
+	for (let tracking of trackingsDb) {
+		let dbTrackingEvents = tracking.result.events;
+		let userTrackingEvents = trackingEvents.find((e) => e.idMDB === tracking.id).eventsList;
+		let userTrackingEventsString = userTrackingEvents.map((t) => {
+			return Object.values(t).join(' - ');
+		});
+		let missingEvents = [];
+		for (let dbEvent of dbTrackingEvents) {
+			let index = userTrackingEventsString.findIndex(
+				(e) => e === Object.values(dbEvent).join(' - '),
+			);
+			if (index === -1) {
+				missingEvents.push(dbEvent);
+			}
+		}
+		if (missingEvents.length) {
+			const { id, service, checkDate, checkTime, result, finished, status } = tracking;
+			missingData.push({
+				id,
+				service,
+				checkDate,
+				checkTime,
+				finished,
+				status,
+				result: {
+					...result,
+					events: missingEvents,
+				},
+			});
+		}
+	}
+	return missingData;
 }
 
 async function check(userId, trackingData) {
@@ -117,6 +125,7 @@ async function addMissingTracking(userId, trackingData) {
 		services.trackingCheckHandler(service, code, lastEvent, user.tokenFB),
 	]);
 	let { date, time } = dateAndTime();
+	let { finished, status } = checkFinishedStatus(apiChecks[0].lastEvent);
 	let lastCheck = new Date(Date.now());
 	await new db.Tracking({
 		_id: idMDB,
@@ -128,7 +137,8 @@ async function addMissingTracking(userId, trackingData) {
 		lastCheck,
 		token: user.tokenFB,
 		result: apiChecks[0],
-		completed: checkCompletedStatus(apiChecks[0].lastEvent),
+		finished,
+		status,
 	}).save();
 	return {
 		idMDB,
@@ -144,7 +154,7 @@ async function addMissingTracking(userId, trackingData) {
 }
 
 async function checkTracking(tracking) {
-	const { id, title, code, service, token, result } = tracking;
+	const { id, title, code, service, token, result, finished, status } = tracking;
 	let checkResult = await services.trackingCheckHandler(
 		service,
 		code,
@@ -152,6 +162,13 @@ async function checkTracking(tracking) {
 		result.extraData,
 	);
 	let { date, time } = dateAndTime();
+	let updatedFinished = finished;
+	let updatedStatus = status;
+	if (checkResult.lastEvent !== null) {
+		let { finished, status } = checkFinishedStatus(checkResult.lastEvent);
+		updatedFinished = finished;
+		updatedStatus = status;
+	}
 	return {
 		idMDB: id,
 		token,
@@ -162,11 +179,14 @@ async function checkTracking(tracking) {
 		checkTime: time,
 		lastCheck: new Date(Date.now()),
 		result: checkResult,
+		finished: updatedFinished,
+		status: updatedStatus,
 	};
 }
 
-function checkCompletedStatus(lastEvent) {
-	let status = false;
+function checkFinishedStatus(lastEvent) {
+	let finished = false;
+	let status = 'in transit';
 	let includedWords = [
 		'entregado',
 		'entregada',
@@ -193,21 +213,23 @@ function checkCompletedStatus(lastEvent) {
 	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-1)[0];
 	for (let word of includedWords) {
 		if (lCLastEvent.includes(word)) {
-			status = true;
+			finished = true;
+			status = word;
 		}
 	}
 	for (let word of notIncludedWords) {
-		if (status && lCLastEvent.includes(word)) {
-			status = false;
+		if (finished && lCLastEvent.includes(word)) {
+			finished = false;
+			status = 'not delivered';
 		}
 	}
-	return status;
+	return { finished, status };
 }
 
 async function updateDatabase(trackingsData) {
 	let databaseUpdates = [];
 	for (let tracking of trackingsData) {
-		let { idMDB, checkDate, checkTime, lastCheck, result } = tracking;
+		let { idMDB, checkDate, checkTime, lastCheck, result, finished, status } = tracking;
 		databaseUpdates.push({
 			updateOne: {
 				filter: { _id: idMDB },
@@ -220,7 +242,8 @@ async function updateDatabase(trackingsData) {
 						checkDate,
 						checkTime,
 						lastCheck,
-						completed: checkCompletedStatus(result.lastEvent),
+						finished,
+						status,
 					},
 				},
 			},
@@ -251,6 +274,6 @@ export default {
 	syncronize,
 	check,
 	checkTracking,
-	checkCompletedStatus,
+	checkFinishedStatus,
 	updateDatabase,
 };

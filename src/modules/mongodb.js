@@ -31,7 +31,8 @@ const trackingSchema = new Schema({
 		type: Object,
 		required: true,
 	},
-	completed: { type: Boolean, required: true },
+	finished: { type: Boolean, required: true },
+	status: { type: String, required: true },
 });
 
 const userSchema = new Schema({
