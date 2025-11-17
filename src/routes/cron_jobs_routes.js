@@ -14,5 +14,5 @@ router.get('/checkTrackings', cronJobs.checkTrackings);
 router.get('/checkAwake', cronJobs.checkAwake);
 router.get('/checkServices', cronJobs.checkServices);
 router.get('/checkPayments', cronJobs.checkPayments);
-router.get('/checkFinished', cronJobs.checkFinishedTrackings);
+router.get('/checkActiveTrackings', cronJobs.checkActiveTrackings);
 router.get('/cleanUp', cronJobs.cleanUp);

@@ -31,7 +31,7 @@ const trackingSchema = new Schema({
 		type: Object,
 		required: true,
 	},
-	finished: { type: Boolean, required: true },
+	active: { type: Boolean, required: true },
 	status: { type: String, required: true },
 });
 

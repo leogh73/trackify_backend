@@ -132,8 +132,8 @@ const check = async (req, res) => {
 
 	try {
 		let tracking = JSON.parse(trackingData);
-		let { finished } = trackingControllers.checkFinishedStatus(tracking.lastEvent);
-		if (finished) {
+		let { active } = trackingControllers.checkActiveStatus(tracking.lastEvent);
+		if (!active) {
 			let { date, time } = dateAndTime();
 			return res.status(200).json({ result: { events: [] }, checkDate: date, checkTime: time });
 		}
@@ -194,10 +194,16 @@ const contactForm = async (req, res) => {
 	}
 
 	try {
-		if (message.includes('text ') || email.includes('text ')) return;
+		if (message.includes('text ') || email.includes('text ')) {
+			return;
+		}
 		let emailIsValid = await emailCheck.isValid(email);
-		if (!emailIsValid) return res.status(403).json({ error: 'email not valid' });
-		if (!checkClaimMessage()) return res.status(400).json({ error: 'message not valid' });
+		if (!emailIsValid) {
+			return res.status(403).json({ error: 'email not valid' });
+		}
+		if (!checkClaimMessage()) {
+			return res.status(400).json({ error: 'message not valid' });
+		}
 		let { date, time } = dateAndTime();
 		let deviceId = uuid ?? 'not available';
 		const { id } = await new db.Contact({ userId, deviceId, message, email, date, time }).save();

@@ -23,7 +23,9 @@ async function check(code, lastEvent, extraData) {
 		})
 		.reverse();
 
-	if (lastEvent) return services.updateResponseHandler(eventsList, lastEvent);
+	if (lastEvent) {
+		return services.updateResponseHandler(eventsList, lastEvent);
+	}
 
 	let result2 = JSON.parse(consult[1].body);
 

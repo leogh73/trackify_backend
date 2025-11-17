@@ -7,7 +7,7 @@ import tracking from './trackings_controllers.js';
 
 const checkTrackings = async (req, res) => {
 	try {
-		let trackingsCollection = await db.Tracking.find({ finished: false });
+		let trackingsCollection = await db.Tracking.find({ active: true });
 		let uniqueTrackings = [];
 		for (let tracking of trackingsCollection) {
 			let trackingResult = { tracking, duplicated: [] };
@@ -38,7 +38,7 @@ const checkTrackings = async (req, res) => {
 							checkTime: time,
 							lastCheck: new Date(Date.now()),
 							result: check.result,
-							finished: check.finished,
+							active: check.active,
 							status: check.status,
 						};
 					}),
@@ -124,7 +124,9 @@ const checkPayments = async (req, res) => {
 		let failedChecks = checkResults.filter(
 			(r) => r.error && r.error !== 'HTTPError: Response code 404 (Not Found)',
 		);
-		if (failedChecks.length) await db.saveLog('payments check', failedChecks, 'failed checks');
+		if (failedChecks.length) {
+			await db.saveLog('payments check', failedChecks, 'failed checks');
+		}
 		await mercadoPago.updateUsers(checkResults);
 		res.status(200).json({
 			success: 'Payments Check Completed',
@@ -190,10 +192,10 @@ const checkServices = async (req, res) => {
 	}
 };
 
-const checkFinishedTrackings = async (req, res) => {
+const checkActiveTrackings = async (req, res) => {
 	try {
-		let trackingsCollection = await db.Tracking.find({ finished: false });
-		let finishedCheckIds = [];
+		let trackingsCollection = await db.Tracking.find({ active: true });
+		let activeCheckIds = [];
 		for (let tracking of trackingsCollection) {
 			let eventDate = tracking.checkDate.split('/');
 			let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
@@ -201,22 +203,19 @@ const checkFinishedTrackings = async (req, res) => {
 				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
 			);
 			if (daysDifference > 10) {
-				finishedCheckIds.push(tracking.id);
+				activeCheckIds.push(tracking.id);
 			}
 		}
-		if (finishedCheckIds.length) {
-			await db.Tracking.updateMany(
-				{ _id: { $in: finishedCheckIds } },
-				{ $set: { finished: true } },
-			);
+		if (activeCheckIds.length) {
+			await db.Tracking.updateMany({ _id: { $in: activeCheckIds } }, { $set: { active: false } });
 		}
 		res.status(200).json({
-			message: 'Check Finished Successful',
-			result: { updated: finishedCheckIds.length },
+			message: 'Check Active Successful',
+			result: { updated: activeCheckIds.length },
 		});
 	} catch (error) {
-		res.status(500).json({ error: 'Check Finished Failed', message: error.toString() });
-		await db.saveLog('Check Finished Failed', 'failed finished check', error);
+		res.status(500).json({ error: 'Check Active Failed', message: error.toString() });
+		await db.saveLog('Check Active Failed', 'failed active check', error);
 	}
 };
 
@@ -228,32 +227,45 @@ const cleanUp = async (req, res) => {
 	try {
 		let dbQueries = await Promise.all([
 			db.User.find(),
-			db.Tracking.find({ finished: true }),
+			db.Tracking.find({ active: false }),
 			db.Log.find(),
 		]);
 		let userIds = [];
 		for (let user of dbQueries[0]) {
 			let daysElapsed = calculateDays(user.lastActivity);
-			if (daysElapsed > 60) userIds.push(user._id);
+			if (daysElapsed > 60) {
+				userIds.push(user._id);
+			}
 		}
 		let trackingIds = [];
 		for (let tracking of dbQueries[1]) {
 			let daysElapsed = calculateDays(tracking.lastCheck);
-			if (daysElapsed > 10) trackingIds.push(tracking._id);
+			if (daysElapsed > 10) {
+				trackingIds.push(tracking._id);
+			}
 		}
 		let logIds = [];
 		for (let log of dbQueries[2]) {
 			let date = log.date.split('/');
 			let logDate = new Date(date[2], date[1] - 1, date[0]);
 			let daysElapsed = calculateDays(logDate);
-			if (daysElapsed > 3) logIds.push(log._id);
+			if (daysElapsed > 3) {
+				logIds.push(log._id);
+			}
 		}
 		let removeOperations = [];
-		if (userIds.length) removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
-		if (trackingIds.length)
+		if (userIds.length) {
+			removeOperations.push(db.User.deleteMany({ _id: { $in: userIds } }));
+		}
+		if (trackingIds.length) {
 			removeOperations.push(db.Tracking.deleteMany({ _id: { $in: trackingIds } }));
-		if (logIds.length) removeOperations.push(db.Log.deleteMany({ _id: { $in: logIds } }));
-		if (removeOperations.length) await Promise.all(removeOperations);
+		}
+		if (logIds.length) {
+			removeOperations.push(db.Log.deleteMany({ _id: { $in: logIds } }));
+		}
+		if (removeOperations.length) {
+			await Promise.all(removeOperations);
+		}
 		res.status(200).json({
 			message: 'Clean Up Cycle Completed',
 			result: {
@@ -273,6 +285,6 @@ export default {
 	checkAwake,
 	checkPayments,
 	checkServices,
-	checkFinishedTrackings,
+	checkActiveTrackings,
 	cleanUp,
 };

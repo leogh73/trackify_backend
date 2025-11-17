@@ -100,7 +100,9 @@ const newPayment = async (req, res) => {
 const newSubscription = async (req, res) => {
 	try {
 		let paymentDetail = await getPaymentDetail(req.query.preapproval_id, 'subscription', false);
-		if (paymentDetail.error) return res.status(503).json({ error: 'mercado pago error' });
+		if (paymentDetail.error) {
+			return res.status(503).json({ error: 'mercado pago error' });
+		}
 		await storeUpdateSubscription(paymentDetail);
 		res.status(200).json({ success: 'subscription stored correctly' });
 	} catch (error) {
@@ -130,9 +132,13 @@ const cancelSubscription = async (req, res) => {
 
 	try {
 		let user = await db.User.findById(req.body.userId);
-		if (!user) return res.status(400).send({ error: 'user not found' });
+		if (!user) {
+			return res.status(400).send({ error: 'user not found' });
+		}
 		let updatedData = await cancelRequest(user.mercadoPago.id);
-		if (updatedData.error) return res.status(500).send({ error: 'mercado pago error' });
+		if (updatedData.error) {
+			return res.status(500).send({ error: 'mercado pago error' });
+		}
 		let paymentData = await storeUpdateSubscription(updatedData, user.mercadoPago.device);
 		res.status(200).json({ paymentData: userPaymentData(paymentData) });
 	} catch (error) {
@@ -145,7 +151,9 @@ const checkDeviceId = async (req, res) => {
 	try {
 		let device = JSON.parse(req.body.deviceData);
 		let users = await db.User.find({ 'mercadoPago.device.uuid': device.uuid });
-		if (!users.length) return res.status(200).json({ result: 'payment not found' });
+		if (!users.length) {
+			return res.status(200).json({ result: 'payment not found' });
+		}
 		let user = users[0];
 		if (users.length > 1) {
 			let validPayments = users.filter((user) => user.mercadoPago.isValid);
@@ -395,7 +403,9 @@ const updateUsers = async (usersData) => {
 };
 
 const syncPaymentData = async (user, payment) => {
-	if (!payment) return false;
+	if (!payment) {
+		return false;
+	}
 	let response;
 	let userPayment = JSON.parse(payment);
 	if (userPayment.status.length && !user.mercadoPago) {

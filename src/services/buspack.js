@@ -58,7 +58,9 @@ async function check(code, lastEvent) {
 	let otherData = {};
 	data1.slice(3, 8).forEach((t) => {
 		let data = t.split(':');
-		if (data.length < 2) return;
+		if (data.length < 2) {
+			return;
+		}
 		otherData[data[0].trim()] = data[1].trim().length ? data[1].trim() : 'Sin datos';
 	});
 

@@ -18,8 +18,12 @@ async function check(code, lastEvent) {
 	let eventsList = resultEvents.map((e) => {
 		let motive = 'Sin datos';
 		let location = 'Sin datos';
-		if (e.motivo) motive = e.motivo;
-		if (e.sucursal.trim(' ').length) location = e.sucursal;
+		if (e.motivo) {
+			motive = e.motivo;
+		}
+		if (e.sucursal.trim(' ').length) {
+			location = e.sucursal;
+		}
 		return {
 			date: e.fecha.dia.split('-').join('/'),
 			time: e.fecha.hora,

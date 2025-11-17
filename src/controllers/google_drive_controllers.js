@@ -45,8 +45,9 @@ const consult = async (req, res) => {
 	try {
 		const { user, driveAuth, drive } = await userDriveInstance(userId);
 		let backupFiles = await findBackups(user, driveAuth, drive);
-		if (backupFiles.length && !backupFiles[0].currentDevice)
+		if (backupFiles.length && !backupFiles[0].currentDevice) {
 			backupFiles.unshift({ date: null, currentDevice: true });
+		}
 		res.status(200).json({ backups: backupFiles, email: driveAuth.email });
 	} catch (error) {
 		await db.saveLog('Google consult', { userId }, error);
@@ -91,7 +92,9 @@ const restore = async (req, res) => {
 				alt: 'media',
 			})
 		).data;
-		if (user.trackings.length) await trackings.remove(userId, user.trackings);
+		if (user.trackings.length) {
+			await trackings.remove(userId, user.trackings);
+		}
 		userData.activeTrackings = (
 			await Promise.allSettled(userData.activeTrackings.map((t) => addTracking(t, userId)))
 		)
@@ -149,7 +152,9 @@ const userDriveInstance = async (userId) => {
 
 const findBackups = async (user, driveAuth, drive) => {
 	let backupFiles = [];
-	if (!driveAuth.backupIds.length) return backupFiles;
+	if (!driveAuth.backupIds.length) {
+		return backupFiles;
+	}
 	backupFiles = await Promise.all(driveAuth.backupIds.map((id) => readBackup(drive, id)));
 	if (user.googleDrive.backupId) {
 		let deviceBackup = backupFiles.filter((b) => b.id == user.googleDrive.backupId);
@@ -218,8 +223,9 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 const syncronizeDrive = async (userId, currentDate) => {
 	const { user, driveAuth, drive } = await userDriveInstance(userId);
 	let driveStatus = 'Backup not found';
-	if (user.googleDrive.backupId)
+	if (user.googleDrive.backupId) {
 		driveStatus = await backupDriveStatus(user, driveAuth, drive, currentDate);
+	}
 	return driveStatus;
 };
 
@@ -241,8 +247,12 @@ const backupDateCheck = (date, currentDate) => {
 	let difference = dateToday.getTime() - dateDrive.getTime();
 	let totalDays = Math.floor(difference / (1000 * 3600 * 24));
 	let driveStatus;
-	if (!totalDays) driveStatus = 'Up to date';
-	if (totalDays) driveStatus = 'Update required';
+	if (!totalDays) {
+		driveStatus = 'Up to date';
+	}
+	if (totalDays) {
+		driveStatus = 'Update required';
+	}
 	return driveStatus;
 };
 

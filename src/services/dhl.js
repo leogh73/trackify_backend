@@ -21,14 +21,31 @@ async function check(code, lastEvent) {
 	}
 	let result = JSON.parse(consult.body).shipments[0];
 
-	let eventsList = result.events.map((e) => {
+	let startEventsList = result.events.map((e) => {
 		let { date, time } = utils.dateStringHandler(e.timestamp);
+		let splittedDate = time.split('/');
+		let splittedTime = date.split(':');
+
 		return {
+			dateObject: Date(
+				splittedDate[2],
+				splittedDate[1] - 1,
+				splittedDate[0],
+				splittedTime[0],
+				splittedTime[1],
+			),
 			date,
 			time,
 			location: e.location.address.addressLocality,
 			description: e.description.trim(),
 		};
+	});
+
+	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
+
+	let eventsList = startEventsList.map((e) => {
+		delete e.dateObject;
+		return e;
 	});
 
 	const { id, status, details, service, origin, destination } = result;

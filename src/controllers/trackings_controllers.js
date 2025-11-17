@@ -16,7 +16,7 @@ async function add(user, title, service, code, driveData) {
 	}
 
 	let { date, time } = dateAndTime();
-	let { finished, status } = checkFinishedStatus(result.lastEvent);
+	let { active, status } = checkActiveStatus(result.lastEvent);
 
 	const newTracking = await new db.Tracking({
 		title,
@@ -27,7 +27,7 @@ async function add(user, title, service, code, driveData) {
 		lastCheck: new Date(Date.now()),
 		token: user.tokenFB,
 		result,
-		finished,
+		active,
 		status,
 	}).save();
 
@@ -91,13 +91,13 @@ async function syncronize(trackingEvents) {
 			}
 		}
 		if (missingEvents.length) {
-			const { id, service, checkDate, checkTime, result, finished, status } = tracking;
+			const { id, service, checkDate, checkTime, result, active, status } = tracking;
 			missingData.push({
 				id,
 				service,
 				checkDate,
 				checkTime,
-				finished,
+				active,
 				status,
 				result: {
 					...result,
@@ -111,9 +111,13 @@ async function syncronize(trackingEvents) {
 
 async function check(userId, trackingData) {
 	let tracking = await db.Tracking.findById(trackingData.idMDB);
-	if (!tracking) return await addMissingTracking(userId, trackingData);
+	if (!tracking) {
+		return await addMissingTracking(userId, trackingData);
+	}
 	let response = await checkTracking(tracking);
-	if (response.result.events?.length) await updateDatabase([response]);
+	if (response.result.events?.length) {
+		await updateDatabase([response]);
+	}
 	return response;
 }
 
@@ -125,7 +129,7 @@ async function addMissingTracking(userId, trackingData) {
 		services.trackingCheckHandler(service, code, lastEvent, user.tokenFB),
 	]);
 	let { date, time } = dateAndTime();
-	let { finished, status } = checkFinishedStatus(apiChecks[0].lastEvent);
+	let { active, status } = checkActiveStatus(apiChecks[0].lastEvent);
 	let lastCheck = new Date(Date.now());
 	await new db.Tracking({
 		_id: idMDB,
@@ -137,7 +141,7 @@ async function addMissingTracking(userId, trackingData) {
 		lastCheck,
 		token: user.tokenFB,
 		result: apiChecks[0],
-		finished,
+		active,
 		status,
 	}).save();
 	return {
@@ -148,13 +152,15 @@ async function addMissingTracking(userId, trackingData) {
 		code,
 		checkDate: date,
 		checkTime: time,
-		lastCheck,
 		result: apiChecks[1],
+		lastCheck,
+		active,
+		status,
 	};
 }
 
 async function checkTracking(tracking) {
-	const { id, title, code, service, token, result, finished, status } = tracking;
+	const { id, title, code, service, token, result, active, status } = tracking;
 	let checkResult = await services.trackingCheckHandler(
 		service,
 		code,
@@ -162,11 +168,11 @@ async function checkTracking(tracking) {
 		result.extraData,
 	);
 	let { date, time } = dateAndTime();
-	let updatedFinished = finished;
+	let updatedactive = active;
 	let updatedStatus = status;
-	if (checkResult.lastEvent !== null) {
-		let { finished, status } = checkFinishedStatus(checkResult.lastEvent);
-		updatedFinished = finished;
+	if (checkResult.lastEvent) {
+		let { active, status } = checkActiveStatus(checkResult.lastEvent);
+		updatedactive = active;
 		updatedStatus = status;
 	}
 	return {
@@ -179,13 +185,13 @@ async function checkTracking(tracking) {
 		checkTime: time,
 		lastCheck: new Date(Date.now()),
 		result: checkResult,
-		finished: updatedFinished,
+		active: updatedactive,
 		status: updatedStatus,
 	};
 }
 
-function checkFinishedStatus(lastEvent) {
-	let finished = false;
+function checkActiveStatus(lastEvent) {
+	let active = true;
 	let status = 'in transit';
 	let includedWords = [
 		'entregado',
@@ -213,23 +219,23 @@ function checkFinishedStatus(lastEvent) {
 	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-1)[0];
 	for (let word of includedWords) {
 		if (lCLastEvent.includes(word)) {
-			finished = true;
+			active = false;
 			status = word;
 		}
 	}
 	for (let word of notIncludedWords) {
-		if (finished && lCLastEvent.includes(word)) {
-			finished = false;
+		if (active && lCLastEvent.includes(word)) {
+			active = false;
 			status = 'not delivered';
 		}
 	}
-	return { finished, status };
+	return { active, status };
 }
 
 async function updateDatabase(trackingsData) {
 	let databaseUpdates = [];
 	for (let tracking of trackingsData) {
-		let { idMDB, checkDate, checkTime, lastCheck, result, finished, status } = tracking;
+		let { idMDB, checkDate, checkTime, lastCheck, result, active, status } = tracking;
 		databaseUpdates.push({
 			updateOne: {
 				filter: { _id: idMDB },
@@ -242,7 +248,7 @@ async function updateDatabase(trackingsData) {
 						checkDate,
 						checkTime,
 						lastCheck,
-						finished,
+						active,
 						status,
 					},
 				},
@@ -274,6 +280,6 @@ export default {
 	syncronize,
 	check,
 	checkTracking,
-	checkFinishedStatus,
+	checkActiveStatus,
 	updateDatabase,
 };
