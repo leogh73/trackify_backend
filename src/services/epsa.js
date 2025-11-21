@@ -9,7 +9,7 @@ async function check(code, lastEvent) {
 	const $ = load(response1.body);
 	let token = $('head > meta[name="csrf-token"]').attr('content');
 
-	let response2 = await got(`${vars.EPSA_API_URL2.replace('code', code).replace('TOKEN', token)}`);
+	let response2 = await got(vars.EPSA_API_URL2.replace('code', code).replace('TOKEN', token));
 	let result = JSON.parse(response2.body);
 
 	if (result.mensaje === 'Tracker no encontrado.') {

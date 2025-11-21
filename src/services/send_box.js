@@ -4,12 +4,13 @@ import services from './_services.js';
 import utils from './_utils.js';
 
 async function check(code, lastEvent) {
-	let dividedCode = code.split('-');
-	let url = vars.SENDBOX_API_URL1.replace('dividedCode0', dividedCode[0])
-		.replace('dividedCode1', dividedCode[1])
-		.replace('dividedCode2', dividedCode[2]);
+	let cleanCode = code.split('-').join('');
+	let url = vars.SENDBOX_API_URL1.replace('dividedCode0', cleanCode.slice(0, 4))
+		.replace('dividedCode1', cleanCode[(4, 12)])
+		.replace('dividedCode2', cleanCode[12]);
 
 	let consult = await got(url);
+
 	let response = JSON.parse(consult.body);
 
 	if (response.error === '2' || response.msj === 'No se encontró información.') {

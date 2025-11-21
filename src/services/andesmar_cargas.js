@@ -39,7 +39,7 @@ async function check(code, lastEvent) {
 	let result2 = JSON.parse(JSON.parse(consult2.body).d).Table;
 
 	let eventsList = result2.map((event) => {
-		let { date, time } = services.dateStringHandler(event.FechaHis);
+		let { date, time } = utils.dateStringHandler(event.FechaHis);
 		let location = `${event.Calle} ${event.CalleNro} - ${utils.capitalizeText(
 			false,
 			event.LocalidadDescrip,

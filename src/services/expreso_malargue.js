@@ -4,9 +4,9 @@ import services from './_services.js';
 import utils from './_utils.js';
 
 async function check(code, lastEvent) {
-	let splittedCode = code.split('-');
+	let cleanCode = code.split('-').join('').slice(-13);
 	let consult = await got.post(vars.EXPRESO_MALARGUE_API_URL, {
-		json: { documento: parseInt(splittedCode[1]), origen: splittedCode[2] },
+		json: { documento: parseInt(cleanCode.slice(0, 12)), origen: cleanCode.slice(-1) },
 	});
 
 	let result = JSON.parse(consult.body);

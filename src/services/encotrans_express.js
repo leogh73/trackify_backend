@@ -4,12 +4,15 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let splittedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
+	console.log(cleanCode.slice(0, 1));
+	console.log(cleanCode.slice(1, 5));
+	console.log(cleanCode.slice(5));
 	let consult = await got.post(vars.ENCOTRANS_API_URL, {
 		form: {
-			tipo: splittedCode[0],
-			sucursal: splittedCode[1],
-			numero: splittedCode[2],
+			tipo: cleanCode.slice(0, 1),
+			sucursal: cleanCode.slice(1, 5),
+			numero: cleanCode.slice(5),
 		},
 	});
 

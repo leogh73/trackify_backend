@@ -4,12 +4,12 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let dividedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
 	let consult = await got.post(vars.CENTRAL_DE_CARGAS_TERRESTRES_API_URL, {
 		form: {
-			tipo: dividedCode[0],
-			suc: dividedCode[1],
-			guia: dividedCode[2],
+			tipo: cleanCode.slice(0, 1),
+			suc: cleanCode.slice(1, 5),
+			guia: cleanCode.slice(5),
 		},
 	});
 

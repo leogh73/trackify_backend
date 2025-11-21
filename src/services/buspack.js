@@ -9,7 +9,7 @@ async function check(code, lastEvent) {
 	if (longCode) splittedCode[2] = parseInt(splittedCode[2]);
 	let checkCode = splittedCode.join('-');
 
-	let consult = await got(`${vars.BUSPACK_API_URL.replace('code', checkCode)}`);
+	let consult = await got(vars.BUSPACK_API_URL.replace('code', checkCode));
 	let result = JSON.parse(consult.body);
 
 	if (result.mensaje.startsWith('No se encontro la operacion con numero:')) {

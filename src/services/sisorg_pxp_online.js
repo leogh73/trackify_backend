@@ -11,7 +11,7 @@ async function check(code, lastEvent, extraData) {
 	};
 
 	let consult = await got.post(
-		`${vars.SISORG_PXP_ONLINE_API_URL.replace('serviceCode', serviceCode[extraData.service])}`,
+		vars.SISORG_PXP_ONLINE_API_URL.replace('serviceCode', serviceCode[extraData.service]),
 		{
 			json: { method: 'SearchByNumero', numero: code },
 		},

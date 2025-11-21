@@ -2,18 +2,16 @@ import got from 'got';
 import vars from '../modules/crypto-js.js';
 import { dateAndTime } from '../modules/luxon.js';
 
-async function check(code, lastEvent, service) {
-	let dividedCode = code.split('-');
-	let companyName = 'PLU';
-	if (service === 'Jetmar') companyName = 'MAR';
-	if (service === 'Condor Estrella') companyName = 'CON';
+async function check(code, lastEvent, extraData) {
+	let cleanCode = code.split('-').join('');
+	let companyName = { Plusmar: 'PLU', Jetmar: 'MAR', 'Condor Estrella': 'CON' };
 
 	let consult = await got.post(vars.PLUSMAR_JETMAR_CONDOR_API_URL, {
 		form: {
-			empresa: companyName,
-			tipoguia: dividedCode[0],
-			ptoVenta: dividedCode[1].padStart(4, 0),
-			numGuia: dividedCode[2].padStart(4, 0),
+			empresa: companyName[extraData.service],
+			tipoguia: cleanCode.slice(0, 1),
+			ptoVenta: cleanCode.slice(1, 5),
+			numGuia: cleanCode.slice(5),
 		},
 		https: {
 			rejectUnauthorized: false,
