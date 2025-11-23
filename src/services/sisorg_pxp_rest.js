@@ -4,21 +4,22 @@ import services from './_services.js';
 import utils from './_utils.js';
 
 async function check(code, lastEvent, extraData) {
-	let serviceCode;
-	let serviceLicenseKeyNumber;
-	if (extraData.service === 'Balut Express') {
-		serviceCode = 'blut';
-		serviceLicenseKeyNumber = 'AABMXRAAABAADYCSE';
-	}
-	if (extraData.service === 'Cooperativa Sportman') {
-		serviceCode = 'sptm';
-		serviceLicenseKeyNumber = 'AABPPAAAABAAABCVE';
-	}
+	let serviceCode = { 'Balut Express': 'blut', 'Cooperativa Sportman': 'sptm' };
+	let serviceLicenseKeyNumber = {
+		'Balut Express': 'AABMXRAAABAADYCSE',
+		'Cooperativa Sportman': 'AABPPAAAABAAABCVE',
+	};
 
-	let baseUrl = vars.SISORG_PXP_REST_API_URL.replace('serviceCode', serviceCode);
+	let baseUrl = vars.SISORG_PXP_REST_API_URL.replace(
+		'serviceCode',
+		serviceCode[extraData.service],
+	);
 
 	let consult1 = await got.post(`${baseUrl}Credential?withToken=true`, {
-		json: { method: 'Generate', jsonparams: { LicenseKeyNumber: serviceLicenseKeyNumber } },
+		json: {
+			method: 'Generate',
+			jsonparams: { LicenseKeyNumber: serviceLicenseKeyNumber[extraData.service] },
+		},
 	});
 	let result1 = JSON.parse(consult1.body);
 

@@ -4,12 +4,13 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let splittedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
+	console.log(vars.FONO_PACK_API_URL);
 	let consult = await got.post(vars.FONO_PACK_API_URL, {
 		form: {
-			comp: splittedCode[0],
-			suc: splittedCode[1],
-			nro: splittedCode[2],
+			comp: cleanCode.slice(0, 1),
+			suc: cleanCode.slice(1, 4),
+			nro: cleanCode.slice(4),
 		},
 	});
 	const $ = load(consult.body.trim());

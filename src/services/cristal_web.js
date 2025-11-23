@@ -3,15 +3,20 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 
 async function check(code, lastEvent, extraData) {
-	let serviceCode;
-	if (extraData.service === 'Expreso Fueguino') serviceCode = 49;
-	if (extraData.service === 'Rabbione') serviceCode = 17;
-	if (extraData.service === 'Rodríguez Hermanos Transportes') serviceCode = 21;
-	if (extraData.service === 'Trans Dan Express') serviceCode = 65;
+	let splittedCode = [];
+	let cleanCode = code.split('-').join('').slice(-7);
+	splittedCode.push(cleanCode.slice(0, 6));
+	splittedCode.push(cleanCode.slice(-1));
 
-	let splittedCode = code.split('-');
-	let consult = await got.post(`${vars.CRISTAL_WEB_API_URL}${serviceCode}`, {
-		form: { id: parseFloat(splittedCode[1]), o: splittedCode[2] },
+	let serviceCode = {
+		'Expreso Fueguino': 49,
+		Rabbione: 17,
+		'Rodríguez Hermanos Transportes': 21,
+		'Trans Dan Express': 65,
+	};
+
+	let consult = await got.post(`${vars.CRISTAL_WEB_API_URL}${serviceCode[extraData.service]}`, {
+		form: { id: parseFloat(splittedCode[0]), o: splittedCode[1] },
 	});
 	let result = JSON.parse(consult.body);
 

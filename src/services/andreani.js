@@ -5,7 +5,7 @@ import services from './_services.js';
 async function check(code, lastEvent) {
 	let consult1;
 	try {
-		consult1 = await got(`${vars.ANDREANI_API_URL1.replace('code', code)}`);
+		consult1 = await got(vars.ANDREANI_API_URL1.replace('code', code));
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
 		if (JSON.parse(response.body).message === 'Envío no encontrado') {

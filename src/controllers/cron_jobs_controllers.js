@@ -207,7 +207,10 @@ const checkActiveTrackings = async (req, res) => {
 			}
 		}
 		if (activeCheckIds.length) {
-			await db.Tracking.updateMany({ _id: { $in: activeCheckIds } }, { $set: { active: false } });
+			await db.Tracking.updateMany(
+				{ _id: { $in: activeCheckIds } },
+				{ $set: { active: false, status: 'delayed' } },
+			);
 		}
 		res.status(200).json({
 			message: 'Check Active Successful',

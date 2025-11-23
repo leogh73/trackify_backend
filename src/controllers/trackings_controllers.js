@@ -10,14 +10,15 @@ async function add(user, title, service, code, driveData) {
 				lastEvent: Object.values(driveData.events[0]).join(' - '),
 		  }
 		: await services.trackingCheckHandler(service, code, null, { service, user });
-
 	if (result.error) {
 		return result;
 	}
-
 	let { date, time } = dateAndTime();
+	result.checkDate = date;
+	result.checkTime = time;
 	let { active, status } = checkActiveStatus(result.lastEvent);
-
+	result.active = active;
+	result.status = status;
 	const newTracking = await new db.Tracking({
 		title,
 		service,
@@ -30,17 +31,10 @@ async function add(user, title, service, code, driveData) {
 		active,
 		status,
 	}).save();
-
 	result.trackingId = newTracking.id;
-
 	await db.User.updateOne({ _id: user.id }, { $push: { trackings: newTracking.id } });
 	await db.Service.updateOne({ name: service }, { $set: { exampleCode: code } });
-
-	result.checkDate = date;
-	result.checkTime = time;
-
 	delete result.extraData;
-
 	return result;
 }
 
@@ -193,12 +187,20 @@ async function checkTracking(tracking) {
 function checkActiveStatus(lastEvent) {
 	let active = true;
 	let status = 'in transit';
-	let includedWords = [
+	let deliveredWords = [
 		'entregado',
 		'entregada',
 		'entregamos',
-		'devuelto',
+		'entrega en sucursal',
 		'entrega en',
+		'delivered',
+	];
+	let notDeliveredWords = [
+		'no entregada',
+		'no entregado',
+		'no fue entregado',
+		'no fue entregada',
+		'devuelto',
 		'devolución',
 		'devuelto',
 		'rehusado',
@@ -207,23 +209,20 @@ function checkActiveStatus(lastEvent) {
 		'retenido',
 		'incautado',
 		'no pudo ser retirado',
-		'entrega en sucursal',
-		'delivered',
 		'returned',
 		'refused',
 		'seized',
 		'retained',
 		'could not be picked up',
 	];
-	let notIncludedWords = ['no entregada', 'no entregado', 'no fue entregado', 'no fue entregada'];
 	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-1)[0];
-	for (let word of includedWords) {
+	for (let word of deliveredWords) {
 		if (lCLastEvent.includes(word)) {
 			active = false;
-			status = word;
+			status = 'delivered';
 		}
 	}
-	for (let word of notIncludedWords) {
+	for (let word of notDeliveredWords) {
 		if (active && lCLastEvent.includes(word)) {
 			active = false;
 			status = 'not delivered';

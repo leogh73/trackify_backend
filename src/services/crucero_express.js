@@ -4,12 +4,12 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let splittedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
 	let consult = await got.post(vars.CRUCERO_EXPRESS_API_URL, {
 		form: {
-			tipoguia: splittedCode[0],
-			nrosuc: splittedCode[1],
-			nroguia: splittedCode[2],
+			tipoguia: cleanCode.slice(0, 1),
+			nrosuc: cleanCode.slice(1, 5),
+			nroguia: cleanCode.slice(5),
 		},
 		https: {
 			rejectUnauthorized: false,

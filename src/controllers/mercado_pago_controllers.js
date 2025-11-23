@@ -74,14 +74,9 @@ const paymentRequest = async (req, res) => {
 
 const newPayment = async (req, res) => {
 	if (!req.body.data) {
-		return res.status(204);
+		return res.status(200).json({ message: 'no payment data' });
 	}
 	const { data, action } = req.body;
-
-	if (action !== 'payment.created') {
-		await db.saveLog('mercado pago webhook timeout', { body: req.body }, 'mp webhook timeout');
-		return res.status(200).json({ success: 'payment event received' });
-	}
 
 	try {
 		let paymentDetail = await getPaymentDetail(data.id, 'simple', false);
@@ -91,7 +86,6 @@ const newPayment = async (req, res) => {
 		await storeUpdatePayment(paymentDetail, action === 'payment.created');
 		res.status(200).json('notification received');
 	} catch (error) {
-		console.log(error);
 		await db.saveLog('mercado pago webhook', { body: req.body }, error);
 		res.status(500).json('an error has occurred');
 	}

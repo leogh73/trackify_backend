@@ -4,11 +4,11 @@ import services from './_services.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let dividedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
 	let consult = await got(
-		`${vars.PULQUI_PACK_API_URL.replace('dividedCode0', dividedCode[0])
-			.replace('dividedCode1', dividedCode[1])
-			.replace('dividedCode2', dividedCode[2])}`,
+		vars.PULQUI_PACK_API_URL.replace('dividedCode0', cleanCode.slice(0, 4))
+			.replace('dividedCode1', cleanCode.slice(4, 5))
+			.replace('dividedCode2', cleanCode.slice(5)),
 	);
 	const $ = load(consult.body);
 

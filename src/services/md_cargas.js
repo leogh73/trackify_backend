@@ -4,12 +4,12 @@ import { dateAndTime } from '../modules/luxon.js';
 import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
-	let dividedCode = code.split('-');
+	let cleanCode = code.split('-').join('');
 	let consult = await got.post(vars.MD_CARGAS_API_URL, {
 		form: {
-			letra: dividedCode[0],
-			pv: dividedCode[1],
-			nro: dividedCode[2],
+			letra: cleanCode.slice(0, 1),
+			pv: cleanCode.slice(1, 5),
+			nro: cleanCode.slice(5),
 		},
 	});
 	const $ = load(consult.body);

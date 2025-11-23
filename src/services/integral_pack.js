@@ -4,11 +4,15 @@ import services from './_services.js';
 import utils from './_utils.js';
 
 async function check(code, lastEvent) {
-	let checkCode = code.split('-');
+	let cleanCode = code.split('-').join('');
 	let consult;
 	try {
 		consult = await got.post(vars.INTEGRAL_PACK_API_URL, {
-			form: { agecod: checkCode[0], tipfor: checkCode[1], guinro: checkCode[2] },
+			form: {
+				agecod: cleanCode.slice(0, 4),
+				tipfor: cleanCode.slice(4, 5),
+				guinro: cleanCode.slice(5),
+			},
 		});
 	} catch (error) {
 		let response = services.errorResponseHandler(error.response);
