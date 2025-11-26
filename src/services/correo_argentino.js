@@ -109,25 +109,46 @@ async function check(code, lastEvent, extraData) {
 		eventsData.push(rowsList.slice(indexList[i], indexList[i + 1]));
 	}
 
-	let eventsList = [];
+	let startEventsList = [];
 	for (let i = 0; i < eventsData.length; i++) {
 		let eventData = eventsData[i];
 		let date = eventData[0].split(' ')[0].split('-').join('/');
+		let splittedDate = date.split('/');
+		if (splittedDate[0].length === 4) {
+			date = splittedDate.reverse().join('/');
+		}
 		let time = eventData[0].split(' ')[1];
+		let splittedTime = time.split(':');
 		let condition = utils.capitalizeText(false, eventData[3] ?? 'Sin datos');
-		if (!condition.length) condition = 'Sin datos';
+		if (!condition.length) {
+			condition = 'Sin datos';
+		}
 		let event = {
+			dateObject: Date(
+				splittedDate[2],
+				splittedDate[1] - 1,
+				splittedDate[0],
+				splittedTime[0],
+				splittedTime[1],
+			),
 			date,
 			time,
 			location: eventData[1],
 			description: eventData[2],
 			condition,
 		};
-		eventsList.push(event);
+		startEventsList.push(event);
 	}
 	if (consult.type === 'oidn') {
-		eventsList.reverse();
+		startEventsList.reverse();
 	}
+
+	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
+
+	let eventsList = startEventsList.map((e) => {
+		delete e.dateObject;
+		return e;
+	});
 
 	if (lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);

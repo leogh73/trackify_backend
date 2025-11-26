@@ -2,16 +2,11 @@ import mongoose from 'mongoose';
 import { dateAndTime } from '../modules/luxon.js';
 import vars from './crypto-js.js';
 import nodeCache from './node-cache.js';
-const Schema = mongoose.Schema;
 
 mongoose.set('strictQuery', false);
 mongoose
 	.connect(
-		`mongodb+srv://${vars.MDB_USER}:${vars.MDB_PASSWORD}@cluster0.rkwyv.mongodb.net/Trackify?retryWrites=true&w=majority`,
-		{
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-		},
+		`mongodb+srv://${vars.MDB_USER}:${vars.MDB_PASSWORD}@cluster0.rkwyv.mongodb.net/Trackify`,
 	)
 	.then(async () => {
 		await nodeCache.setCache();
@@ -19,7 +14,7 @@ mongoose
 	})
 	.catch((error) => console.error('Could not connect to MongoDB', error));
 
-const trackingSchema = new Schema({
+const trackingSchema = new mongoose.Schema({
 	title: { type: String, required: true },
 	code: { type: String, required: true },
 	service: { type: String, required: true },
@@ -35,7 +30,7 @@ const trackingSchema = new Schema({
 	status: { type: String, required: true },
 });
 
-const userSchema = new Schema({
+const userSchema = new mongoose.Schema({
 	lastActivity: { type: Date, required: true },
 	tokenFB: { type: String, required: true },
 	mercadoLibre: { type: Object },
@@ -47,13 +42,13 @@ const userSchema = new Schema({
 	},
 });
 
-const googleDriveSchema = new Schema({
+const googleDriveSchema = new mongoose.Schema({
 	auth: { type: Object, required: true },
 	email: { type: String, required: true },
 	backupIds: [{ type: String, required: true }],
 });
 
-const contactSchema = new Schema({
+const contactSchema = new mongoose.Schema({
 	userId: { type: String, required: true },
 	deviceId: { type: String, required: true },
 	message: { type: String, required: true },
@@ -62,7 +57,7 @@ const contactSchema = new Schema({
 	time: { type: String, required: true },
 });
 
-const logSchema = new Schema({
+const logSchema = new mongoose.Schema({
 	actionName: { type: String, required: true },
 	actionDetail: { type: Object, required: true },
 	errorMessage: { type: String, required: true },
@@ -70,7 +65,7 @@ const logSchema = new Schema({
 	time: { type: String, required: true },
 });
 
-const serviceSchema = new Schema({
+const serviceSchema = new mongoose.Schema({
 	name: { type: String, required: true },
 	exampleCode: { type: String, required: true },
 	logoUrl: { type: String, required: true },

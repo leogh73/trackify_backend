@@ -14,11 +14,7 @@ async function add(user, title, service, code, driveData) {
 		return result;
 	}
 	let { date, time } = dateAndTime();
-	result.checkDate = date;
-	result.checkTime = time;
 	let { active, status } = checkActiveStatus(result.lastEvent);
-	result.active = active;
-	result.status = status;
 	const newTracking = await new db.Tracking({
 		title,
 		service,
@@ -31,6 +27,10 @@ async function add(user, title, service, code, driveData) {
 		active,
 		status,
 	}).save();
+	result.checkDate = date;
+	result.checkTime = time;
+	result.active = active;
+	result.status = status;
 	result.trackingId = newTracking.id;
 	await db.User.updateOne({ _id: user.id }, { $push: { trackings: newTracking.id } });
 	await db.Service.updateOne({ name: service }, { $set: { exampleCode: code } });
