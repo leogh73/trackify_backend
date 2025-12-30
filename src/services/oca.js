@@ -1,6 +1,7 @@
 import got from 'got';
 import vars from '../modules/crypto-js.js';
 import services from './_services.js';
+import utils from './_utils.js';
 
 async function check(code, lastEvent) {
 	let consultEvents = await got.post(vars.OCA_API_URL1, {
@@ -12,16 +13,20 @@ async function check(code, lastEvent) {
 		return { error: 'No data' };
 	}
 
-	let eventsList = resultEvents.map((e) => {
+	let startEventsList = resultEvents.map((e) => {
+		let date = e.DateShow.split(' ')[0];
+		let time = e.DateShow.split(' ')[1];
 		return {
-			date: e.DateShow.split(' ')[0],
-			time: e.DateShow.split(' ')[1],
+			date,
+			time,
 			status: e.State.trim(),
 			motive: e.Razon,
 			location: e.Sucursal.trim(),
 		};
 	});
-	eventsList.reverse();
+	startEventsList.reverse();
+
+	let eventsList = utils.sortEventsByDate(startEventsList);
 
 	if (lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);
@@ -60,6 +65,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://www.oca.com.ar/Busquedas/Envios',
 	};
 }
 

@@ -10,6 +10,29 @@ const dateStringHandler = (ts) => {
 	return { date, time };
 };
 
+const sortEventsByDate = (list) => {
+	let eventsList = list.map((e) => {
+		let splittedDate = e.time.split('/');
+		let splittedTime = e.date.split(':');
+		return {
+			...e,
+			dateObject: Date(
+				splittedDate[2],
+				splittedDate[1] - 1,
+				splittedDate[0],
+				splittedTime[0],
+				splittedTime[1],
+				splittedTime[2] ?? '00',
+			),
+		};
+	});
+	eventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
+	return eventsList.map((e) => {
+		delete e.dateObject;
+		return e;
+	});
+};
+
 const capitalizeText = (firstWordOnly, text) => {
 	return text
 		.toLowerCase()
@@ -82,6 +105,7 @@ const getMonthNumber = {
 
 export default {
 	dateStringHandler,
+	sortEventsByDate,
 	capitalizeText,
 	convert12to24Hour,
 	convertNamedDate,

@@ -73,6 +73,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://www.buspack.com.ar/segui-tu-envio/',
 	};
 }
 

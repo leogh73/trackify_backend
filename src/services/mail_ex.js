@@ -19,6 +19,10 @@ async function check(code, lastEvent) {
 
 	const $ = load(consult.body);
 
+	let token = $('head > meta[name="csrf-token"]').attr('content');
+
+	console.log(token);
+
 	if (
 		$('body > div > div.main > div > div > div.col > div > div').text() ===
 		'No se ha encontrado un paquete con ese numero de tracking.'
@@ -65,6 +69,7 @@ async function check(code, lastEvent) {
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://www.mailexpress.com.ar/ecommerce/seguimiento/${code}`,
 	};
 }
 

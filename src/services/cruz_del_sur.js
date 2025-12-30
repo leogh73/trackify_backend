@@ -104,6 +104,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://www.cruzdelsur.com/herramientas_seguimiento_resultado.php?nic=${code}`,
 	};
 }
 

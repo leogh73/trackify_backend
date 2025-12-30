@@ -118,19 +118,11 @@ async function check(code, lastEvent, extraData) {
 			date = splittedDate.reverse().join('/');
 		}
 		let time = eventData[0].split(' ')[1];
-		let splittedTime = time.split(':');
 		let condition = utils.capitalizeText(false, eventData[3] ?? 'Sin datos');
 		if (!condition.length) {
 			condition = 'Sin datos';
 		}
 		let event = {
-			dateObject: Date(
-				splittedDate[2],
-				splittedDate[1] - 1,
-				splittedDate[0],
-				splittedTime[0],
-				splittedTime[1],
-			),
 			date,
 			time,
 			location: eventData[1],
@@ -143,12 +135,7 @@ async function check(code, lastEvent, extraData) {
 		startEventsList.reverse();
 	}
 
-	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
-
-	let eventsList = startEventsList.map((e) => {
-		delete e.dateObject;
-		return e;
-	});
+	let eventsList = utils.sortEventsByDate(startEventsList);
 
 	if (lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);
@@ -158,6 +145,7 @@ async function check(code, lastEvent, extraData) {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 		extraData: { ...extraData, serviceType: consult.type },
+		url: 'https://www.correoargentino.com.ar/',
 	};
 }
 

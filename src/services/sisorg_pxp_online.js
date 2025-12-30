@@ -10,6 +10,12 @@ async function check(code, lastEvent, extraData) {
 		'El Práctico Pack': 'prac',
 	};
 
+	let serviceUrl = {
+		'Cata Cargo': 'http://mend.pxp.sisorgcloud.com/PXPOnline/Tracking.aspx',
+		ÑanduPack: 'https://sisorg.com/PXPOnline/Tracking.aspx',
+		'El Práctico Pack': 'https://prac.pxp.sisorgcloud.com/pxponline/tracking.aspx',
+	};
+
 	let consult = await got.post(
 		vars.SISORG_PXP_ONLINE_API_URL.replace('serviceCode', serviceCode[extraData.service]),
 		{
@@ -67,6 +73,7 @@ async function check(code, lastEvent, extraData) {
 			{ title: 'DETALLE DEL ENVIO', data: detail },
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: serviceUrl[extraData.service],
 	};
 }
 

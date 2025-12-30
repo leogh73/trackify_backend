@@ -93,6 +93,7 @@ async function check(code, lastEvent) {
 			{ title: 'OTROS DATOS', data: otherData },
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://hopenvios.com.ar/segui-tu-envio?c=${code}`,
 	};
 }
 

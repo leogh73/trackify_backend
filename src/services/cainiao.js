@@ -55,6 +55,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://global.cainiao.com/newDetail.htm?mailNoList=${code}&otherMailNoList=`,
 	};
 }
 

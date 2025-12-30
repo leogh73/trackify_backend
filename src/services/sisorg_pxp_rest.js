@@ -5,6 +5,10 @@ import utils from './_utils.js';
 
 async function check(code, lastEvent, extraData) {
 	let serviceCode = { 'Balut Express': 'blut', 'Cooperativa Sportman': 'sptm' };
+	let serviceUrl = {
+		'Balut Express': 'http://balutexpress.com.ar/Home/Seguimiento',
+		'Cooperativa Sportman': 'https://www.coopsportman.com/qui%C3%A9nes-somos',
+	};
 	let serviceLicenseKeyNumber = {
 		'Balut Express': 'AABMXRAAABAADYCSE',
 		'Cooperativa Sportman': 'AABPPAAAABAAABCVE',
@@ -78,7 +82,9 @@ async function check(code, lastEvent, extraData) {
 	let eventsList = result3
 		.map((event) => {
 			let { date, time } = utils.dateStringHandler(event.FechaOperacion);
-			if (event.Evento === 19) return null;
+			if (event.Evento === 19) {
+				return null;
+			}
 			return {
 				date,
 				time,
@@ -99,6 +105,7 @@ async function check(code, lastEvent, extraData) {
 			{ title: 'DETALLE DEL ENVIO', data: detail },
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: serviceUrl[extraData.service],
 	};
 }
 

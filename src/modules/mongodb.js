@@ -14,6 +14,19 @@ mongoose
 	})
 	.catch((error) => console.error('Could not connect to MongoDB', error));
 
+const userSchema = new mongoose.Schema({
+	lastActivity: { type: Date, required: true },
+	tokenFB: { type: String, required: true },
+	mercadoLibre: { type: Object },
+	mercadoPago: { type: Object },
+	googleDrive: { auth: { type: String }, backupId: { type: String } },
+	trackings: {
+		type: [String],
+		required: true,
+	},
+});
+const User = mongoose.model('User', userSchema);
+
 const trackingSchema = new mongoose.Schema({
 	title: { type: String, required: true },
 	code: { type: String, required: true },
@@ -29,24 +42,14 @@ const trackingSchema = new mongoose.Schema({
 	active: { type: Boolean, required: true },
 	status: { type: String, required: true },
 });
+const Tracking = mongoose.model('Tracking', trackingSchema);
 
-const userSchema = new mongoose.Schema({
-	lastActivity: { type: Date, required: true },
-	tokenFB: { type: String, required: true },
-	mercadoLibre: { type: Object },
-	mercadoPago: { type: Object },
-	googleDrive: { auth: { type: String }, backupId: { type: String } },
-	trackings: {
-		type: [String],
-		required: true,
-	},
-});
-
-const googleDriveSchema = new mongoose.Schema({
+const GDriveSchema = new mongoose.Schema({
 	auth: { type: Object, required: true },
 	email: { type: String, required: true },
 	backupIds: [{ type: String, required: true }],
 });
+const GoogleDrive = mongoose.model('GDriveAuth', GDriveSchema);
 
 const contactSchema = new mongoose.Schema({
 	userId: { type: String, required: true },
@@ -56,6 +59,7 @@ const contactSchema = new mongoose.Schema({
 	date: { type: String, required: true },
 	time: { type: String, required: true },
 });
+const Contact = mongoose.model('Contact', contactSchema);
 
 const logSchema = new mongoose.Schema({
 	actionName: { type: String, required: true },
@@ -64,21 +68,16 @@ const logSchema = new mongoose.Schema({
 	date: { type: String, required: true },
 	time: { type: String, required: true },
 });
+const Log = mongoose.model('Log', logSchema);
 
-const serviceSchema = new mongoose.Schema({
+const serviceSchmea = new mongoose.Schema({
 	name: { type: String, required: true },
 	exampleCode: { type: String, required: true },
 	logoUrl: { type: String, required: true },
 	event: { type: Array, required: true },
 	contact: { type: Object, required: true },
 });
-
-const User = mongoose.model('User', userSchema);
-const Tracking = mongoose.model('Tracking', trackingSchema);
-const GoogleDrive = mongoose.model('GDriveAuth', googleDriveSchema);
-const Contact = mongoose.model('Contact', contactSchema);
-const Log = mongoose.model('Log', logSchema);
-const Service = mongoose.model('Service', serviceSchema);
+const Service = mongoose.model('Service', serviceSchmea);
 
 const saveLog = async (actionName, actionDetail, errorMessage) => {
 	let { date, time } = dateAndTime();

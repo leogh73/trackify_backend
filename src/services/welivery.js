@@ -47,6 +47,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://welivery.com.ar/tracking/index.php?wid=${code}`,
 	};
 }
 

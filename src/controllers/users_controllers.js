@@ -50,8 +50,8 @@ const trackingAction = async (req, res) => {
 		let response;
 		let statusCode = 200;
 		if (action === 'add') {
-			const { title, service, code } = req.body;
-			response = await trackingControllers.add(user, title, service, code.trim(), false);
+			const { title, service, code, language } = req.body;
+			response = await trackingControllers.add(user, title, service, code.trim(), language, false);
 			if (response.error) {
 				statusCode = 500;
 				if (response.error !== 'No data') {
@@ -98,6 +98,8 @@ const syncronize = async (req, res) => {
 		driveLoggedIn,
 	} = req.body;
 
+	console.log(req.body);
+
 	try {
 		let user = await db.User.findById(userId);
 		if (!user) {
@@ -106,12 +108,8 @@ const syncronize = async (req, res) => {
 		}
 		await update(user, token);
 		let response = {};
-		response.data = trackingEvents
-			? await trackingControllers.syncronize(JSON.parse(trackingEvents))
-			: [];
-		if (driveLoggedIn === 'true') {
-			response.driveStatus = await google.syncronizeDrive(userId, dateAndTime().date);
-		}
+		response.data = await trackingControllers.syncronize(trackingEvents);
+		response.driveStatus = await google.syncronizeDrive(userId, dateAndTime().date, driveLoggedIn);
 		response.updatedServices = await services.servicesCheckHandler(
 			servicesCount,
 			servicesVersions,
@@ -135,7 +133,15 @@ const check = async (req, res) => {
 		let { active } = trackingControllers.checkActiveStatus(tracking.lastEvent);
 		if (!active) {
 			let { date, time } = dateAndTime();
-			return res.status(200).json({ result: { events: [] }, checkDate: date, checkTime: time });
+			let status = (await db.Tracking.findById(tracking.idMDB)).status;
+			return res.status(200).json({
+				result: { events: [] },
+				checkDate: date,
+				checkTime: time,
+				active: false,
+				status,
+				lastEvent: tracking.lastEvent,
+			});
 		}
 		let response = await trackingControllers.check(userId, tracking);
 		let statusCode = response.result.error ? 500 : 200;

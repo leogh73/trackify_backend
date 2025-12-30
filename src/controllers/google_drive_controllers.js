@@ -220,7 +220,10 @@ const createUpdateBackup = async (user, driveAuth, drive, backupFiles, userData)
 	return result;
 };
 
-const syncronizeDrive = async (userId, currentDate) => {
+const syncronizeDrive = async (userId, currentDate, loggedIn) => {
+	if (loggedIn === 'false') {
+		return;
+	}
 	const { user, driveAuth, drive } = await userDriveInstance(userId);
 	let driveStatus = 'Backup not found';
 	if (user.googleDrive.backupId) {

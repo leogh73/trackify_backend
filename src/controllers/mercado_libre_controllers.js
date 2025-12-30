@@ -37,6 +37,10 @@ const consult = async (req, res) => {
 
 	try {
 		let { id, mercadoLibre } = await db.User.findById(userId);
+		if (!mercadoLibre) {
+			res.status(401).json({ error: 'no auth data' });
+			return;
+		}
 		let { shippingIds, httpHeaders } = await checkShippingOrders(id, mercadoLibre, consultType);
 		let shippingResults = await checkShippings(shippingIds.consult, httpHeaders);
 		let response = {
@@ -206,6 +210,7 @@ async function renewTokenML(refreshToken, userId) {
 		return newMeLiData;
 	} catch (error) {
 		await db.saveLog('ML token renew failed', { refreshToken, userId }, error);
+		return { error: 'relogin' };
 	}
 }
 

@@ -25,10 +25,14 @@ const sendNotification = async (title, body, token, data) => {
 	try {
 		let response = await admin.messaging().send(notification);
 		console.log({ 'Notification sended': response });
+		return response;
 	} catch (error) {
 		console.log(error);
-		if (error.errorInfo.code == 'messaging/registration-token-not-registered') {
+		if (error.errorInfo.message === 'Requested entity was not found.') {
 			await user.remove(token);
+		}
+		if (error.errorInfo.message === 'Android message is too big') {
+			return await sendNotification(title, body, token, '');
 		}
 		await db.saveLog('send notification error', { title, body, token, data }, error);
 	}

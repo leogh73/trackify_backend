@@ -29,6 +29,7 @@ async function check(code, lastEvent) {
 	return {
 		events: lastEvent ? (event.status === lastEvent.split(' - ')[2] ? [] : [event]) : [event],
 		lastEvent: Object.values(event).join(' - '),
+		url: 'https://mdcargasoficial.com/',
 	};
 }
 

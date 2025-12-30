@@ -55,6 +55,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://www.sendbox.com.ar/seguimiento/',
 	};
 }
 

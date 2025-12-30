@@ -33,6 +33,7 @@ async function check(code, lastEvent, extraData) {
 	return {
 		events: [event],
 		lastEvent: Object.values(event).join(' - '),
+		url: 'https://www.plusmar.com.ar/es/servicio-de-encomiendas',
 	};
 }
 

@@ -23,29 +23,17 @@ async function check(code, lastEvent) {
 	let data = result.ok[0].objeto;
 
 	let startEventsList = data.listaEventos.map((e) => {
-		let splittedDate = e.fechaEvento.split(' ')[0].split('/');
-		let splittedTime = e.fechaEvento.split(' ')[1].split(':');
+		let date = e.fechaEvento.split(' ')[0];
+		let time = e.fechaEvento.split(' ')[1];
 		return {
-			dateObject: Date(
-				splittedDate[2],
-				splittedDate[1] - 1,
-				splittedDate[0],
-				splittedTime[0],
-				splittedTime[1],
-			),
-			date: e.fechaEvento.split(' ')[0],
-			time: e.fechaEvento.split(' ')[1],
+			date,
+			time,
 			location: e.deleNombre,
 			status: e.descripcion,
 		};
 	});
 
-	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
-
-	let eventsList = startEventsList.map((e) => {
-		delete e.dateObject;
-		return e;
-	});
+	let eventsList = utils.sortEventsByDate(startEventsList);
 
 	let destination = {
 		'Nombre del destinatario': utils.capitalizeText(false, data.nombreDestinatario),
@@ -114,6 +102,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://viacargo.com.ar/seguimiento-de-envio/${code}/`,
 	};
 }
 

@@ -15,23 +15,28 @@ async function check(code, lastEvent) {
 
 	let resultEvents = JSON.parse(consult1.body);
 
-	let eventsList = resultEvents.map((e) => {
-		let motive = 'Sin datos';
-		let location = 'Sin datos';
-		if (e.motivo) {
-			motive = e.motivo;
-		}
-		if (e.sucursal.trim(' ').length) {
-			location = e.sucursal;
-		}
-		return {
-			date: e.fecha.dia.split('-').join('/'),
-			time: e.fecha.hora,
-			location: location,
-			status: e.estado,
-			motive: motive,
-		};
-	});
+	let eventsList = resultEvents
+		.map((e) => {
+			if (!e.sucursal) {
+				return null;
+			}
+			let motive = 'Sin datos';
+			let location = 'Sin datos';
+			if (e.motivo) {
+				motive = e.motivo;
+			}
+			if (e.sucursal.trim(' ').length) {
+				location = e.sucursal;
+			}
+			return {
+				date: e.fecha.dia.split('-').join('/'),
+				time: e.fecha.hora,
+				location: location,
+				status: e.estado,
+				motive: motive,
+			};
+		})
+		.filter((e) => !!e);
 
 	if (lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);
@@ -70,6 +75,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://andreani.com/envio/${code}`,
 	};
 
 	return response;

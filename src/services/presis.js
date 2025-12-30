@@ -48,6 +48,7 @@ async function check(code, lastEvent, extraData) {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 		extraData,
+		url: url1,
 	};
 }
 

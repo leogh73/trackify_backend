@@ -2,14 +2,14 @@ import db from '../modules/mongodb.js';
 import { dateAndTime } from '../modules/luxon.js';
 import services from '../services/_services.js';
 
-async function add(user, title, service, code, driveData) {
+async function add(user, title, service, code, language, driveData) {
 	let result = driveData
 		? {
 				events: driveData.events,
 				moreData: driveData.moreData,
 				lastEvent: Object.values(driveData.events[0]).join(' - '),
 		  }
-		: await services.trackingCheckHandler(service, code, null, { service, user });
+		: await services.trackingCheckHandler(service, code, null, { service, user, language });
 	if (result.error) {
 		return result;
 	}
@@ -40,7 +40,9 @@ async function add(user, title, service, code, driveData) {
 
 async function rename(trackingId, newTitle) {
 	let allTrackings = await findDuplicateds(trackingId);
-	if (allTrackings.error) return;
+	if (allTrackings.error) {
+		return;
+	}
 	let ids = allTrackings.map((t) => t.id);
 	await db.Tracking.updateMany({ _id: { $in: ids } }, { $set: { title: newTitle } });
 }
@@ -50,7 +52,9 @@ async function remove(userId, ids) {
 	let fullTrackingsIds = [];
 	for (let tId of trackingIds) {
 		let allTrackings = await findDuplicateds(tId);
-		if (allTrackings.error) return;
+		if (allTrackings.error) {
+			return;
+		}
 		allTrackings.map((t) => fullTrackingsIds.push(t.id));
 	}
 	await db.Tracking.deleteMany({ _id: { $in: fullTrackingsIds } });
@@ -66,12 +70,21 @@ async function findDuplicateds(id) {
 	return await db.Tracking.find({ title, code, service, token });
 }
 
-async function syncronize(trackingEvents) {
-	let trackingsDb = await db.Tracking.find({ _id: { $in: trackingEvents.map((e) => e.idMDB) } });
-	let missingData = [];
+async function syncronize(events) {
+	if (!events) {
+		return [];
+	}
+	let trackingsData = JSON.parse(events);
+	if (!trackingsData.length) {
+		return [];
+	}
+	let trackingsDb = await db.Tracking.find({ _id: { $in: trackingsData.map((e) => e.idMDB) } });
+	let responseData = [];
 	for (let tracking of trackingsDb) {
 		let dbTrackingEvents = tracking.result.events;
-		let userTrackingEvents = trackingEvents.find((e) => e.idMDB === tracking.id).eventsList;
+		let userTracking = trackingsData.find((e) => e.idMDB === tracking.id);
+		let userTrackingStatus = userTracking.status;
+		let userTrackingEvents = userTracking.eventsList;
 		let userTrackingEventsString = userTrackingEvents.map((t) => {
 			return Object.values(t).join(' - ');
 		});
@@ -84,23 +97,24 @@ async function syncronize(trackingEvents) {
 				missingEvents.push(dbEvent);
 			}
 		}
-		if (missingEvents.length) {
-			const { id, service, checkDate, checkTime, result, active, status } = tracking;
-			missingData.push({
-				id,
-				service,
-				checkDate,
-				checkTime,
-				active,
-				status,
-				result: {
-					...result,
-					events: missingEvents,
-				},
-			});
+		const { id, service, checkDate, checkTime, result, active, status } = tracking;
+		let trackingData = {
+			id,
+			service,
+			checkDate,
+			checkTime,
+			active,
+		};
+		if (missingEvents.length || status !== userTrackingStatus) {
+			trackingData.result = {
+				...result,
+				events: missingEvents,
+			};
+			trackingData.status = status;
+			responseData.push(trackingData);
 		}
 	}
-	return missingData;
+	return responseData;
 }
 
 async function check(userId, trackingData) {
@@ -215,7 +229,7 @@ function checkActiveStatus(lastEvent) {
 		'retained',
 		'could not be picked up',
 	];
-	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-1)[0];
+	let lCLastEvent = lastEvent.toLowerCase().split(' - ').slice(-3).join(' ');
 	for (let word of deliveredWords) {
 		if (lCLastEvent.includes(word)) {
 			active = false;

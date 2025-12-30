@@ -5,12 +5,16 @@ import services from './_services.js';
 import utils from './_utils.js';
 import { cache } from '../modules/node-cache.js';
 
-async function check(code, lastEvent) {
+async function check(code, lastEvent, extraData) {
 	let accessToken = cache.get('FedEx_token') ?? (await fetchAccessToken());
 
-	let responseData = await fetchData(code, accessToken);
+	let selectLanguage = {
+		Español: 'es_MX',
+		English: 'en_UK',
+	};
+	let language = selectLanguage[extraData.language] ?? 'es_MX';
 
-	console.log(responseData);
+	let responseData = await fetchData(code, accessToken, language);
 
 	if (
 		responseData.error?.code === 'TRACKING.TRACKINGNUMBER.NOTFOUND' ||
@@ -87,10 +91,12 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://www.fedex.com/fedextrack/?trknbr=${code}&trkqual=2460699000~771624179469~FX`,
+		extraData: { ...extraData, language: extraData.language ?? 'Español' },
 	};
 }
 
-const fetchData = async (code, accessToken) => {
+const fetchData = async (code, accessToken, language) => {
 	let consult;
 	try {
 		consult = await got.post(vars.FEDEX_API_URL, {
@@ -99,7 +105,7 @@ const fetchData = async (code, accessToken) => {
 				trackingInfo: [{ trackingNumberInfo: { trackingNumber: code } }],
 			},
 			headers: {
-				'x-locale': 'es_MX',
+				'x-locale': language,
 				authorization: `Bearer ${accessToken}`,
 			},
 		});

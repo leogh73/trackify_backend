@@ -70,6 +70,7 @@ const servicesData = async () => {
 		}
 		let serviceData = sData[index].toObject();
 		delete serviceData.contact;
+		delete serviceData.event;
 		services[service] = serviceData;
 	});
 	return services;

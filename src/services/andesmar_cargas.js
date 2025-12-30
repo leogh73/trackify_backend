@@ -68,6 +68,7 @@ async function check(code, lastEvent) {
 		events: eventsList,
 		moreData: [{ title: 'OTROS DATOS', data: otherData }],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://andesmarcargas.com/seguimiento.html',
 	};
 }
 

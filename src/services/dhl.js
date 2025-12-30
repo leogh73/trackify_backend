@@ -3,10 +3,15 @@ import vars from '../modules/crypto-js.js';
 import services from './_services.js';
 import utils from './_utils.js';
 
-async function check(code, lastEvent) {
+async function check(code, lastEvent, extraData) {
+	let selectLanguage = {
+		Español: 'es',
+		English: 'en',
+	};
+	let language = selectLanguage[extraData.language] ?? 'es';
 	let consult;
 	try {
-		consult = await got(`${vars.DHL_API_URL}${code}&language=es`, {
+		consult = await got(`${vars.DHL_API_URL}${code}&language=${language}`, {
 			headers: {
 				Accept: 'application/json',
 				'DHL-API-Key': `${vars.DHL_API_KEY}`,
@@ -23,17 +28,7 @@ async function check(code, lastEvent) {
 
 	let startEventsList = result.events.map((e) => {
 		let { date, time } = utils.dateStringHandler(e.timestamp);
-		let splittedDate = time.split('/');
-		let splittedTime = date.split(':');
-
 		return {
-			dateObject: Date(
-				splittedDate[2],
-				splittedDate[1] - 1,
-				splittedDate[0],
-				splittedTime[0],
-				splittedTime[1],
-			),
 			date,
 			time,
 			location: e.location.address.addressLocality,
@@ -41,12 +36,7 @@ async function check(code, lastEvent) {
 		};
 	});
 
-	startEventsList.sort((e1, e2) => e2.dateObject - e1.dateObject);
-
-	let eventsList = startEventsList.map((e) => {
-		delete e.dateObject;
-		return e;
-	});
+	let eventsList = utils.sortEventsByDate(startEventsList);
 
 	const { id, status, details, service, origin, destination } = result;
 
@@ -132,6 +122,8 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://www.dhl.com/ar-es/home/rastreo.html?tracking-id=${code}&submit=1`,
+		extraData: { ...extraData, language: extraData.language ?? 'Español' },
 	};
 }
 

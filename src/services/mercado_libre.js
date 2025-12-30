@@ -11,7 +11,7 @@ async function check(code, lastEvent, extraData) {
 
 	let result1 = JSON.parse(consult[0].body);
 
-	let eventsList = result1
+	let startEventsList = result1
 		.map((e) => {
 			let { date, time } = utils.dateStringHandler(e.date);
 			return {
@@ -22,6 +22,8 @@ async function check(code, lastEvent, extraData) {
 			};
 		})
 		.reverse();
+
+	let eventsList = utils.sortEventsByDate(startEventsList);
 
 	if (lastEvent) {
 		return services.updateResponseHandler(eventsList, lastEvent);
@@ -53,6 +55,7 @@ async function check(code, lastEvent, extraData) {
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 		extraData,
+		url: '',
 	};
 }
 

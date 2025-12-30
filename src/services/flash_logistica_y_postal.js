@@ -57,6 +57,7 @@ async function check(code, lastEvent) {
 		events: eventsList,
 		moreData: [{ title: 'DESTINATARIO', data: destination }],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://flashlogistica.com.ar/seguimiento',
 	};
 }
 

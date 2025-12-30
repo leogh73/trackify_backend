@@ -48,6 +48,7 @@ async function check(code, lastEvent) {
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://www.entregaok.com/emp/listas/seguim.php',
 	};
 }
 

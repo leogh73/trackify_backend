@@ -96,6 +96,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://web.paquery.com/order-detail?externalCode=${code}`,
 	};
 }
 

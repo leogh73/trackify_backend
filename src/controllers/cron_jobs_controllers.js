@@ -197,10 +197,10 @@ const checkActiveTrackings = async (req, res) => {
 		let trackingsCollection = await db.Tracking.find({ active: true });
 		let activeCheckIds = [];
 		for (let tracking of trackingsCollection) {
-			let eventDate = tracking.checkDate.split('/');
-			let lastUpdateDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
+			let eventDate = tracking.result.events[0].date.split('/');
+			let lastEventDate = new Date(eventDate[2], eventDate[1] - 1, eventDate[0]);
 			let daysDifference = Math.floor(
-				(new Date(Date.now()).getTime() - lastUpdateDate.getTime()) / (1000 * 3600 * 24),
+				(new Date(Date.now()).getTime() - lastEventDate.getTime()) / (1000 * 3600 * 24),
 			);
 			if (daysDifference > 10) {
 				activeCheckIds.push(tracking.id);

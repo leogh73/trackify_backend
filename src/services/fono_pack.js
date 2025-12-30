@@ -5,7 +5,6 @@ import { load } from 'cheerio';
 
 async function check(code, lastEvent) {
 	let cleanCode = code.split('-').join('');
-	console.log(vars.FONO_PACK_API_URL);
 	let consult = await got.post(vars.FONO_PACK_API_URL, {
 		form: {
 			comp: cleanCode.slice(0, 1),
@@ -43,6 +42,7 @@ async function check(code, lastEvent) {
 	return {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://fonopack.sytes.net/fonopack/tracking.html',
 	};
 }
 

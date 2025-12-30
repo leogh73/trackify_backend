@@ -78,7 +78,9 @@ async function check(code, lastEvent) {
 	let eventsList = events.map((e) => {
 		let finalLocation;
 		let location = e[4].split('-');
-		if (location.length == 1) finalLocation = location[0];
+		if (location.length == 1) {
+			finalLocation = location[0];
+		}
 		if (location.length > 1) {
 			location.shift();
 			finalLocation = location.join('-');
@@ -109,6 +111,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: 'https://www.urbano.com.ar/segui-tu-envio',
 	};
 }
 

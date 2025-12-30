@@ -15,6 +15,12 @@ async function check(code, lastEvent, extraData) {
 		'Trans Dan Express': 65,
 	};
 
+	let serviceUrl = {
+		Rabbione: 'https://www.rabbione.com.ar/',
+		'Rodríguez Hermanos Transportes': 'https://www.softwarecristal.com/web/?empresa=trm',
+		'Trans Dan Express': 'https://www.softwarecristal.com/web/track.inc.php?empresa=TRANSDAN',
+	};
+
 	let consult = await got.post(`${vars.CRISTAL_WEB_API_URL}${serviceCode[extraData.service]}`, {
 		form: { id: parseFloat(splittedCode[0]), o: splittedCode[1] },
 	});
@@ -43,6 +49,7 @@ async function check(code, lastEvent, extraData) {
 		events: eventsList,
 		lastEvent: Object.values(eventsList[0]).join(' - '),
 		extraData,
+		url: serviceUrl[extraData.service],
 	};
 }
 

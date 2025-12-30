@@ -12,6 +12,8 @@ async function check(code, lastEvent) {
 		},
 	});
 
+	console.log(vars.OCASA_API_URL);
+
 	const $ = load(consult.body);
 
 	let rowEvents = [];
@@ -72,6 +74,7 @@ async function check(code, lastEvent) {
 			},
 		],
 		lastEvent: Object.values(eventsList[0]).join(' - '),
+		url: `https://tracking.ocasa.com/TrackingOnline/index?airbillnumber=${code}`,
 	};
 }
 
