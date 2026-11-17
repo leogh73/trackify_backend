@@ -25,7 +25,7 @@ const paymentRequest = async (req, res) => {
 										id: 'Premium App',
 										category_id: 'services',
 										quantity: 1,
-										unit_price: 2000,
+										unit_price: 3000,
 										currency_id: 'ARS',
 									},
 								],
@@ -37,7 +37,7 @@ const paymentRequest = async (req, res) => {
 								external_reference: deviceData,
 								statement_descriptor: 'TRACKEAR PREMIUM POR 30 DÍAS',
 								notification_url: `${notification_url}newPayment`,
-						  }
+							}
 						: {
 								reason: 'TrackeAR Premium Suscripción',
 								external_reference: deviceData,
@@ -50,12 +50,12 @@ const paymentRequest = async (req, res) => {
 									})(),
 									billing_day_proportional: false,
 									category_id: 'services',
-									transaction_amount: 2000,
+									transaction_amount: 3000,
 									currency_id: 'ARS',
 								},
 								statement_descriptor: 'TRACKEAR PREMIUM SUSCRIPCIÓN',
 								back_url: `${notification_url}newSubscription`,
-						  },
+							},
 				headers: {
 					content_type: 'application/json',
 					authorization: `Bearer ${
